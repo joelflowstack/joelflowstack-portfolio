@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Home — Joel Flowstack</title>
+<link rel="stylesheet" href="../css/global.css"/>
+
+<style>
+.cube-hero{position:relative;height:100vh;overflow:hidden;background:#000}
+#heroCube{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hero-text{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 3.5rem clamp(1.5rem,4vw,4.5rem);background:linear-gradient(to top,rgba(6,6,15,.92) 0%,rgba(6,6,15,.06) 55%,transparent 100%);pointer-events:none}
+.hero-text h1{font-size:clamp(2.4rem,6vw,5rem);font-weight:700;letter-spacing:-.03em;line-height:.95;color:#fff;margin-bottom:.7rem}
+.hero-text p{color:rgba(255,255,255,.55);font-size:1.05rem;max-width:440px;line-height:1.65;margin-bottom:1.75rem}
+.hero-text .btns{display:flex;gap:1rem;flex-wrap:wrap;pointer-events:all}
+</style>
+
+<style>
+.sec-title{font-size:clamp(2rem,4.5vw,3.5rem);font-weight:700;letter-spacing:-.025em;line-height:1.08;margin-bottom:1rem}
+</style>
+</head>
+<body>
+
+<div class="cube-hero">
+  <canvas id="heroCube"></canvas>
+  <div class="hero-text">
+    <div class="eyebrow" style="color:#A78BFA">Interactive Digital Studio</div>
+    <h1>We Build<br/><span class="accent">Intelligent<br/>Experiences.</span></h1>
+    <p>Interactive 3D websites, AI automations &amp; bots that don't just look good — they work.</p>
+    <div class="btns"><a href="services.html" class="btn btn-p">See What We Do</a><a href="contact.html" class="btn btn-g">Start a Project →</a></div>
+  </div>
+</div>
+<div class="marq"><div class="marq-track"><span>3D Websites</span><span class="dot">✦</span><span>AI Automations</span><span class="dot">✦</span><span>Discord Bots</span><span class="dot">✦</span><span>Telegram Bots</span><span class="dot">✦</span><span>WhatsApp Bots</span><span class="dot">✦</span><span>n8n Workflows</span><span class="dot">✦</span><span>Bot Integrations</span><span class="dot">✦</span><span>Built to Scale</span><span class="dot">✦</span><span>3D Websites</span><span class="dot">✦</span><span>AI Automations</span><span class="dot">✦</span><span>Discord Bots</span><span class="dot">✦</span><span>Telegram Bots</span><span class="dot">✦</span><span>WhatsApp Bots</span><span class="dot">✦</span><span>n8n Workflows</span><span class="dot">✦</span><span>Bot Integrations</span><span class="dot">✦</span><span>Built to Scale</span><span class="dot">✦</span></div></div>
+<section class="section" style="background:var(--bg2)">
+  <div class="container" style="display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center">
+    <div class="reveal">
+      <div class="eyebrow">Live Demo</div>
+      <h2 class="sec-title">Watch bots &amp;<br/><span class="accent">automations in action.</span></h2>
+      <p style="color:var(--mut);line-height:1.75;margin-bottom:1rem">A real system built by Joel Flowstack — bots integrated directly into websites, Discord communities, Telegram groups and more.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.75rem">
+        <span style="padding:.35rem .85rem;border-radius:50px;background:rgba(123,97,255,.12);border:1px solid rgba(123,97,255,.22);font-size:.8rem;color:var(--plt)">Discord Bots</span>
+        <span style="padding:.35rem .85rem;border-radius:50px;background:rgba(123,97,255,.12);border:1px solid rgba(123,97,255,.22);font-size:.8rem;color:var(--plt)">Telegram Bots</span>
+        <span style="padding:.35rem .85rem;border-radius:50px;background:rgba(123,97,255,.12);border:1px solid rgba(123,97,255,.22);font-size:.8rem;color:var(--plt)">WhatsApp Bots</span>
+        <span style="padding:.35rem .85rem;border-radius:50px;background:rgba(123,97,255,.12);border:1px solid rgba(123,97,255,.22);font-size:.8rem;color:var(--plt)">Website Chatbots</span>
+        <span style="padding:.35rem .85rem;border-radius:50px;background:rgba(123,97,255,.12);border:1px solid rgba(123,97,255,.22);font-size:.8rem;color:var(--plt)">AI Agents</span>
+      </div>
+      <a href="services.html" class="btn btn-p">Explore Services →</a>
+    </div>
+    <div class="reveal d2">
+      <div style="border-radius:16px;overflow:hidden;border:1px solid var(--bdr);position:relative">
+        <video autoplay muted loop playsinline style="width:100%;display:block"><source src="../assets/demo.mp4" type="video/mp4"/></video>
+        <div style="position:absolute;bottom:1rem;left:1rem;background:rgba(123,97,255,.88);backdrop-filter:blur(10px);padding:.45rem 1rem;border-radius:50px;font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:#fff;font-weight:700">🤖 Bot Demo — Live Build</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background:var(--bg)">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:3.5rem" class="reveal">
+      <div class="eyebrow" style="justify-content:center">Core Skills</div>
+      <h2 class="sec-title">Every bot. <span class="accent">Every platform.</span></h2>
+      <p style="color:var(--mut);max-width:500px;margin:.75rem auto 0;line-height:1.7">If it has an API, it can have a bot. From community management to full AI automation pipelines.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem">
+      <div class="card reveal d1" style="padding:1.75rem 1.5rem"><div style="width:42px;height:42px;border-radius:10px;background:rgba(88,101,242,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem">💬</div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem">Discord Bots</h3><p style="font-size:.87rem;color:var(--mut);line-height:1.6">Moderation, economy, tickets, leveling — fully custom to your server.</p></div>
+      <div class="card reveal d2" style="padding:1.75rem 1.5rem"><div style="width:42px;height:42px;border-radius:10px;background:rgba(42,171,238,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem">✈️</div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem">Telegram Bots</h3><p style="font-size:.87rem;color:var(--mut);line-height:1.6">Group management, broadcasts, payments, AI-powered conversations.</p></div>
+      <div class="card reveal d3" style="padding:1.75rem 1.5rem"><div style="width:42px;height:42px;border-radius:10px;background:rgba(37,211,102,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem">📱</div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem">WhatsApp Bots</h3><p style="font-size:.87rem;color:var(--mut);line-height:1.6">Support flows, booking, order tracking, lead qualification.</p></div>
+      <div class="card reveal d1" style="padding:1.75rem 1.5rem"><div style="width:42px;height:42px;border-radius:10px;background:rgba(123,97,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem">🌐</div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem">Website Chatbots</h3><p style="font-size:.87rem;color:var(--mut);line-height:1.6">Embedded AI assistants trained on your content and brand.</p></div>
+      <div class="card reveal d2" style="padding:1.75rem 1.5rem"><div style="width:42px;height:42px;border-radius:10px;background:rgba(6,182,212,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem">⚙️</div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem">Workflow Bots</h3><p style="font-size:.87rem;color:var(--mut);line-height:1.6">n8n, Make.com automations connecting your entire stack.</p></div>
+      <div class="card reveal d3" style="padding:1.75rem 1.5rem"><div style="width:42px;height:42px;border-radius:10px;background:rgba(236,72,153,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem">🤖</div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem">AI Agents</h3><p style="font-size:.87rem;color:var(--mut);line-height:1.6">Autonomous agents powered by OpenAI or Claude — multi-step reasoning.</p></div>
+    </div>
+  </div>
+</section>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;padding:3.5rem 2rem;max-width:1160px;margin:0 auto">
+  <div style="text-align:center;padding:2rem 1rem;background:var(--surf);border:1px solid var(--bdr);border-radius:16px" class="reveal d1"><span style="display:block;font-size:2.8rem;font-weight:700;line-height:1;margin-bottom:.3rem">50<span class="accent">+</span></span><span style="font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)">Projects</span></div>
+  <div style="text-align:center;padding:2rem 1rem;background:var(--surf);border:1px solid var(--bdr);border-radius:16px" class="reveal d2"><span style="display:block;font-size:2.8rem;font-weight:700;line-height:1;margin-bottom:.3rem">6</span><span style="font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)">Bot Platforms</span></div>
+  <div style="text-align:center;padding:2rem 1rem;background:var(--surf);border:1px solid var(--bdr);border-radius:16px" class="reveal d3"><span style="display:block;font-size:2.8rem;font-weight:700;line-height:1;margin-bottom:.3rem">3D</span><span style="font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)">Web Experiences</span></div>
+  <div style="text-align:center;padding:2rem 1rem;background:var(--surf);border:1px solid var(--bdr);border-radius:16px" class="reveal d4"><span style="display:block;font-size:2.8rem;font-weight:700;line-height:1;margin-bottom:.3rem">∞</span><span style="font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)">Automations</span></div>
+</div>
+
+<div class="cta-band"><div class="container cta-row"><div class="reveal"><div class="eyebrow">Ready?</div><h2>Let's build something <span class="accent">extraordinary.</span></h2></div><a href="contact.html" class="btn btn-p reveal">Start a Project →</a></div></div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="../js/cube.js"></script>
+<script src="../js/shared.js"></script>
+<script>
+(function(){
+  var canvas = document.getElementById('heroCube');
+  var renderer = new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(44, canvas.clientWidth/canvas.clientHeight, .1, 100);
+  camera.position.set(0, .5, 9); camera.lookAt(0,0,0);
+  var lights = JFCube.addLights(scene);
+  var cube = JFCube.build(scene, []);
+  var grp = cube.group;
+  var clock = new THREE.Clock();
+  function animate(){
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+    grp.rotation.y = t * .22;
+    grp.rotation.x = .18 + Math.sin(t*.28)*.07;
+    grp.position.y = Math.sin(t*.4)*.1;
+    lights.rim.intensity = 4.2 + Math.sin(t*1.1)*.7;
+    lights.fill.intensity = 2.6 + Math.cos(t*.9)*.5;
+    renderer.render(scene, camera);
+  }
+  animate();
+  window.addEventListener('resize', function(){
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+    camera.aspect = canvas.clientWidth/canvas.clientHeight;
+    camera.updateProjectionMatrix();
+  });
+})();
+</script>
+
+</body>
+</html>

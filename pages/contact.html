@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Contact — Joel Flowstack</title>
+<link rel="stylesheet" href="../css/global.css"/>
+
+<style>
+.cube-hero{position:relative;height:100vh;overflow:hidden;background:#000}
+#heroCube{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hero-text{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 3.5rem clamp(1.5rem,4vw,4.5rem);background:linear-gradient(to top,rgba(6,6,15,.92) 0%,rgba(6,6,15,.06) 55%,transparent 100%);pointer-events:none}
+.hero-text h1{font-size:clamp(2.4rem,6vw,5rem);font-weight:700;letter-spacing:-.03em;line-height:.95;color:#fff;margin-bottom:.7rem}
+.hero-text p{color:rgba(255,255,255,.55);font-size:1.05rem;max-width:440px;line-height:1.65;margin-bottom:1.75rem}
+.hero-text .btns{display:flex;gap:1rem;flex-wrap:wrap;pointer-events:all}
+</style>
+
+<style>
+.sec-title{font-size:clamp(2rem,4.5vw,3.5rem);font-weight:700;letter-spacing:-.025em;line-height:1.08;margin-bottom:1rem}
+</style>
+</head>
+<body>
+
+<div class="cube-hero">
+  <canvas id="heroCube"></canvas>
+  <div class="hero-text">
+    <div class="eyebrow" style="color:#A78BFA">Get In Touch</div>
+    <h1>Let's<br/><span class='accent'>Build Together.</span></h1>
+    <p>Send a message — I reply within 24 hours.</p>
+    
+  </div>
+</div>
+<div class="marq"><div class="marq-track"><span>3D Websites</span><span class="dot">✦</span><span>AI Automations</span><span class="dot">✦</span><span>Discord Bots</span><span class="dot">✦</span><span>Telegram Bots</span><span class="dot">✦</span><span>WhatsApp Bots</span><span class="dot">✦</span><span>n8n Workflows</span><span class="dot">✦</span><span>Bot Integrations</span><span class="dot">✦</span><span>Built to Scale</span><span class="dot">✦</span><span>3D Websites</span><span class="dot">✦</span><span>AI Automations</span><span class="dot">✦</span><span>Discord Bots</span><span class="dot">✦</span><span>Telegram Bots</span><span class="dot">✦</span><span>WhatsApp Bots</span><span class="dot">✦</span><span>n8n Workflows</span><span class="dot">✦</span><span>Bot Integrations</span><span class="dot">✦</span><span>Built to Scale</span><span class="dot">✦</span></div></div>
+<section class="section" style="background:var(--bg2)">
+  <div class="container" style="display:grid;grid-template-columns:1fr 1.2fr;gap:5rem;align-items:start">
+    <div class="reveal">
+      <div class="eyebrow">Contact</div>
+      <h2 class="sec-title">Ready to start<br/><span class="accent">something great?</span></h2>
+      <p style="color:var(--mut);line-height:1.75;margin-bottom:2rem">Whether you need a 3D website, an AI automation or a bot — let's talk about what you need and how to build it right.</p>
+      <div style="display:flex;flex-direction:column;gap:1.25rem;margin-bottom:2rem">
+        <div style="display:flex;align-items:center;gap:1rem"><div style="width:42px;height:42px;border-radius:10px;background:var(--surf);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;flex-shrink:0">✉️</div><div><span style="display:block;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem">Email</span><a href="mailto:joelflowstack@gmail.com" style="color:var(--txt);font-size:.92rem">joelflowstack@gmail.com</a></div></div>
+        <div style="display:flex;align-items:center;gap:1rem"><div style="width:42px;height:42px;border-radius:10px;background:var(--surf);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;flex-shrink:0">𝕏</div><div><span style="display:block;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem">X / Twitter</span><a href="https://x.com/Joelfowstack" target="_blank" style="color:var(--txt);font-size:.92rem">@Joelfowstack</a></div></div>
+        <div style="display:flex;align-items:center;gap:1rem"><div style="width:42px;height:42px;border-radius:10px;background:var(--surf);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;flex-shrink:0">🎵</div><div><span style="display:block;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem">TikTok</span><a href="https://www.tiktok.com/@joelflowstack" target="_blank" style="color:var(--txt);font-size:.92rem">@joelflowstack</a></div></div>
+      </div>
+    </div>
+    <div class="reveal d2">
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:2.5rem" id="formWrap">
+        <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:.45rem">Send a message</h3>
+        <p style="color:var(--mut);font-size:.87rem;margin-bottom:1.75rem">I reply within 24 hours.</p>
+        <form id="cForm" style="display:flex;flex-direction:column;gap:1.1rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.1rem">
+            <div class="fld"><label>Name</label><input name="name" placeholder="Your name" required/></div>
+            <div class="fld"><label>Email</label><input type="email" name="email" placeholder="your@email.com" required/></div>
+          </div>
+          <div class="fld"><label>What do you need?</label>
+            <select name="service"><option value="" disabled selected>Choose a service</option><option>3D Website</option><option>Discord Bot</option><option>Telegram Bot</option><option>WhatsApp Bot</option><option>Website Chatbot</option><option>AI Automation</option><option>n8n Workflow</option><option>API Integration</option><option>Something else</option></select>
+          </div>
+          <div class="fld"><label>Message</label><textarea name="message" placeholder="Tell me about your project..." required></textarea></div>
+          <button type="submit" class="btn btn-p btn-full" id="cBtn"><span id="cBtnTxt">Send Message →</span></button>
+        </form>
+      </div>
+      <div id="formDone" style="display:none;text-align:center;padding:3rem 2rem;background:var(--surf);border:1px solid var(--bdr);border-radius:16px">
+        <div style="font-size:2.5rem;margin-bottom:1rem">✦</div>
+        <h3 style="font-size:1.3rem;font-weight:700;margin-bottom:.65rem">Message received!</h3>
+        <p style="color:var(--mut)">I'll be in touch within 24 hours.</p>
+        <a href="home.html" class="btn btn-g" style="margin-top:1.5rem;display:inline-flex">← Back to Home</a>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+document.getElementById('cForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var btn = document.getElementById('cBtn');
+  document.getElementById('cBtnTxt').textContent = 'Sending...';
+  btn.disabled = true;
+  var data = {name:this.name.value, email:this.email.value, service:this.service.value, message:this.message.value, _replyto:this.email.value};
+  try {
+    var res = await fetch('https://formspree.io/f/xkgwnkza', {method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(data)});
+    var json = await res.json();
+    if(res.ok && !json.errors){
+      document.getElementById('formWrap').style.display='none';
+      document.getElementById('formDone').style.display='block';
+    } else { throw new Error('failed'); }
+  } catch(err){
+    document.getElementById('cBtnTxt').textContent = 'Try again →';
+    btn.disabled = false;
+  }
+});
+</script>
+<div class="cta-band"><div class="container" style="text-align:center"><h2 class="reveal" style="font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:700;letter-spacing:-.025em;margin-bottom:1.5rem">Or reach me directly at <span class="accent">joelflowstack@gmail.com</span></h2></div></div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="../js/cube.js"></script>
+<script src="../js/shared.js"></script>
+<script>
+(function(){
+  var canvas = document.getElementById('heroCube');
+  var renderer = new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(44, canvas.clientWidth/canvas.clientHeight, .1, 100);
+  camera.position.set(0, .5, 9); camera.lookAt(0,0,0);
+  var lights = JFCube.addLights(scene);
+  var cube = JFCube.build(scene, []);
+  var grp = cube.group;
+  var clock = new THREE.Clock();
+  function animate(){
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+    grp.rotation.y = t * .22;
+    grp.rotation.x = .18 + Math.sin(t*.28)*.07;
+    grp.position.y = Math.sin(t*.4)*.1;
+    lights.rim.intensity = 4.2 + Math.sin(t*1.1)*.7;
+    lights.fill.intensity = 2.6 + Math.cos(t*.9)*.5;
+    renderer.render(scene, camera);
+  }
+  animate();
+  window.addEventListener('resize', function(){
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+    camera.aspect = canvas.clientWidth/canvas.clientHeight;
+    camera.updateProjectionMatrix();
+  });
+})();
+</script>
+
+</body>
+</html>
