@@ -21,20 +21,20 @@ window.JFCube = (function () {
     var cv = document.createElement('canvas'); cv.width = S; cv.height = S;
     var c = cv.getContext('2d');
 
-    // Dark glossy base
+    // Dark glossy base — brighter so it reads against a pure black page
     var bg = c.createRadialGradient(S*.4, S*.35, 0, S*.5, S*.5, S*.7);
-    bg.addColorStop(0, '#1c1635');
-    bg.addColorStop(0.65, '#0e0b1e');
-    bg.addColorStop(1, '#060410');
+    bg.addColorStop(0, '#2a2250');
+    bg.addColorStop(0.65, '#181432');
+    bg.addColorStop(1, '#0d0a1e');
     rrp(c, 7, 7, S-14, S-14, 30); c.fillStyle = bg; c.fill();
 
-    // Purple border glow
-    c.strokeStyle = 'rgba(123,97,255,.42)'; c.lineWidth = 2.5;
+    // Purple border glow — stronger
+    c.strokeStyle = 'rgba(140,115,255,.6)'; c.lineWidth = 3;
     rrp(c, 9, 9, S-18, S-18, 28); c.stroke();
 
-    // Top-left bevel
+    // Top-left bevel — brighter highlight
     var bv = c.createLinearGradient(0, 0, S*.45, S*.45);
-    bv.addColorStop(0, 'rgba(255,255,255,.07)'); bv.addColorStop(1, 'rgba(255,255,255,0)');
+    bv.addColorStop(0, 'rgba(255,255,255,.13)'); bv.addColorStop(1, 'rgba(255,255,255,0)');
     rrp(c, 12, 12, S-24, S-24, 26); c.fillStyle = bv; c.fill();
 
     if (isLogo) {
@@ -49,8 +49,8 @@ window.JFCube = (function () {
     }
 
     if (!label) {
-      // Outer face — subtle grid lines only
-      c.strokeStyle = 'rgba(90,70,160,.09)'; c.lineWidth = 1;
+      // Outer face — subtle grid lines, brighter
+      c.strokeStyle = 'rgba(130,105,220,.22)'; c.lineWidth = 1.5;
       for (var i = 1; i < 3; i++) {
         c.beginPath(); c.moveTo(S/3*i, 12); c.lineTo(S/3*i, S-12); c.stroke();
         c.beginPath(); c.moveTo(12, S/3*i); c.lineTo(S-12, S/3*i); c.stroke();
@@ -86,13 +86,13 @@ window.JFCube = (function () {
 
   /* ── Standard lights for any scene ── */
   function addLights(scene) {
-    scene.add(new THREE.AmbientLight(0x334466, .65));
-    var k = new THREE.DirectionalLight(0xffffff, 2.8);
+    scene.add(new THREE.AmbientLight(0x4a4a7a, 1.1));
+    var k = new THREE.DirectionalLight(0xffffff, 4.2);
     k.position.set(6, 8, 6); k.castShadow = true;
     k.shadow.mapSize.set(1024, 1024); scene.add(k);
-    var r = new THREE.PointLight(0x7722ff, 5.0, 22); r.position.set(-6, -2, -5); scene.add(r);
-    var f = new THREE.PointLight(0x1133cc, 3.0, 22); f.position.set(5, -3, 5); scene.add(f);
-    var topLight = new THREE.DirectionalLight(0xaaaaff, .38);
+    var r = new THREE.PointLight(0x8855ff, 7.5, 26); r.position.set(-6, -2, -5); scene.add(r);
+    var f = new THREE.PointLight(0x3366ff, 5.0, 26); f.position.set(5, -3, 5); scene.add(f);
+    var topLight = new THREE.DirectionalLight(0xccccff, .7);
     topLight.position.set(-2, 6, -3);
     scene.add(topLight);
     return { rim: r, fill: f };
@@ -100,17 +100,22 @@ window.JFCube = (function () {
 
   /* ── Build a 3×3×3 Rubik's cube ──
      frontLabels: array of {gx,gy,label,url} for front face (gz=1)
-     If frontLabels is null/empty → plain glossy black all faces
+     opts: { parent: Object3D (default scene), plainCenter: bool }
+     If frontLabels is null/empty → plain glossy faces (still center logo unless plainCenter)
   */
-  function build(scene, frontLabels) {
+  function build(scene, frontLabels, opts) {
+    opts = opts || {};
+    var parent = opts.parent || scene;
+    var plainCenter = !!opts.plainCenter;
+
     var group = new THREE.Group();
-    scene.add(group);
+    parent.add(group);
 
     var plainTex = makeTex(null, false);
-    var bodyMat  = new THREE.MeshStandardMaterial({ color: 0x06060e, roughness: .12, metalness: .02 });
+    var bodyMat  = new THREE.MeshStandardMaterial({ color: 0x171430, roughness: .16, metalness: .25 });
 
     function oMat(tex) {
-      return new THREE.MeshStandardMaterial({ map: tex, roughness: .09, metalness: .0 });
+      return new THREE.MeshStandardMaterial({ map: tex, roughness: .1, metalness: .15 });
     }
 
     // Build front-face lookup
@@ -127,7 +132,7 @@ window.JFCube = (function () {
 
           var geo = new THREE.BoxGeometry(SZ, SZ, SZ);
           var fd  = bz === 1 ? (fmap[bx+','+by] || null) : null;
-          var isLogo = bz === 1 && bx === 0 && by === 0 && !fd;
+          var isLogo = bz === 1 && bx === 0 && by === 0 && !fd && !plainCenter;
 
           // Material order: +X -X +Y -Y +Z -Z
           var mats = [
@@ -150,7 +155,8 @@ window.JFCube = (function () {
             gx: bx, gy: by, gz: bz,
             data: fd,
             isFront: bz === 1,
-            isLogo: isLogo
+            isLogo: isLogo,
+            isCenter: bz === 1 && bx === 0 && by === 0
           });
         }
       }
