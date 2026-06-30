@@ -6,7 +6,7 @@
 <title>Joel Flowstack — 3D Websites, AI Automations & Bots</title>
 <link rel="stylesheet" href="css/global.css"/>
 <style>
-html,body{height:100%;overflow:hidden;background:#000}
+html,body{height:100%;overflow:hidden;background:radial-gradient(ellipse 90% 70% at 50% 42%,#120e26 0%,#070512 45%,#000 78%)}
 
 /* The scroll container */
 #scroller{position:fixed;inset:0;overflow-y:scroll;z-index:0;scrollbar-width:none}
@@ -113,10 +113,10 @@ if (typeof THREE === 'undefined') {
 /* ── Renderer ── */
 var W = innerWidth, H = innerHeight;
 var canvas = document.getElementById('c');
-var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(W, H, false);
-renderer.setClearColor(0x000000, 1);
+renderer.setClearColor(0x000000, 0);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -140,8 +140,8 @@ var stars = new THREE.Points(sGeo, new THREE.PointsMaterial({
 }));
 scene.add(stars);
 
-/* ── OUTER CUBE — pure black, no labels ── */
-var outerR = JFCube.build(scene, []);
+/* ── OUTER CUBE — pure black, no labels, clean blank center ── */
+var outerR = JFCube.build(scene, [], { plainCenter: true });
 var outerG = outerR.group;
 
 /* ── INNER NAV CUBE — face-forward, on front face of outer ── */
@@ -150,19 +150,27 @@ var NAV = [
   {gx: 0, gy: 1, label:'About',     url:'pages/about.html'},
   {gx: 1, gy: 1, label:'Services',  url:'pages/services.html'},
   {gx:-1, gy: 0, label:'Portfolio', url:'pages/portfolio.html'},
-  /* center (0,0) → JF logo — no entry needed */
+  /* center (0,0) → a real nested mini Rubik's cube sits here instead of a logo */
   {gx: 1, gy: 0, label:'Blog',      url:'pages/blog.html'},
   {gx:-1, gy:-1, label:'Contact',   url:'pages/contact.html'},
   {gx: 0, gy:-1, label:'YouTube',   url:'https://www.youtube.com/channel/UCyB6tXCbdBczkZwD__VCdTA'},
   {gx: 1, gy:-1, label:'TikTok',    url:'https://www.tiktok.com/@joelflowstack'},
 ];
-var innerR = JFCube.build(scene, NAV);
+var innerR = JFCube.build(scene, NAV, { plainCenter: true });
 var innerG = innerR.group;
 var innerP = innerR.pieces;
 
 innerG.scale.setScalar(0.30);
 innerG.visible = false;
 /* Keep inner cube in world space — positioned each frame */
+
+/* ── MINI CUBE — a real, tiny Rubik's cube nested on the center tile ──
+   Parented to innerG so it inherits its world position/rotation/scale
+   automatically. It also spins gently on its own to read as "alive". */
+var miniR = JFCube.build(scene, [], { parent: innerG, plainCenter: true });
+var miniG = miniR.group;
+miniG.scale.setScalar(0.34);
+miniG.position.set(0, 0, JFCube.GAP * 1.08 + 0.42);
 
 /* ── Scroll tracking ── */
 var scroller = document.getElementById('scroller');
@@ -278,11 +286,11 @@ function animate() {
     outerG.rotation.x=rotX; outerG.rotation.y=rotY; outerG.rotation.z=0;
 
   } else if (P < .50) {
-    /* Fast dramatic spin: 2 full Y rotations */
+    /* Fast dramatic spin: clean 2 full Y rotations, no wobble */
     var sp=eioq((P-.12)/.38);
     outerG.rotation.y = rotY + sp*Math.PI*4;
     outerG.rotation.x = rotX*(1-sp);
-    outerG.rotation.z = Math.sin(sp*Math.PI)*.14;
+    outerG.rotation.z = 0;
 
   } else if (P < .70) {
     /* Decelerate → face-forward */
@@ -308,7 +316,7 @@ function animate() {
   innerG.position.copy(outerG.localToWorld(fp));
   innerG.rotation.set(0,0,0);
 
-  /* Inner opacity */
+  /* Inner opacity — fades in the nav cube AND the nested mini cube together */
   var toOp = P>.72?1:0;
   innerOp+=(toOp-innerOp)*.1;
   if (innerOp>.02) {
@@ -318,7 +326,17 @@ function animate() {
         p.mesh.material.forEach(function(m){if(m){m.transparent=true;m.opacity=innerOp;}});
       }
     });
+    miniR.pieces.forEach(function(p){
+      if(Array.isArray(p.mesh.material)){
+        p.mesh.material.forEach(function(m){if(m){m.transparent=true;m.opacity=innerOp;}});
+      }
+    });
   } else { innerG.visible=false; }
+
+  /* Mini cube spins gently on its own — reads as "alive" even while the
+     parent nav cube stays locked face-forward */
+  miniG.rotation.y = t * .6;
+  miniG.rotation.x = .25 + Math.sin(t * .4) * .12;
 
   navReady = P>.80 && !navigating;
 
