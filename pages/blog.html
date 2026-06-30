@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Blog — Joel Flowstack</title>
+<link rel="stylesheet" href="../css/global.css"/>
+
+<style>
+.cube-hero{position:relative;height:100vh;overflow:hidden;background:#000}
+#heroCube{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hero-text{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 3.5rem clamp(1.5rem,4vw,4.5rem);background:linear-gradient(to top,rgba(6,6,15,.92) 0%,rgba(6,6,15,.06) 55%,transparent 100%);pointer-events:none}
+.hero-text h1{font-size:clamp(2.4rem,6vw,5rem);font-weight:700;letter-spacing:-.03em;line-height:.95;color:#fff;margin-bottom:.7rem}
+.hero-text p{color:rgba(255,255,255,.55);font-size:1.05rem;max-width:440px;line-height:1.65;margin-bottom:1.75rem}
+.hero-text .btns{display:flex;gap:1rem;flex-wrap:wrap;pointer-events:all}
+</style>
+
+<style>
+.sec-title{font-size:clamp(2rem,4.5vw,3.5rem);font-weight:700;letter-spacing:-.025em;line-height:1.08;margin-bottom:1rem}
+</style>
+</head>
+<body>
+
+<div class="cube-hero">
+  <canvas id="heroCube"></canvas>
+  <div class="hero-text">
+    <div class="eyebrow" style="color:#A78BFA">Thoughts & Guides</div>
+    <h1>The<br/><span class="accent">Flowstack Blog.</span></h1>
+    <p>Tutorials, breakdowns and behind-the-scenes on bots, 3D web, and AI automation.</p>
+    
+  </div>
+</div>
+<div class="marq"><div class="marq-track"><span>3D Websites</span><span class="dot">✦</span><span>AI Automations</span><span class="dot">✦</span><span>Discord Bots</span><span class="dot">✦</span><span>Telegram Bots</span><span class="dot">✦</span><span>WhatsApp Bots</span><span class="dot">✦</span><span>n8n Workflows</span><span class="dot">✦</span><span>Bot Integrations</span><span class="dot">✦</span><span>Built to Scale</span><span class="dot">✦</span><span>3D Websites</span><span class="dot">✦</span><span>AI Automations</span><span class="dot">✦</span><span>Discord Bots</span><span class="dot">✦</span><span>Telegram Bots</span><span class="dot">✦</span><span>WhatsApp Bots</span><span class="dot">✦</span><span>n8n Workflows</span><span class="dot">✦</span><span>Bot Integrations</span><span class="dot">✦</span><span>Built to Scale</span><span class="dot">✦</span></div></div>
+<section class="section" style="background:var(--bg2)">
+  <div class="container">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem">
+      <a href="https://medium.com/@joelflowstack" target="_blank" class="card reveal d1" style="overflow:hidden;text-decoration:none;color:inherit;display:block"><div style="height:180px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:linear-gradient(135deg,rgba(88,101,242,.25),rgba(123,97,255,.1))">🤖</div><div style="padding:1.5rem"><div style="font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:.5rem">Bots · 5 min read</div><h3 style="font-size:1.02rem;font-weight:700;line-height:1.3;margin-bottom:.5rem">How I Built a Discord Bot That Runs a 10k Community on Autopilot</h3><p style="font-size:.82rem;color:var(--mut);line-height:1.6">A full breakdown of the moderation, economy, and AI support systems.</p></div></a>
+      <a href="https://medium.com/@joelflowstack" target="_blank" class="card reveal d2" style="overflow:hidden;text-decoration:none;color:inherit;display:block"><div style="height:180px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:linear-gradient(135deg,rgba(123,97,255,.25),rgba(6,182,212,.1))">🌐</div><div style="padding:1.5rem"><div style="font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:.5rem">3D Web · 8 min read</div><h3 style="font-size:1.02rem;font-weight:700;line-height:1.3;margin-bottom:.5rem">Three.js for Non-Engineers: Building Your First 3D Hero Section</h3><p style="font-size:.82rem;color:var(--mut);line-height:1.6">Step-by-step guide to adding an interactive 3D scene to any website.</p></div></a>
+      <a href="https://medium.com/@joelflowstack" target="_blank" class="card reveal d3" style="overflow:hidden;text-decoration:none;color:inherit;display:block"><div style="height:180px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:linear-gradient(135deg,rgba(59,130,246,.25),rgba(16,163,127,.1))">⚡</div><div style="padding:1.5rem"><div style="font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:.5rem">AI · 6 min read</div><h3 style="font-size:1.02rem;font-weight:700;line-height:1.3;margin-bottom:.5rem">The n8n Workflow That Saves Me 15 Hours a Week</h3><p style="font-size:.82rem;color:var(--mut);line-height:1.6">My exact lead qualification + content scheduling automation.</p></div></a>
+    </div>
+    <div style="text-align:center;margin-top:3rem" class="reveal">
+      <a href="https://medium.com/@joelflowstack" target="_blank" class="btn btn-g">Read more on Medium →</a>
+    </div>
+  </div>
+</section>
+<div class="cta-band"><div class="container cta-row"><div class="reveal"><div class="eyebrow">Newsletter</div><h2>Get insights <span class="accent">delivered.</span></h2></div><a href="contact.html" class="btn btn-p reveal">Subscribe Free →</a></div></div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="../js/cube.js"></script>
+<script src="../js/shared.js"></script>
+<script>
+(function(){
+  var canvas = document.getElementById('heroCube');
+  var renderer = new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(44, canvas.clientWidth/canvas.clientHeight, .1, 100);
+  camera.position.set(0, .5, 9); camera.lookAt(0,0,0);
+  var lights = JFCube.addLights(scene);
+  var cube = JFCube.build(scene, []);
+  var grp = cube.group;
+  var clock = new THREE.Clock();
+  function animate(){
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+    grp.rotation.y = t * .22;
+    grp.rotation.x = .18 + Math.sin(t*.28)*.07;
+    grp.position.y = Math.sin(t*.4)*.1;
+    lights.rim.intensity = 4.2 + Math.sin(t*1.1)*.7;
+    lights.fill.intensity = 2.6 + Math.cos(t*.9)*.5;
+    renderer.render(scene, camera);
+  }
+  animate();
+  window.addEventListener('resize', function(){
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+    camera.aspect = canvas.clientWidth/canvas.clientHeight;
+    camera.updateProjectionMatrix();
+  });
+})();
+</script>
+
+<script src="../js/flowbot.js"></script>
+</body>
+</html>

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Joel Flowstack — 3D Websites, AI Automations & Bots</title>
+<link rel="stylesheet" href="css/global.css"/>
+<style>
+html,body{height:100%;overflow:hidden;background:#000}
+
+/* The scroll container */
+#scroller{position:fixed;inset:0;overflow-y:scroll;z-index:0;scrollbar-width:none}
+#scroller::-webkit-scrollbar{display:none}
+#scroller-inner{height:600vh}
+
+/* Fixed canvas */
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1}
+
+/* Headline */
+#hl{
+  position:fixed;left:clamp(1.5rem,4vw,4.5rem);bottom:clamp(2rem,6vh,4.5rem);
+  z-index:10;pointer-events:none;
+  transition:opacity .3s ease,transform .3s ease;
+}
+#hl h1{font-size:clamp(2rem,5vw,4.5rem);font-weight:700;letter-spacing:-.035em;line-height:.95;color:#fff}
+#hl h1 em{
+  font-style:normal;
+  background:linear-gradient(130deg,#A78BFA,#06B6D4);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+#hl p{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.28);margin-top:.65rem}
+
+/* Scroll hint */
+#si{
+  position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);
+  z-index:10;display:flex;flex-direction:column;align-items:center;gap:.4rem;
+  font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(255,255,255,.28);pointer-events:none;
+  opacity:0;animation:jfFade .8s 1.8s ease both;transition:opacity .4s;
+}
+#si .sil{width:1px;height:30px;background:linear-gradient(to bottom,rgba(123,97,255,.7),transparent);animation:jfLine 1.6s 2s ease infinite}
+@keyframes jfLine{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+@keyframes jfFade{to{opacity:1}}
+
+/* "Click a square" hint */
+#ch{
+  position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);
+  z-index:20;font-family:'Space Mono',monospace;font-size:.6rem;
+  letter-spacing:.18em;text-transform:uppercase;color:rgba(167,139,250,.9);
+  background:rgba(6,6,18,.84);backdrop-filter:blur(14px);
+  padding:.55rem 1.4rem;border-radius:50px;border:1px solid rgba(123,97,255,.38);
+  display:none;align-items:center;gap:.55rem;pointer-events:none;white-space:nowrap;
+  animation:jfBob 1.8s ease-in-out infinite;
+}
+#ch.show{display:flex}
+@keyframes jfBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-5px)}}
+
+/* Entering overlay */
+#jfEntering{
+  position:fixed;inset:0;z-index:200;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(6,6,15,0);pointer-events:none;
+  transition:background .4s ease;
+}
+#jfEntering.go{background:rgba(6,6,15,.96)}
+#jfEnteringText{
+  font-family:'Space Mono',monospace;font-size:.85rem;letter-spacing:.25em;text-transform:uppercase;
+  color:#A78BFA;opacity:0;transition:opacity .3s .15s;
+}
+#jfEntering.go #jfEnteringText{opacity:1}
+
+/* Loader */
+#jfLoader{
+  position:fixed;inset:0;z-index:900;background:#000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;
+  transition:opacity .5s ease;
+}
+#jfLoader.done{opacity:0;pointer-events:none}
+.jfRing{width:36px;height:36px;border:2px solid rgba(123,97,255,.18);border-top-color:#7B61FF;border-radius:50%;animation:jfSpin .7s linear infinite}
+@keyframes jfSpin{to{transform:rotate(360deg)}}
+#jfLoader p{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(167,139,250,.38)}
+</style>
+</head>
+<body>
+
+<div id="jfLoader"><div class="jfRing"></div><p>Loading...</p></div>
+<div id="scroller"><div id="scroller-inner"></div></div>
+<canvas id="c"></canvas>
+
+<div id="hl">
+  <h1>Joel<br/><em>Flowstack</em></h1>
+  <p>Scroll to enter</p>
+</div>
+
+<div id="si"><span>Scroll</span><div class="sil"></div></div>
+<div id="ch">✦ <span>Click a square to enter</span> ✦</div>
+<div id="jfEntering"><span id="jfEnteringText">Entering...</span></div>
+
+<!-- Three.js from jsDelivr — synchronous, no module needed, most reliable CDN -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"
+  onerror="document.querySelector('#jfLoader p').textContent='Network error — please refresh'"></script>
+<script src="js/cube.js"></script>
+<script>
+/* Guard: if THREE didn't load, stop here */
+if (typeof THREE === 'undefined') {
+  document.querySelector('#jfLoader p').textContent = 'Could not load 3D engine — please refresh';
+  throw new Error('THREE not loaded');
+}
+
+(function () {
+'use strict';
+
+/* ── Renderer ── */
+var W = innerWidth, H = innerHeight;
+var canvas = document.getElementById('c');
+var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(W, H, false);
+renderer.setClearColor(0x000000, 1);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+var scene  = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(44, W/H, .1, 100);
+camera.position.set(0, .5, 14);
+camera.lookAt(0, 0, 0);
+
+/* ── Lights ── */
+var lights = JFCube.addLights(scene);
+
+/* ── Stars ── */
+var sN = 200, sP = new Float32Array(sN*3);
+for (var i = 0; i < sN*3; i++) sP[i] = (Math.random()-.5)*42;
+var sGeo = new THREE.BufferGeometry();
+sGeo.setAttribute('position', new THREE.BufferAttribute(sP, 3));
+var stars = new THREE.Points(sGeo, new THREE.PointsMaterial({
+  color: 0x6644bb, size: .055, transparent: true, opacity: .35
+}));
+scene.add(stars);
+
+/* ── OUTER CUBE — pure black, no labels ── */
+var outerR = JFCube.build(scene, []);
+var outerG = outerR.group;
+
+/* ── INNER NAV CUBE — face-forward, on front face of outer ── */
+var NAV = [
+  {gx:-1, gy: 1, label:'Home',      url:'pages/home.html'},
+  {gx: 0, gy: 1, label:'About',     url:'pages/about.html'},
+  {gx: 1, gy: 1, label:'Services',  url:'pages/services.html'},
+  {gx:-1, gy: 0, label:'Portfolio', url:'pages/portfolio.html'},
+  /* center (0,0) → JF logo — no entry needed */
+  {gx: 1, gy: 0, label:'Blog',      url:'pages/blog.html'},
+  {gx:-1, gy:-1, label:'Contact',   url:'pages/contact.html'},
+  {gx: 0, gy:-1, label:'YouTube',   url:'https://www.youtube.com/channel/UCyB6tXCbdBczkZwD__VCdTA'},
+  {gx: 1, gy:-1, label:'TikTok',    url:'https://www.tiktok.com/@joelflowstack'},
+];
+var innerR = JFCube.build(scene, NAV);
+var innerG = innerR.group;
+var innerP = innerR.pieces;
+
+innerG.scale.setScalar(0.30);
+innerG.visible = false;
+/* Keep inner cube in world space — positioned each frame */
+
+/* ── Scroll tracking ── */
+var scroller = document.getElementById('scroller');
+var P = 0; /* 0 → 1 */
+
+scroller.addEventListener('scroll', function () {
+  var max = Math.max(scroller.scrollHeight - scroller.clientHeight, 1);
+  P = Math.min(scroller.scrollTop / max, 1);
+}, { passive: true });
+
+/* ── Easing ── */
+function eoc(t) { return 1 - Math.pow(1-t, 3); }   /* ease out cubic */
+function eioq(t) { return t<.5?2*t*t:-1+(4-2*t)*t; } /* ease in-out quad */
+
+/* ── Drag (intro only) ── */
+var rotX=.22, rotY=.5, tgtX=.22, tgtY=.5;
+var drag=false, pMX=0, pMY=0, vX=0, vY=0;
+
+canvas.addEventListener('mousedown', function(e){
+  if (P>.12) return;
+  drag=true; vX=0; vY=0; pMX=e.clientX; pMY=e.clientY;
+});
+window.addEventListener('mousemove', function(e){
+  if (!drag) return;
+  var dx=e.clientX-pMX, dy=e.clientY-pMY;
+  vY=dx*.012; vX=dy*.012;
+  tgtX+=dy*.01; tgtY+=dx*.01;
+  tgtX=Math.max(-1.2,Math.min(1.2,tgtX));
+  pMX=e.clientX; pMY=e.clientY;
+});
+window.addEventListener('mouseup', function(){ drag=false; });
+
+var tDrag=false, tPX=0, tPY=0;
+canvas.addEventListener('touchstart', function(e){
+  if(P>.12) return; tDrag=true;
+  tPX=e.touches[0].clientX; tPY=e.touches[0].clientY;
+},{passive:true});
+canvas.addEventListener('touchmove', function(e){
+  if(!tDrag) return;
+  tgtY+=(e.touches[0].clientX-tPX)*.01; tgtX+=(e.touches[0].clientY-tPY)*.01;
+  tgtX=Math.max(-1.2,Math.min(1.2,tgtX));
+  tPX=e.touches[0].clientX; tPY=e.touches[0].clientY;
+},{passive:true});
+canvas.addEventListener('touchend', function(e){
+  tDrag=false;
+  if (navReady) {
+    var t=e.changedTouches[0];
+    var hit=JFCube.hitFront(rc, innerP, camera, t.clientX, t.clientY, canvas);
+    if (hit&&hit.data) doNav(hit.data);
+  }
+},{passive:true});
+
+/* ── Raycast ── */
+var rc       = JFCube.makeRaycaster();
+var hovered  = null;
+var navReady = false;
+var navigating = false;
+
+canvas.addEventListener('mousemove', function(e){
+  if (!navReady) return;
+  var hit = JFCube.hitFront(rc, innerP, camera, e.clientX, e.clientY, canvas);
+  if (hit && hit.data && hit.data.url) {
+    canvas.style.cursor='pointer'; hovered=hit;
+  } else { canvas.style.cursor='default'; hovered=null; }
+});
+
+canvas.addEventListener('click', function(e){
+  if (!navReady||navigating) return;
+  var hit=JFCube.hitFront(rc, innerP, camera, e.clientX, e.clientY, canvas);
+  if (hit&&hit.data&&hit.data.url) doNav(hit.data);
+});
+
+function doNav(data) {
+  if (navigating) return; navigating=true;
+  JFCube.scatter(innerP, data.url, data.label);
+}
+
+/* ── UI elements ── */
+var hlEl = document.getElementById('hl');
+var siEl = document.getElementById('si');
+var chEl = document.getElementById('ch');
+
+/* ── Render loop ── */
+var clock = new THREE.Clock();
+var camZ=14, camY=.5, innerOp=0;
+
+function animate() {
+  requestAnimationFrame(animate);
+  var t = clock.getElapsedTime();
+
+  /* Camera zoom: fixed scroll-driven path */
+  var tCZ, tCY=.4;
+  if (P < .15) {
+    tCZ=14; tCY=.5;
+  } else if (P < .70) {
+    var zp = eoc((P-.15)/.55);
+    tCZ=14-zp*11.8; tCY=.5-zp*.5;
+  } else {
+    tCZ=2.2-(Math.min((P-.70)/.30,1))*.2; tCY=0;
+  }
+  camZ+=(tCZ-camZ)*.065; camY+=(tCY-camY)*.065;
+  camera.position.z=camZ; camera.position.y=camY; camera.lookAt(0,0,0);
+
+  /* Outer cube rotation on path */
+  if (P < .12) {
+    /* Intro: gentle auto-spin + drag */
+    if (!drag&&!tDrag) {
+      vX*=.93; vY*=.93;
+      tgtX+=vX; tgtY+=vY+.0025;
+      tgtX=Math.max(-1.2,Math.min(1.2,tgtX));
+    }
+    rotX+=(tgtX-rotX)*.08; rotY+=(tgtY-rotY)*.08;
+    outerG.rotation.x=rotX; outerG.rotation.y=rotY; outerG.rotation.z=0;
+
+  } else if (P < .50) {
+    /* Fast dramatic spin: 2 full Y rotations */
+    var sp=eioq((P-.12)/.38);
+    outerG.rotation.y = rotY + sp*Math.PI*4;
+    outerG.rotation.x = rotX*(1-sp);
+    outerG.rotation.z = Math.sin(sp*Math.PI)*.14;
+
+  } else if (P < .70) {
+    /* Decelerate → face-forward */
+    var ap=eoc((P-.50)/.20);
+    var snapY=Math.round(outerG.rotation.y/(Math.PI*2))*Math.PI*2;
+    outerG.rotation.y += (snapY-outerG.rotation.y)*ap*.1;
+    outerG.rotation.x += (0-outerG.rotation.x)*ap*.1;
+    outerG.rotation.z += (0-outerG.rotation.z)*ap*.1;
+
+  } else {
+    /* Locked */
+    outerG.rotation.x += (0-outerG.rotation.x)*.14;
+    outerG.rotation.y += (0-outerG.rotation.y)*.14;
+    outerG.rotation.z += (0-outerG.rotation.z)*.14;
+  }
+
+  /* Float */
+  if (P<.65) outerG.position.y=Math.sin(t*.45)*.14;
+  else outerG.position.y+=(0-outerG.position.y)*.08;
+
+  /* Inner cube: always face-forward, on outer front face */
+  var fp=new THREE.Vector3(0,0,JFCube.GAP*1.08+.46);
+  innerG.position.copy(outerG.localToWorld(fp));
+  innerG.rotation.set(0,0,0);
+
+  /* Inner opacity */
+  var toOp = P>.72?1:0;
+  innerOp+=(toOp-innerOp)*.1;
+  if (innerOp>.02) {
+    innerG.visible=true;
+    innerP.forEach(function(p){
+      if(Array.isArray(p.mesh.material)){
+        p.mesh.material.forEach(function(m){if(m){m.transparent=true;m.opacity=innerOp;}});
+      }
+    });
+  } else { innerG.visible=false; }
+
+  navReady = P>.80 && !navigating;
+
+  /* Hover glow */
+  if (navReady) {
+    innerP.forEach(function(p){
+      if (!p.isFront) return;
+      var tgt=p===hovered?1.1:1.0;
+      p.mesh.scale.x+=(tgt-p.mesh.scale.x)*.18;
+      p.mesh.scale.y+=(tgt-p.mesh.scale.y)*.18;
+      p.mesh.scale.z+=(tgt-p.mesh.scale.z)*.18;
+    });
+  }
+
+  /* UI */
+  hlEl.style.opacity=String(Math.max(0,1-P/.1));
+  siEl.style.opacity=String(Math.max(0,1-P*12));
+  if(P>.80&&!navigating) chEl.classList.add('show');
+  else chEl.classList.remove('show');
+
+  /* Stars + lights */
+  stars.rotation.y=t*.01; stars.rotation.x=t*.006;
+  stars.material.opacity=Math.max(0,.35-P*.45);
+  lights.rim.intensity=4.5+Math.sin(t*1.2)*.8;
+  lights.fill.intensity=2.8+Math.cos(t*.9)*.6;
+
+  renderer.render(scene, camera);
+}
+animate();
+
+/* Resize */
+window.addEventListener('resize', function(){
+  renderer.setSize(innerWidth,innerHeight,false);
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+/* Hide loader */
+document.getElementById('jfLoader').classList.add('done');
+
+})();
+</script>
+<script src="js/flowbot.js"></script>
+</body>
+</html>
