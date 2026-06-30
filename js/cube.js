@@ -92,7 +92,9 @@ window.JFCube = (function () {
     k.shadow.mapSize.set(1024, 1024); scene.add(k);
     var r = new THREE.PointLight(0x7722ff, 5.0, 22); r.position.set(-6, -2, -5); scene.add(r);
     var f = new THREE.PointLight(0x1133cc, 3.0, 22); f.position.set(5, -3, 5); scene.add(f);
-    scene.add(Object.assign(new THREE.DirectionalLight(0xaaaaff, .38), { position: new THREE.Vector3(-2,6,-3) }));
+    var topLight = new THREE.DirectionalLight(0xaaaaff, .38);
+    topLight.position.set(-2, 6, -3);
+    scene.add(topLight);
     return { rim: r, fill: f };
   }
 
