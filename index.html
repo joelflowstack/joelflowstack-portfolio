@@ -1,487 +1,211 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>Joel Flowstack — 3D Websites, AI Automations & Bots</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23000'/%3E%3Ctext x='50' y='66' font-size='52' font-family='monospace' font-weight='700' text-anchor='middle' fill='%23fff'%3EJF%3C/text%3E%3C/svg%3E"/>
-<link rel="stylesheet" href="css/global.css"/>
-<style>
-html,body{height:100%;overflow:hidden;background:#000}
-#scroller{position:fixed;inset:0;overflow-y:scroll;z-index:0;scrollbar-width:none}
-#scroller::-webkit-scrollbar{display:none}
-#scroller-inner{height:400vh}
-#c{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1}
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Joel Flowstack — 3D Websites, AI Agents &amp; Bots</title>
+<meta name="description" content="Joel Flowstack builds 3D websites, AI chatbots and agent workflows, and bots deployed across Discord, Telegram and WhatsApp for growing businesses." />
 
-/* ═══ GROUNDBREAKING IDEA #1 ═══
-   The cube's solve progress doubles as the page's boot sequence.
-   Instead of a generic spinner, you watch the cube visibly
-   assemble itself from a scattered state into a solved cube —
-   and that solve percentage IS the loading percentage. */
-#bootPct{
-  position:fixed;bottom:2.2rem;left:50%;transform:translateX(-50%);
-  z-index:15;font-family:'Space Mono',monospace;
-  font-size:.65rem;letter-spacing:.3em;color:rgba(255,255,255,.4);
-  pointer-events:none;
-}
-#bootPct span{color:#fff;font-weight:700}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-#hl{position:fixed;left:clamp(1.5rem,4vw,4.5rem);bottom:clamp(2rem,6vh,4.5rem);z-index:10;pointer-events:none;transition:opacity .3s ease}
-#hl h1{font-size:clamp(2rem,5vw,4.5rem);font-weight:700;letter-spacing:-.035em;line-height:.95;color:#fff}
-#hl h1 em{font-style:normal;color:rgba(255,255,255,.35)}
-#hl p{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.32);margin-top:.65rem}
-
-#si{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;gap:.4rem;font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.32);pointer-events:none;opacity:0;animation:jfFade .8s 2.2s ease both;transition:opacity .4s}
-#si .sil{width:1px;height:30px;background:linear-gradient(to bottom,rgba(255,255,255,.6),transparent);animation:jfLine 1.6s 2.4s ease infinite}
-@keyframes jfLine{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
-@keyframes jfFade{to{opacity:1}}
-
-/* ═══ GROUNDBREAKING IDEA #2 ═══
-   "Face Peek" — hovering near a labeled square on the locked-in
-   cube causes that single tile to peel open on a hinge (like an
-   aperture/iris door) revealing a tiny live glimpse of that page's
-   actual content rendered inside, before you ever click. No site
-   has ever put a live content preview physically inside a 3D
-   object's surface like this. */
-#peekLayer{position:fixed;inset:0;z-index:12;pointer-events:none}
-.peekCard{
-  position:absolute;width:180px;border-radius:10px;overflow:hidden;
-  background:#0a0a0c;border:1px solid rgba(255,255,255,.14);
-  box-shadow:0 20px 50px rgba(0,0,0,.6);
-  opacity:0;transform:scale(.85) translateY(10px);
-  transition:opacity .22s ease,transform .22s cubic-bezier(.34,1.56,.64,1);
-  pointer-events:none;
-}
-.peekCard.show{opacity:1;transform:scale(1) translateY(0)}
-.peekCard img{width:100%;display:block;height:100px;object-fit:cover;filter:grayscale(.15) brightness(.9)}
-.peekCard .pc-label{padding:.55rem .7rem;font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:#fff;border-top:1px solid rgba(255,255,255,.1)}
-
-#ch{position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);z-index:20;font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#fff;background:rgba(255,255,255,.06);backdrop-filter:blur(14px);padding:.6rem 1.5rem;border-radius:50px;border:1px solid rgba(255,255,255,.18);display:none;align-items:center;gap:.55rem;pointer-events:none;white-space:nowrap;animation:jfBob 1.8s ease-in-out infinite}
-#ch.show{display:flex}
-@keyframes jfBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-5px)}}
-
-#jfEntering{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0);pointer-events:none;transition:background .4s ease}
-#jfEntering.go{background:rgba(0,0,0,.97)}
-#jfEnteringText{font-family:'Space Mono',monospace;font-size:.9rem;letter-spacing:.25em;text-transform:uppercase;color:#fff;opacity:0;transition:opacity .3s .15s}
-#jfEntering.go #jfEnteringText{opacity:1}
-
-#jfLoader{position:fixed;inset:0;z-index:900;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .5s ease}
-#jfLoader.done{opacity:0;pointer-events:none}
-
-#jfHelp{position:fixed;bottom:1.6rem;left:1.6rem;z-index:10;font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.22);display:none}
-@media(min-width:700px){#jfHelp{display:block}}
-</style>
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<div id="jfLoader"></div>
-<div id="scroller"><div id="scroller-inner"></div></div>
-<canvas id="c"></canvas>
+<!-- ============ FIXED NAV (fades in after intro) ============ -->
+<nav id="site-nav">
+  <div class="nav-word">Joel<span>Flowstack</span></div>
+  <div class="nav-links">
+    <a href="#services">Services</a>
+    <a href="#work">Work</a>
+    <a href="#process">Process</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <a href="#contact" class="nav-cta">Start a project</a>
+</nav>
 
-<div id="hl">
-  <h1>Joel<br/><em>Flowstack</em></h1>
-  <p>Scroll to enter</p>
+<!-- ============ 3D INTRO ============ -->
+<div id="intro">
+  <div id="hero-stage">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-veil"></div>
+
+    <div class="hero-ui">
+      <div class="hero-top">
+        <div class="hero-mark"><b>JOEL FLOWSTACK</b> — STUDIO</div>
+        <div class="hero-mark mono">EST. 3D WEB / AI AGENTS</div>
+      </div>
+
+      <div class="hero-bottom">
+        <div class="hero-headline">
+          <div class="eyebrow">3D Websites &middot; AI Agents &middot; Bots</div>
+          <h1>Interfaces that <em>think</em>, built for businesses that don't sleep.</h1>
+        </div>
+
+        <div class="scroll-cue" id="scrollCue">
+          <span>Scroll</span>
+          <div class="stick"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div id="bootPct"><span id="bootPctNum">0</span>% ASSEMBLED</div>
-<div id="si"><span>Scroll</span><div class="sil"></div></div>
-<div id="ch">✦ <span>Click a square to enter</span> ✦</div>
-<div id="jfEntering"><span id="jfEnteringText">Entering...</span></div>
-<div id="jfHelp">Drag to rotate · Scroll to zoom</div>
-<div id="peekLayer"></div>
+<!-- ============ MAIN SITE ============ -->
+<main id="site">
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
-<script src="js/cube.js"></script>
-<script>
-if (typeof THREE === 'undefined') {
-  document.body.style.background = '#000';
-} else {
-try {
-(function () {
-'use strict';
+  <section id="statement">
+    <div class="wrap">
+      <div class="statement-text reveal">
+        <p>
+          I'm <strong>Joel</strong> — a one-person studio building the parts of the internet
+          that used to need a whole team: <span class="accent">3D-native websites</span>,
+          AI chatbots that actually resolve things, and bots that live inside
+          Discord, Telegram and WhatsApp so your business is reachable
+          <strong>at 2am on a Tuesday</strong> just the same as 2pm on a Monday.
+        </p>
+      </div>
+      <div class="statement-meta reveal">
+        <div class="stat"><b>1</b><span>Studio, end to end</span></div>
+        <div class="stat"><b>3</b><span>Platforms shipped on</span></div>
+        <div class="stat"><b>24/7</b><span>Always-on agents</span></div>
+        <div class="stat"><b>GitHub&nbsp;→&nbsp;Vercel</b><span>Deploy pipeline</span></div>
+      </div>
+    </div>
+  </section>
 
-console.log('[JF Portal] Booting...');
+  <section id="services">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>Three ways to make your business feel a decade ahead.</h2>
+        <p class="lede">Pick one, or stack all three — most clients start with a site and grow into automation.</p>
+      </div>
 
-/* ═══════════════════════════════════════
-   RENDERER
-═══════════════════════════════════════ */
-var canvas = document.getElementById('c');
-var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setSize(innerWidth, innerHeight, false);
-renderer.setClearColor(0x000000, 1);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
+      <div class="services-grid reveal">
+        <div class="service-card">
+          <div class="service-num">01</div>
+          <h3>3D Websites</h3>
+          <p>Interactive, WebGL-driven sites that turn a scroll into an experience — built to load fast and feel expensive.</p>
+          <div class="service-tags">
+            <span>Three.js</span><span>WebGL</span><span>Vercel</span>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-num">02</div>
+          <h3>AI Chatbots &amp; Agents</h3>
+          <p>Custom assistants trained on your business that answer, qualify and route — not generic wrappers.</p>
+          <div class="service-tags">
+            <span>LLM Integration</span><span>Custom Trained</span><span>Analytics</span>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-num">03</div>
+          <h3>Bot Deployment</h3>
+          <p>Bots that live where your community already is — moderation, support and workflows, fully managed.</p>
+          <div class="service-tags">
+            <span>Discord</span><span>Telegram</span><span>WhatsApp</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-var scene  = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, .1, 100);
-camera.position.set(0, .3, 11);
-camera.lookAt(0, 0, 0);
+  <section id="work">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>Recent builds.</h2>
+        <p class="lede">A few things from the shop floor — more detail available on request.</p>
+      </div>
 
-var lights = JFCube.addLights(scene);
-JFCube.addStudioBackdrop(scene);
-console.log('[JF Portal] Scene ready.');
+      <div class="work-grid reveal">
+        <div class="work-card">
+          <div class="work-top">
+            <span class="mono">PRODUCT — CHATBOT</span>
+            <span class="work-tag">Live</span>
+          </div>
+          <div>
+            <h3>Flow</h3>
+            <p>An AI chat &amp; screen-control assistant with gesture recognition, deployed on Vercel with a companion Chrome extension.</p>
+          </div>
+        </div>
+        <div class="work-card">
+          <div class="work-top">
+            <span class="mono">PRODUCT — WEBSITE</span>
+            <span class="work-tag">In progress</span>
+          </div>
+          <div>
+            <h3>This site</h3>
+            <p>A WebGL-driven portfolio built to demonstrate the studio's own 3D-web capability, end to end.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-/* ═══════════════════════════════════════
-   THE CUBE
-═══════════════════════════════════════ */
-var NAV = [
-  { gx:-1, gy: 1, label:'Home',      url:'pages/home.html' },
-  { gx: 0, gy: 1, label:'About',     url:'pages/about.html' },
-  { gx: 1, gy: 1, label:'Services',  url:'pages/services.html' },
-  { gx:-1, gy: 0, label:'Portfolio', url:'pages/portfolio.html' },
-  { gx: 1, gy: 0, label:'Blog',      url:'pages/blog.html' },
-  { gx:-1, gy:-1, label:'Contact',   url:'pages/contact.html' },
-  { gx: 0, gy:-1, label:'YouTube',   url:'https://www.youtube.com/channel/UCyB6tXCbdBczkZwD__VCdTA' },
-  { gx: 1, gy:-1, label:'TikTok',    url:'https://www.tiktok.com/@joelflowstack' },
-];
+  <section id="process">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>How a project runs.</h2>
+        <p class="lede">Lean, fast, and built around one person who owns the whole stack.</p>
+      </div>
 
-var cubeR = JFCube.build(scene, NAV, { plainCenter: false });
-var cubeG = cubeR.group;
-var cubeP = cubeR.pieces;
-console.log('[JF Portal] Cube built:', cubeP.length, 'pieces.');
+      <div class="process-list reveal">
+        <div class="process-step">
+          <span class="step-index mono">01 — Scope</span>
+          <h3>Define the outcome</h3>
+          <p>We agree what the site or bot needs to actually do for your business, not just look like.</p>
+        </div>
+        <div class="process-step">
+          <span class="step-index mono">02 — Build</span>
+          <h3>Design &amp; develop</h3>
+          <p>Interface, motion and logic get built together so nothing feels bolted on afterward.</p>
+        </div>
+        <div class="process-step">
+          <span class="step-index mono">03 — Connect</span>
+          <h3>Wire the automation</h3>
+          <p>Chatbots and platform bots get trained, tested and connected to your real workflows.</p>
+        </div>
+        <div class="process-step">
+          <span class="step-index mono">04 — Ship</span>
+          <h3>Deploy &amp; hand off</h3>
+          <p>Pushed live via GitHub and Vercel, with a walkthrough so you're never locked out of your own site.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-/* ═══════════════════════════════════════
-   GROUNDBREAKING #1 — BOOT-SOLVE SEQUENCE
-   Every piece starts scattered in space with random rotation.
-   Over the first ~1.6s of real time, each piece flies back into
-   its correct slot — the percentage of pieces "home" IS the
-   displayed loading percentage. The site doesn't load behind a
-   spinner; the site loading *is* the cube assembling itself.
-═══════════════════════════════════════ */
-var bootDuration = 1.7; // seconds
-var bootStartPos = cubeP.map(function (p) {
-  var dir = new THREE.Vector3(p.gx, p.gy, p.gz);
-  if (dir.lengthSq() < .01) dir.set(Math.random()-.5, Math.random()-.5, Math.random()-.5);
-  dir.normalize();
-  var dist = 5 + Math.random() * 4;
-  return {
-    pos: new THREE.Vector3(dir.x * dist, dir.y * dist, dir.z * dist),
-    rot: new THREE.Euler(Math.random()*Math.PI*2, Math.random()*Math.PI*2, Math.random()*Math.PI*2)
-  };
-});
-var bootHomePos = cubeP.map(function (p) {
-  return {
-    pos: new THREE.Vector3(p.gx * JFCube.GAP, p.gy * JFCube.GAP, p.gz * JFCube.GAP),
-    rot: new THREE.Euler(0, 0, 0)
-  };
-});
-/* Stagger each piece's arrival slightly so it doesn't look like one
-   mechanical snap — pieces settle in a loose wave, center-out */
-var bootDelays = cubeP.map(function (p) {
-  var d = Math.sqrt(p.gx*p.gx + p.gy*p.gy + p.gz*p.gz);
-  return d * .09 + Math.random() * .12;
-});
-var bootPctEl = document.getElementById('bootPctNum');
-var bootComplete = false;
+  <section id="contact">
+    <div class="wrap">
+      <div class="cta-inner reveal">
+        <h2>Got a business that needs a <span class="accent">3D site</span> or a bot that never clocks out?</h2>
+        <a href="mailto:hello@joelflowstack.com" class="cta-button">Start a project →</a>
+      </div>
+    </div>
+  </section>
 
-function easeOutBack(t) {
-  var c1 = 1.70158, c3 = c1 + 1;
-  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
-}
+  <footer>
+    <div class="wrap footer-row">
+      <div class="footer-copy">© <span id="year"></span> Joel Flowstack.</div>
+      <div class="footer-links">
+        <a href="https://x.com/Joelfowstack" target="_blank" rel="noopener">X</a>
+        <a href="https://instagram.com/joelflowstack" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://tiktok.com/@joelflowstack" target="_blank" rel="noopener">TikTok</a>
+        <a href="https://github.com/joelflowstack" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </footer>
+</main>
 
-/* ═══════════════════════════════════════
-   Nested decorative mini-cube on center tile
-═══════════════════════════════════════ */
-var miniR = JFCube.build(scene, [], { parent: cubeG, plainCenter: true });
-var miniG = miniR.group;
-miniG.scale.setScalar(0.28);
-miniG.position.set(0, 0, JFCube.GAP * 1.05 + 0.4);
-miniG.visible = false; /* revealed only after boot completes */
-
-/* ═══════════════════════════════════════
-   SCROLL — stateless, single source of truth
-═══════════════════════════════════════ */
-var scroller = document.getElementById('scroller');
-var P = 0;
-scroller.addEventListener('scroll', function () {
-  var max = Math.max(scroller.scrollHeight - scroller.clientHeight, 1);
-  P = Math.min(Math.max(scroller.scrollTop / max, 0), 1);
-}, { passive: true });
-
-function clamp01(v) { return Math.max(0, Math.min(1, v)); }
-function smoothstep(a, b, x) { var t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); }
-function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-
-/* ═══════════════════════════════════════
-   Drag-to-rotate
-═══════════════════════════════════════ */
-var dragRotX = 0, dragRotY = 0;
-var drag = false, pMX = 0, pMY = 0;
-canvas.addEventListener('mousedown', function (e) { if (!bootComplete) return; drag = true; pMX = e.clientX; pMY = e.clientY; });
-window.addEventListener('mousemove', function (e) {
-  if (!drag) return;
-  dragRotY += (e.clientX - pMX) * .006;
-  dragRotX += (e.clientY - pMY) * .006;
-  dragRotX = Math.max(-.9, Math.min(.9, dragRotX));
-  pMX = e.clientX; pMY = e.clientY;
-});
-window.addEventListener('mouseup', function () { drag = false; });
-
-var tDrag = false, tPX = 0, tPY = 0;
-canvas.addEventListener('touchstart', function (e) {
-  if (!bootComplete) return;
-  tDrag = true; tPX = e.touches[0].clientX; tPY = e.touches[0].clientY;
-}, { passive: true });
-canvas.addEventListener('touchmove', function (e) {
-  if (!tDrag) return;
-  dragRotY += (e.touches[0].clientX - tPX) * .006;
-  dragRotX += (e.touches[0].clientY - tPY) * .006;
-  dragRotX = Math.max(-.9, Math.min(.9, dragRotX));
-  tPX = e.touches[0].clientX; tPY = e.touches[0].clientY;
-}, { passive: true });
-canvas.addEventListener('touchend', function (e) {
-  tDrag = false;
-  if (navReady) {
-    var t = e.changedTouches[0];
-    var hit = JFCube.hitFront(rc, cubeP, camera, t.clientX, t.clientY, canvas);
-    if (hit && hit.data) doNav(hit.data);
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
   }
-}, { passive: true });
-
-var mouseNX = 0, mouseNY = 0;
-window.addEventListener('mousemove', function (e) {
-  mouseNX = (e.clientX / innerWidth) * 2 - 1;
-  mouseNY = (e.clientY / innerHeight) * 2 - 1;
-});
-
-/* ═══════════════════════════════════════
-   Raycast click + GROUNDBREAKING #2: Face Peek
-═══════════════════════════════════════ */
-var rc = JFCube.makeRaycaster();
-var hovered = null;
-var navigating = false;
-var navReady = false;
-
-/* Build a small offscreen preview thumbnail per page once, reused for peek cards.
-   We render text-only placeholder canvases (no iframe — instant, zero network cost,
-   still gives a genuine "glimpse of the page" feel via color + iconography). */
-var previewMeta = {
-  'Home':      { bg:'#141414', accent:'#fff',    icon:'⌂' },
-  'About':     { bg:'#171310', accent:'#e8d5b0', icon:'◉' },
-  'Services':  { bg:'#0f1414', accent:'#9fe8e0', icon:'⚡' },
-  'Portfolio': { bg:'#131018', accent:'#c9b8ff', icon:'◈' },
-  'Blog':      { bg:'#0f1210', accent:'#b8e0b0', icon:'✐' },
-  'Contact':   { bg:'#141010', accent:'#ffb8b8', icon:'✉' },
-  'YouTube':   { bg:'#180d0d', accent:'#ff4444', icon:'▶' },
-  'TikTok':    { bg:'#0a0a0a', accent:'#25f4ee', icon:'♪' }
-};
-function makePreviewDataURL(label) {
-  var m = previewMeta[label] || { bg:'#111', accent:'#fff', icon:'✦' };
-  var S = 300, cv = document.createElement('canvas'); cv.width = S; cv.height = 168;
-  var c = cv.getContext('2d');
-  c.fillStyle = m.bg; c.fillRect(0,0,S,168);
-  c.font = '64px sans-serif'; c.textAlign='center'; c.textBaseline='middle';
-  c.fillStyle = m.accent; c.globalAlpha = .85;
-  c.fillText(m.icon, S/2, 84);
-  c.globalAlpha = 1;
-  return cv.toDataURL();
-}
-
-var peekLayer = document.getElementById('peekLayer');
-var peekCards = {}; /* label -> DOM element */
-NAV.forEach(function (n) {
-  var el = document.createElement('div');
-  el.className = 'peekCard';
-  el.innerHTML = '<img src="' + makePreviewDataURL(n.label) + '"/><div class="pc-label">' + n.label + '</div>';
-  peekLayer.appendChild(el);
-  peekCards[n.label] = el;
-});
-var activePeek = null;
-
-function hidePeeks() {
-  for (var k in peekCards) peekCards[k].classList.remove('show');
-  activePeek = null;
-}
-
-canvas.addEventListener('mousemove', function (e) {
-  if (!navReady) { hovered = null; canvas.style.cursor = drag ? 'grabbing' : 'grab'; hidePeeks(); return; }
-  var hit = JFCube.hitFront(rc, cubeP, camera, e.clientX, e.clientY, canvas);
-  if (hit && hit.data && hit.data.url) {
-    canvas.style.cursor = 'pointer';
-    hovered = hit;
-    var label = hit.data.label;
-    if (activePeek !== label) {
-      hidePeeks();
-      activePeek = label;
-      var card = peekCards[label];
-      if (card) {
-        var px = Math.min(Math.max(e.clientX - 90, 12), innerWidth - 192);
-        var py = Math.max(e.clientY - 170, 12);
-        card.style.left = px + 'px';
-        card.style.top = py + 'px';
-        card.classList.add('show');
-      }
-    }
-  } else {
-    canvas.style.cursor = 'grab';
-    hovered = null;
-    hidePeeks();
-  }
-});
-canvas.addEventListener('mouseleave', hidePeeks);
-
-canvas.addEventListener('click', function (e) {
-  if (!navReady || navigating || drag) return;
-  var hit = JFCube.hitFront(rc, cubeP, camera, e.clientX, e.clientY, canvas);
-  if (hit && hit.data && hit.data.url) doNav(hit.data);
-});
-
-function doNav(data) {
-  if (navigating) return;
-  navigating = true;
-  hidePeeks();
-  console.log('[JF Portal] Navigating to', data.url);
-  JFCube.scatter(cubeP, data.url, data.label);
-}
-
-/* ═══════════════════════════════════════
-   UI refs
-═══════════════════════════════════════ */
-var hlEl = document.getElementById('hl');
-var siEl = document.getElementById('si');
-var chEl = document.getElementById('ch');
-var bootPctWrap = document.getElementById('bootPct');
-
-/* ═══════════════════════════════════════
-   RENDER LOOP
-═══════════════════════════════════════ */
-var clock = new THREE.Clock();
-var camZ = 11, camY = .3;
-var rotXSmooth = 0, rotYSmooth = 0;
-
-function animate() {
-  requestAnimationFrame(animate);
-  var t = clock.getElapsedTime();
-
-  /* ── BOOT SOLVE PHASE ── */
-  if (!bootComplete) {
-    var globalT = t / bootDuration;
-    var settledCount = 0;
-
-    cubeP.forEach(function (p, i) {
-      var localT = clamp01((t - bootDelays[i]) / .8);
-      var e = easeOutBack(localT);
-      var from = bootStartPos[i], to = bootHomePos[i];
-
-      /* Do NOT clamp e to 1 — easeOutBack intentionally overshoots past 1
-         then settles back down. Clamping here was freezing pieces at an
-         overshot position forever, which is why the cube never closed up. */
-      p.mesh.position.x = from.pos.x + (to.pos.x - from.pos.x) * e;
-      p.mesh.position.y = from.pos.y + (to.pos.y - from.pos.y) * e;
-      p.mesh.position.z = from.pos.z + (to.pos.z - from.pos.z) * e;
-
-      var rotT = 1 - localT;
-      p.mesh.rotation.x = from.rot.x * rotT;
-      p.mesh.rotation.y = from.rot.y * rotT;
-      p.mesh.rotation.z = from.rot.z * rotT;
-
-      /* A piece only counts as settled once its localT has fully reached 1
-         AND enough time has passed for the overshoot spring to have died
-         down (easeOutBack settles to ~1.0 well before localT hits 1, so
-         this is safe and accurate). */
-      if (localT >= 1) settledCount++;
-    });
-
-    var pct = Math.round((settledCount / cubeP.length) * 100);
-    bootPctEl.textContent = pct;
-
-    /* Whole cube slowly rotates while assembling, like it's alive */
-    cubeG.rotation.y = t * .3;
-    cubeG.rotation.x = Math.sin(t * .2) * .1;
-
-    camera.position.set(0, .3, 11);
-    camera.lookAt(0, 0, 0);
-
-    if (settledCount === cubeP.length && globalT > 1) {
-      /* Hard snap every piece to its exact home transform — guarantees
-         a perfectly flush, gapless cube with zero drift, regardless of
-         any float rounding accumulated during the spring animation. */
-      cubeP.forEach(function (p, i) {
-        var to = bootHomePos[i];
-        p.mesh.position.copy(to.pos);
-        p.mesh.rotation.set(0, 0, 0);
-      });
-      bootComplete = true;
-      miniG.visible = true;
-      bootPctWrap.style.transition = 'opacity .5s ease';
-      bootPctWrap.style.opacity = '0';
-      setTimeout(function () { bootPctWrap.style.display = 'none'; }, 500);
-      console.log('[JF Portal] Boot-solve complete. Interactive.');
-    }
-
-    renderer.render(scene, camera);
-    return;
-  }
-
-  /* ── NORMAL INTERACTIVE PHASE (post-boot) ── */
-  var zoomT = smoothstep(0, .85, P);
-  var targetCamZ = 11 - easeOutCubic(zoomT) * 8.6;
-  var targetCamY = .3 - zoomT * .3;
-  camZ += (targetCamZ - camZ) * .07;
-  camY += (targetCamY - camY) * .07;
-  camera.position.set(0, camY, camZ);
-  camera.lookAt(0, 0, 0);
-
-  var autoY = t * .12;
-  var autoX = .12 + Math.sin(t * .15) * .05;
-  var spinBoost = easeOutCubic(smoothstep(.1, .45, P)) * Math.PI * 3;
-  var lockT = smoothstep(.4, .78, P);
-
-  var targetRotY = (autoY + spinBoost + dragRotY) * (1 - lockT);
-  var targetRotX = (autoX + dragRotX) * (1 - lockT);
-
-  var parallax = (1 - lockT) * .1;
-  targetRotY += mouseNX * parallax;
-  targetRotX += -mouseNY * parallax * .6;
-
-  rotYSmooth += (targetRotY - rotYSmooth) * .09;
-  rotXSmooth += (targetRotX - rotXSmooth) * .09;
-  cubeG.rotation.set(rotXSmooth, rotYSmooth, 0);
-  cubeG.position.y = Math.sin(t * .5) * .1 * (1 - lockT);
-
-  miniG.rotation.y = t * .7;
-  miniG.rotation.x = .25 + Math.sin(t * .45) * .12;
-
-  navReady = P > .82 && !navigating;
-  cubeP.forEach(function (p) {
-    if (!p.isFront) return;
-    var tgt = (navReady && p === hovered) ? 1.1 : 1.0;
-    p.mesh.scale.x += (tgt - p.mesh.scale.x) * .18;
-    p.mesh.scale.y += (tgt - p.mesh.scale.y) * .18;
-    p.mesh.scale.z += (tgt - p.mesh.scale.z) * .18;
-  });
-
-  hlEl.style.opacity = String(clamp01(1 - P * 7));
-  siEl.style.opacity = String(clamp01(1 - P * 8));
-  if (navReady) chEl.classList.add('show'); else chEl.classList.remove('show');
-  if (!navReady) hidePeeks();
-
-  lights.rim.intensity = 1.4 + Math.sin(t * 1.1) * .3;
-  lights.fill.intensity = .5 + Math.cos(t * .8) * .15;
-
-  renderer.render(scene, camera);
-}
-animate();
-console.log('[JF Portal] Render loop started.');
-
-window.addEventListener('resize', function () {
-  renderer.setSize(innerWidth, innerHeight, false);
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-});
-
-document.getElementById('jfLoader').classList.add('done');
-console.log('[JF Portal] Ready.');
-
-})();
-} catch (fatal) {
-  console.error('[JF Portal] FATAL:', fatal);
-}
 }
 </script>
-<script src="js/flowbot.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
