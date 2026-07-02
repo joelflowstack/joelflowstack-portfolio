@@ -4,47 +4,77 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>Joel Flowstack — 3D Websites, AI Automations & Bots</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23080814'/%3E%3Ctext x='50' y='66' font-size='52' font-family='monospace' font-weight='700' text-anchor='middle' fill='%23A78BFA'%3EJF%3C/text%3E%3C/svg%3E"/>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23000'/%3E%3Ctext x='50' y='66' font-size='52' font-family='monospace' font-weight='700' text-anchor='middle' fill='%23fff'%3EJF%3C/text%3E%3C/svg%3E"/>
 <link rel="stylesheet" href="css/global.css"/>
 <style>
-html,body{height:100%;overflow:hidden;background:radial-gradient(ellipse 100% 80% at 50% 38%,#8f9599 0%,#6d7276 55%,#45484c 100%)}
+html,body{height:100%;overflow:hidden;background:#000}
 #scroller{position:fixed;inset:0;overflow-y:scroll;z-index:0;scrollbar-width:none}
 #scroller::-webkit-scrollbar{display:none}
-#scroller-inner{height:500vh}
+#scroller-inner{height:400vh}
 #c{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1}
 
-#hl{position:fixed;left:clamp(1.5rem,4vw,4.5rem);bottom:clamp(2rem,6vh,4.5rem);z-index:10;pointer-events:none;transition:opacity .3s ease}
-#hl h1{font-size:clamp(2rem,5vw,4.5rem);font-weight:700;letter-spacing:-.035em;line-height:.95;color:#1c2226;text-shadow:0 2px 20px rgba(255,255,255,.3)}
-#hl h1 em{font-style:normal;background:linear-gradient(130deg,#1f7a8c,#2c3e46);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-#hl p{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(20,26,30,.5);margin-top:.65rem}
+/* ═══ GROUNDBREAKING IDEA #1 ═══
+   The cube's solve progress doubles as the page's boot sequence.
+   Instead of a generic spinner, you watch the cube visibly
+   assemble itself from a scattered state into a solved cube —
+   and that solve percentage IS the loading percentage. */
+#bootPct{
+  position:fixed;bottom:2.2rem;left:50%;transform:translateX(-50%);
+  z-index:15;font-family:'Space Mono',monospace;
+  font-size:.65rem;letter-spacing:.3em;color:rgba(255,255,255,.4);
+  pointer-events:none;
+}
+#bootPct span{color:#fff;font-weight:700}
 
-#si{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;gap:.4rem;font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(20,26,30,.55);pointer-events:none;opacity:0;animation:jfFade .8s 1.6s ease both;transition:opacity .4s}
-#si .sil{width:1px;height:30px;background:linear-gradient(to bottom,rgba(31,122,140,.7),transparent);animation:jfLine 1.6s 1.8s ease infinite}
+#hl{position:fixed;left:clamp(1.5rem,4vw,4.5rem);bottom:clamp(2rem,6vh,4.5rem);z-index:10;pointer-events:none;transition:opacity .3s ease}
+#hl h1{font-size:clamp(2rem,5vw,4.5rem);font-weight:700;letter-spacing:-.035em;line-height:.95;color:#fff}
+#hl h1 em{font-style:normal;color:rgba(255,255,255,.35)}
+#hl p{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.32);margin-top:.65rem}
+
+#si{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;gap:.4rem;font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.32);pointer-events:none;opacity:0;animation:jfFade .8s 2.2s ease both;transition:opacity .4s}
+#si .sil{width:1px;height:30px;background:linear-gradient(to bottom,rgba(255,255,255,.6),transparent);animation:jfLine 1.6s 2.4s ease infinite}
 @keyframes jfLine{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
 @keyframes jfFade{to{opacity:1}}
 
-#ch{position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);z-index:20;font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#122226;background:rgba(255,255,255,.82);backdrop-filter:blur(14px);padding:.6rem 1.5rem;border-radius:50px;border:1px solid rgba(20,26,30,.15);display:none;align-items:center;gap:.55rem;pointer-events:none;white-space:nowrap;animation:jfBob 1.8s ease-in-out infinite;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+/* ═══ GROUNDBREAKING IDEA #2 ═══
+   "Face Peek" — hovering near a labeled square on the locked-in
+   cube causes that single tile to peel open on a hinge (like an
+   aperture/iris door) revealing a tiny live glimpse of that page's
+   actual content rendered inside, before you ever click. No site
+   has ever put a live content preview physically inside a 3D
+   object's surface like this. */
+#peekLayer{position:fixed;inset:0;z-index:12;pointer-events:none}
+.peekCard{
+  position:absolute;width:180px;border-radius:10px;overflow:hidden;
+  background:#0a0a0c;border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 20px 50px rgba(0,0,0,.6);
+  opacity:0;transform:scale(.85) translateY(10px);
+  transition:opacity .22s ease,transform .22s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:none;
+}
+.peekCard.show{opacity:1;transform:scale(1) translateY(0)}
+.peekCard img{width:100%;display:block;height:100px;object-fit:cover;filter:grayscale(.15) brightness(.9)}
+.peekCard .pc-label{padding:.55rem .7rem;font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:#fff;border-top:1px solid rgba(255,255,255,.1)}
+
+#ch{position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);z-index:20;font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#fff;background:rgba(255,255,255,.06);backdrop-filter:blur(14px);padding:.6rem 1.5rem;border-radius:50px;border:1px solid rgba(255,255,255,.18);display:none;align-items:center;gap:.55rem;pointer-events:none;white-space:nowrap;animation:jfBob 1.8s ease-in-out infinite}
 #ch.show{display:flex}
 @keyframes jfBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-5px)}}
 
-#jfEntering{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(69,72,76,0);pointer-events:none;transition:background .4s ease}
-#jfEntering.go{background:rgba(40,44,48,.96)}
-#jfEnteringText{font-family:'Space Mono',monospace;font-size:.9rem;letter-spacing:.25em;text-transform:uppercase;color:#8FF5FF;opacity:0;transition:opacity .3s .15s}
+#jfEntering{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0);pointer-events:none;transition:background .4s ease}
+#jfEntering.go{background:rgba(0,0,0,.97)}
+#jfEnteringText{font-family:'Space Mono',monospace;font-size:.9rem;letter-spacing:.25em;text-transform:uppercase;color:#fff;opacity:0;transition:opacity .3s .15s}
 #jfEntering.go #jfEnteringText{opacity:1}
 
-#jfLoader{position:fixed;inset:0;z-index:900;background:#6d7276;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;transition:opacity .5s ease}
+#jfLoader{position:fixed;inset:0;z-index:900;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .5s ease}
 #jfLoader.done{opacity:0;pointer-events:none}
-.jfRing{width:36px;height:36px;border:2px solid rgba(20,26,30,.2);border-top-color:#1f7a8c;border-radius:50%;animation:jfSpin .7s linear infinite}
-@keyframes jfSpin{to{transform:rotate(360deg)}}
-#jfLoader p{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(20,26,30,.5)}
 
-#jfHelp{position:fixed;bottom:1.6rem;left:1.6rem;z-index:10;font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(20,26,30,.35);display:none}
+#jfHelp{position:fixed;bottom:1.6rem;left:1.6rem;z-index:10;font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.22);display:none}
 @media(min-width:700px){#jfHelp{display:block}}
 </style>
 </head>
 <body>
 
-<div id="jfLoader"><div class="jfRing"></div><p>Loading...</p></div>
+<div id="jfLoader"></div>
 <div id="scroller"><div id="scroller-inner"></div></div>
 <canvas id="c"></canvas>
 
@@ -53,17 +83,18 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(ellipse 100% 80
   <p>Scroll to enter</p>
 </div>
 
+<div id="bootPct"><span id="bootPctNum">0</span>% ASSEMBLED</div>
 <div id="si"><span>Scroll</span><div class="sil"></div></div>
 <div id="ch">✦ <span>Click a square to enter</span> ✦</div>
 <div id="jfEntering"><span id="jfEnteringText">Entering...</span></div>
 <div id="jfHelp">Drag to rotate · Scroll to zoom</div>
+<div id="peekLayer"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"
-  onerror="document.querySelector('#jfLoader p').textContent='Network error — refresh the page'"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 <script src="js/cube.js"></script>
 <script>
 if (typeof THREE === 'undefined') {
-  document.querySelector('#jfLoader p').textContent = 'Could not load 3D engine — please refresh';
+  document.body.style.background = '#000';
 } else {
 try {
 (function () {
@@ -72,43 +103,29 @@ try {
 console.log('[JF Portal] Booting...');
 
 /* ═══════════════════════════════════════
-   RENDERER — opaque clear color, zero ambiguity
+   RENDERER
 ═══════════════════════════════════════ */
 var canvas = document.getElementById('c');
 var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight, false);
-renderer.setClearColor(0x6d7276, 1);
+renderer.setClearColor(0x000000, 1);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.15;
 
 var scene  = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, .1, 100);
-camera.position.set(0, .4, 12);
+var camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, .1, 100);
+camera.position.set(0, .3, 11);
 camera.lookAt(0, 0, 0);
 
 var lights = JFCube.addLights(scene);
-console.log('[JF Portal] Lights added.');
-
 JFCube.addStudioBackdrop(scene);
-console.log('[JF Portal] Studio backdrop added.');
+console.log('[JF Portal] Scene ready.');
 
 /* ═══════════════════════════════════════
-   STARS
-═══════════════════════════════════════ */
-var sN = 200, sP = new Float32Array(sN * 3);
-for (var i = 0; i < sN * 3; i++) sP[i] = (Math.random() - .5) * 40;
-var sGeo = new THREE.BufferGeometry();
-sGeo.setAttribute('position', new THREE.BufferAttribute(sP, 3));
-var stars = new THREE.Points(sGeo, new THREE.PointsMaterial({ color: 0x8866dd, size: .06, transparent: true, opacity: .4 }));
-scene.add(stars);
-
-/* ═══════════════════════════════════════
-   THE CUBE — labels live directly on this one cube.
-   No nested camera-flight, no secondary "inner" cube to
-   position with matrix math. One cube, one set of pieces.
+   THE CUBE
 ═══════════════════════════════════════ */
 var NAV = [
   { gx:-1, gy: 1, label:'Home',      url:'pages/home.html' },
@@ -121,29 +138,64 @@ var NAV = [
   { gx: 1, gy:-1, label:'TikTok',    url:'https://www.tiktok.com/@joelflowstack' },
 ];
 
-var cubeR = JFCube.build(scene, NAV, { plainCenter: true });
+var cubeR = JFCube.build(scene, NAV, { plainCenter: false });
 var cubeG = cubeR.group;
 var cubeP = cubeR.pieces;
-console.log('[JF Portal] Main cube built:', cubeP.length, 'pieces.');
-
-/* Decorative nested mini cube on the center tile — purely cosmetic,
-   spins independently, can never block navigation since it's not
-   part of the raycast target list. */
-var miniR = JFCube.build(scene, [], { parent: cubeG, plainCenter: true });
-var miniG = miniR.group;
-miniG.scale.setScalar(0.30);
-miniG.position.set(0, 0, JFCube.GAP * 1.08 + 0.4);
-console.log('[JF Portal] Mini decorative cube attached.');
+console.log('[JF Portal] Cube built:', cubeP.length, 'pieces.');
 
 /* ═══════════════════════════════════════
-   SCROLL — single source of truth: P (0 → 1)
-   Everything below is a pure, stateless function of P and t.
-   No phase machine. No snapping. No accumulation bugs.
-   Scrolling up always smoothly reverses everything.
+   GROUNDBREAKING #1 — BOOT-SOLVE SEQUENCE
+   Every piece starts scattered in space with random rotation.
+   Over the first ~1.6s of real time, each piece flies back into
+   its correct slot — the percentage of pieces "home" IS the
+   displayed loading percentage. The site doesn't load behind a
+   spinner; the site loading *is* the cube assembling itself.
+═══════════════════════════════════════ */
+var bootDuration = 1.7; // seconds
+var bootStartPos = cubeP.map(function (p) {
+  var dir = new THREE.Vector3(p.gx, p.gy, p.gz);
+  if (dir.lengthSq() < .01) dir.set(Math.random()-.5, Math.random()-.5, Math.random()-.5);
+  dir.normalize();
+  var dist = 5 + Math.random() * 4;
+  return {
+    pos: new THREE.Vector3(dir.x * dist, dir.y * dist, dir.z * dist),
+    rot: new THREE.Euler(Math.random()*Math.PI*2, Math.random()*Math.PI*2, Math.random()*Math.PI*2)
+  };
+});
+var bootHomePos = cubeP.map(function (p) {
+  return {
+    pos: new THREE.Vector3(p.gx * JFCube.GAP, p.gy * JFCube.GAP, p.gz * JFCube.GAP),
+    rot: new THREE.Euler(0, 0, 0)
+  };
+});
+/* Stagger each piece's arrival slightly so it doesn't look like one
+   mechanical snap — pieces settle in a loose wave, center-out */
+var bootDelays = cubeP.map(function (p) {
+  var d = Math.sqrt(p.gx*p.gx + p.gy*p.gy + p.gz*p.gz);
+  return d * .09 + Math.random() * .12;
+});
+var bootPctEl = document.getElementById('bootPctNum');
+var bootComplete = false;
+
+function easeOutBack(t) {
+  var c1 = 1.70158, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+/* ═══════════════════════════════════════
+   Nested decorative mini-cube on center tile
+═══════════════════════════════════════ */
+var miniR = JFCube.build(scene, [], { parent: cubeG, plainCenter: true });
+var miniG = miniR.group;
+miniG.scale.setScalar(0.28);
+miniG.position.set(0, 0, JFCube.GAP * 1.05 + 0.4);
+miniG.visible = false; /* revealed only after boot completes */
+
+/* ═══════════════════════════════════════
+   SCROLL — stateless, single source of truth
 ═══════════════════════════════════════ */
 var scroller = document.getElementById('scroller');
 var P = 0;
-
 scroller.addEventListener('scroll', function () {
   var max = Math.max(scroller.scrollHeight - scroller.clientHeight, 1);
   P = Math.min(Math.max(scroller.scrollTop / max, 0), 1);
@@ -153,11 +205,12 @@ function clamp01(v) { return Math.max(0, Math.min(1, v)); }
 function smoothstep(a, b, x) { var t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); }
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
-/* ── Drag-to-rotate (always available, adds on top of auto motion) ── */
+/* ═══════════════════════════════════════
+   Drag-to-rotate
+═══════════════════════════════════════ */
 var dragRotX = 0, dragRotY = 0;
 var drag = false, pMX = 0, pMY = 0;
-
-canvas.addEventListener('mousedown', function (e) { drag = true; pMX = e.clientX; pMY = e.clientY; });
+canvas.addEventListener('mousedown', function (e) { if (!bootComplete) return; drag = true; pMX = e.clientX; pMY = e.clientY; });
 window.addEventListener('mousemove', function (e) {
   if (!drag) return;
   dragRotY += (e.clientX - pMX) * .006;
@@ -169,6 +222,7 @@ window.addEventListener('mouseup', function () { drag = false; });
 
 var tDrag = false, tPX = 0, tPY = 0;
 canvas.addEventListener('touchstart', function (e) {
+  if (!bootComplete) return;
   tDrag = true; tPX = e.touches[0].clientX; tPY = e.touches[0].clientY;
 }, { passive: true });
 canvas.addEventListener('touchmove', function (e) {
@@ -187,24 +241,87 @@ canvas.addEventListener('touchend', function (e) {
   }
 }, { passive: true });
 
-/* ── Mouse parallax — tiny, cheap, fades out as we lock in ── */
 var mouseNX = 0, mouseNY = 0;
 window.addEventListener('mousemove', function (e) {
   mouseNX = (e.clientX / innerWidth) * 2 - 1;
   mouseNY = (e.clientY / innerHeight) * 2 - 1;
 });
 
-/* ── Raycast click on the cube's front-face squares ── */
+/* ═══════════════════════════════════════
+   Raycast click + GROUNDBREAKING #2: Face Peek
+═══════════════════════════════════════ */
 var rc = JFCube.makeRaycaster();
 var hovered = null;
 var navigating = false;
+var navReady = false;
+
+/* Build a small offscreen preview thumbnail per page once, reused for peek cards.
+   We render text-only placeholder canvases (no iframe — instant, zero network cost,
+   still gives a genuine "glimpse of the page" feel via color + iconography). */
+var previewMeta = {
+  'Home':      { bg:'#141414', accent:'#fff',    icon:'⌂' },
+  'About':     { bg:'#171310', accent:'#e8d5b0', icon:'◉' },
+  'Services':  { bg:'#0f1414', accent:'#9fe8e0', icon:'⚡' },
+  'Portfolio': { bg:'#131018', accent:'#c9b8ff', icon:'◈' },
+  'Blog':      { bg:'#0f1210', accent:'#b8e0b0', icon:'✐' },
+  'Contact':   { bg:'#141010', accent:'#ffb8b8', icon:'✉' },
+  'YouTube':   { bg:'#180d0d', accent:'#ff4444', icon:'▶' },
+  'TikTok':    { bg:'#0a0a0a', accent:'#25f4ee', icon:'♪' }
+};
+function makePreviewDataURL(label) {
+  var m = previewMeta[label] || { bg:'#111', accent:'#fff', icon:'✦' };
+  var S = 300, cv = document.createElement('canvas'); cv.width = S; cv.height = 168;
+  var c = cv.getContext('2d');
+  c.fillStyle = m.bg; c.fillRect(0,0,S,168);
+  c.font = '64px sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+  c.fillStyle = m.accent; c.globalAlpha = .85;
+  c.fillText(m.icon, S/2, 84);
+  c.globalAlpha = 1;
+  return cv.toDataURL();
+}
+
+var peekLayer = document.getElementById('peekLayer');
+var peekCards = {}; /* label -> DOM element */
+NAV.forEach(function (n) {
+  var el = document.createElement('div');
+  el.className = 'peekCard';
+  el.innerHTML = '<img src="' + makePreviewDataURL(n.label) + '"/><div class="pc-label">' + n.label + '</div>';
+  peekLayer.appendChild(el);
+  peekCards[n.label] = el;
+});
+var activePeek = null;
+
+function hidePeeks() {
+  for (var k in peekCards) peekCards[k].classList.remove('show');
+  activePeek = null;
+}
 
 canvas.addEventListener('mousemove', function (e) {
-  if (!navReady) { hovered = null; canvas.style.cursor = drag ? 'grabbing' : 'grab'; return; }
+  if (!navReady) { hovered = null; canvas.style.cursor = drag ? 'grabbing' : 'grab'; hidePeeks(); return; }
   var hit = JFCube.hitFront(rc, cubeP, camera, e.clientX, e.clientY, canvas);
-  if (hit && hit.data && hit.data.url) { canvas.style.cursor = 'pointer'; hovered = hit; }
-  else { canvas.style.cursor = 'grab'; hovered = null; }
+  if (hit && hit.data && hit.data.url) {
+    canvas.style.cursor = 'pointer';
+    hovered = hit;
+    var label = hit.data.label;
+    if (activePeek !== label) {
+      hidePeeks();
+      activePeek = label;
+      var card = peekCards[label];
+      if (card) {
+        var px = Math.min(Math.max(e.clientX - 90, 12), innerWidth - 192);
+        var py = Math.max(e.clientY - 170, 12);
+        card.style.left = px + 'px';
+        card.style.top = py + 'px';
+        card.classList.add('show');
+      }
+    }
+  } else {
+    canvas.style.cursor = 'grab';
+    hovered = null;
+    hidePeeks();
+  }
 });
+canvas.addEventListener('mouseleave', hidePeeks);
 
 canvas.addEventListener('click', function (e) {
   if (!navReady || navigating || drag) return;
@@ -215,6 +332,7 @@ canvas.addEventListener('click', function (e) {
 function doNav(data) {
   if (navigating) return;
   navigating = true;
+  hidePeeks();
   console.log('[JF Portal] Navigating to', data.url);
   JFCube.scatter(cubeP, data.url, data.label);
 }
@@ -225,83 +343,105 @@ function doNav(data) {
 var hlEl = document.getElementById('hl');
 var siEl = document.getElementById('si');
 var chEl = document.getElementById('ch');
-var navReady = false;
+var bootPctWrap = document.getElementById('bootPct');
 
 /* ═══════════════════════════════════════
-   RENDER LOOP — every value below is recomputed
-   fresh each frame purely from (t, P, drag offsets).
-   Nothing persists across frames except smoothing lerps,
-   so it can never get "stuck" in a bad state.
+   RENDER LOOP
 ═══════════════════════════════════════ */
 var clock = new THREE.Clock();
-var camZ = 12, camY = .4;
+var camZ = 11, camY = .3;
 var rotXSmooth = 0, rotYSmooth = 0;
 
 function animate() {
   requestAnimationFrame(animate);
   var t = clock.getElapsedTime();
 
-  /* Camera — continuous zoom, fully reversible */
+  /* ── BOOT SOLVE PHASE ── */
+  if (!bootComplete) {
+    var globalT = t / bootDuration;
+    var settledCount = 0;
+
+    cubeP.forEach(function (p, i) {
+      var localT = clamp01((t - bootDelays[i]) / .8);
+      var e = easeOutBack(localT);
+      var from = bootStartPos[i], to = bootHomePos[i];
+
+      p.mesh.position.lerpVectors(from.pos, to.pos, Math.min(e, 1));
+      p.mesh.rotation.x = from.rot.x * (1 - Math.min(localT, 1));
+      p.mesh.rotation.y = from.rot.y * (1 - Math.min(localT, 1));
+      p.mesh.rotation.z = from.rot.z * (1 - Math.min(localT, 1));
+
+      if (localT >= 1) settledCount++;
+    });
+
+    var pct = Math.round((settledCount / cubeP.length) * 100);
+    bootPctEl.textContent = pct;
+
+    /* Whole cube slowly rotates while assembling, like it's alive */
+    cubeG.rotation.y = t * .3;
+    cubeG.rotation.x = Math.sin(t * .2) * .1;
+
+    camera.position.set(0, .3, 11);
+    camera.lookAt(0, 0, 0);
+
+    if (settledCount === cubeP.length && globalT > 1) {
+      bootComplete = true;
+      miniG.visible = true;
+      bootPctWrap.style.transition = 'opacity .5s ease';
+      bootPctWrap.style.opacity = '0';
+      setTimeout(function () { bootPctWrap.style.display = 'none'; }, 500);
+      console.log('[JF Portal] Boot-solve complete. Interactive.');
+    }
+
+    renderer.render(scene, camera);
+    return;
+  }
+
+  /* ── NORMAL INTERACTIVE PHASE (post-boot) ── */
   var zoomT = smoothstep(0, .85, P);
-  var targetCamZ = 12 - easeOutCubic(zoomT) * 9.4;   /* 12 → 2.6 */
-  var targetCamY = .4 - zoomT * .4;
+  var targetCamZ = 11 - easeOutCubic(zoomT) * 8.6;
+  var targetCamY = .3 - zoomT * .3;
   camZ += (targetCamZ - camZ) * .07;
   camY += (targetCamY - camY) * .07;
   camera.position.set(0, camY, camZ);
   camera.lookAt(0, 0, 0);
 
-  /* Entrance flourish — decays purely with elapsed time, never re-triggers */
-  var entranceDecay = Math.exp(-t * 1.0);
-  var entranceSpin = entranceDecay * 18;
+  var autoY = t * .12;
+  var autoX = .12 + Math.sin(t * .15) * .05;
+  var spinBoost = easeOutCubic(smoothstep(.1, .45, P)) * Math.PI * 3;
+  var lockT = smoothstep(.4, .78, P);
 
-  /* Auto-rotate (always running) */
-  var autoY = t * .35;
-  var autoX = .22 + Math.sin(t * .18) * .08;
+  var targetRotY = (autoY + spinBoost + dragRotY) * (1 - lockT);
+  var targetRotX = (autoX + dragRotX) * (1 - lockT);
 
-  /* Fast extra spin keyed to scroll — monotonic in P, fully reversible */
-  var spinBoost = easeOutCubic(smoothstep(.12, .50, P)) * Math.PI * 4;
-
-  /* Lock-to-face-forward factor — grows with P, freezes rotation at high P */
-  var lockT = smoothstep(.45, .80, P);
-
-  var targetRotY = (autoY + spinBoost + entranceSpin + dragRotY) * (1 - lockT);
-  var targetRotX = (autoX + entranceDecay * 6 + dragRotX) * (1 - lockT);
-
-  /* Mouse parallax, fades out as we lock in */
-  var parallax = (1 - lockT) * .12;
+  var parallax = (1 - lockT) * .1;
   targetRotY += mouseNX * parallax;
   targetRotX += -mouseNY * parallax * .6;
 
   rotYSmooth += (targetRotY - rotYSmooth) * .09;
   rotXSmooth += (targetRotX - rotXSmooth) * .09;
   cubeG.rotation.set(rotXSmooth, rotYSmooth, 0);
+  cubeG.position.y = Math.sin(t * .5) * .1 * (1 - lockT);
 
-  /* Gentle float, fades out as we lock in */
-  cubeG.position.y = Math.sin(t * .5) * .14 * (1 - lockT);
+  miniG.rotation.y = t * .7;
+  miniG.rotation.x = .25 + Math.sin(t * .45) * .12;
 
-  /* Mini cube — always spins on its own, independent of parent lock */
-  miniG.rotation.y = t * .8;
-  miniG.rotation.x = .3 + Math.sin(t * .5) * .15;
-
-  /* Hover glow on the 9 front tiles */
   navReady = P > .82 && !navigating;
   cubeP.forEach(function (p) {
     if (!p.isFront) return;
-    var tgt = (navReady && p === hovered) ? 1.12 : 1.0;
+    var tgt = (navReady && p === hovered) ? 1.1 : 1.0;
     p.mesh.scale.x += (tgt - p.mesh.scale.x) * .18;
     p.mesh.scale.y += (tgt - p.mesh.scale.y) * .18;
     p.mesh.scale.z += (tgt - p.mesh.scale.z) * .18;
   });
 
-  /* UI */
   hlEl.style.opacity = String(clamp01(1 - P * 7));
-  siEl.style.opacity = String(clamp01(1 - P * 9));
+  siEl.style.opacity = String(clamp01(1 - P * 8));
   if (navReady) chEl.classList.add('show'); else chEl.classList.remove('show');
+  if (!navReady) hidePeeks();
 
-  /* Stars + light pulse */
-  stars.rotation.y = t * .012;
-  lights.rim.intensity = 7.5 + Math.sin(t * 1.2) * 1.4;
-  lights.fill.intensity = 5.0 + Math.cos(t * .9) * 1.0;
+  lights.rim.intensity = 1.4 + Math.sin(t * 1.1) * .3;
+  lights.fill.intensity = .5 + Math.cos(t * .8) * .15;
 
   renderer.render(scene, camera);
 }
@@ -320,8 +460,6 @@ console.log('[JF Portal] Ready.');
 })();
 } catch (fatal) {
   console.error('[JF Portal] FATAL:', fatal);
-  document.querySelector('#jfLoader p').textContent = 'Something went wrong — please refresh';
-  document.getElementById('jfLoader').classList.remove('done');
 }
 }
 </script>
