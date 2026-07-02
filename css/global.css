@@ -72,7 +72,7 @@ button,input,select,textarea{font-family:inherit;border:none;outline:none;backgr
 .foot-links{display:flex;gap:1.5rem;flex-wrap:wrap}.foot-links a{font-size:.78rem;color:var(--mut);transition:color var(--t)}.foot-links a:hover{color:var(--txt)}
 .foot-copy{font-family:var(--fm);font-size:.7rem;color:var(--dim)}
 /* Hero canvas block — used on every inner page */
-.cube-hero{position:relative;height:100vh;overflow:hidden;background:radial-gradient(ellipse 100% 80% at 50% 38%,#8f9599 0%,#6d7276 55%,#45484c 100%)}
+.cube-hero{position:relative;height:100vh;overflow:hidden;background:#000}
 .cube-hero canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .cube-hero-text{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 3.5rem clamp(1.5rem,4vw,4.5rem);background:linear-gradient(to top,rgba(6,6,15,.92) 0%,rgba(6,6,15,.08) 55%,transparent 100%);pointer-events:none}
 .cube-hero-text h1{font-size:clamp(2.4rem,6vw,5rem);font-weight:700;letter-spacing:-.03em;line-height:.95;color:#fff;margin-bottom:.7rem}
