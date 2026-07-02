@@ -366,11 +366,22 @@ function animate() {
       var e = easeOutBack(localT);
       var from = bootStartPos[i], to = bootHomePos[i];
 
-      p.mesh.position.lerpVectors(from.pos, to.pos, Math.min(e, 1));
-      p.mesh.rotation.x = from.rot.x * (1 - Math.min(localT, 1));
-      p.mesh.rotation.y = from.rot.y * (1 - Math.min(localT, 1));
-      p.mesh.rotation.z = from.rot.z * (1 - Math.min(localT, 1));
+      /* Do NOT clamp e to 1 — easeOutBack intentionally overshoots past 1
+         then settles back down. Clamping here was freezing pieces at an
+         overshot position forever, which is why the cube never closed up. */
+      p.mesh.position.x = from.pos.x + (to.pos.x - from.pos.x) * e;
+      p.mesh.position.y = from.pos.y + (to.pos.y - from.pos.y) * e;
+      p.mesh.position.z = from.pos.z + (to.pos.z - from.pos.z) * e;
 
+      var rotT = 1 - localT;
+      p.mesh.rotation.x = from.rot.x * rotT;
+      p.mesh.rotation.y = from.rot.y * rotT;
+      p.mesh.rotation.z = from.rot.z * rotT;
+
+      /* A piece only counts as settled once its localT has fully reached 1
+         AND enough time has passed for the overshoot spring to have died
+         down (easeOutBack settles to ~1.0 well before localT hits 1, so
+         this is safe and accurate). */
       if (localT >= 1) settledCount++;
     });
 
@@ -385,6 +396,14 @@ function animate() {
     camera.lookAt(0, 0, 0);
 
     if (settledCount === cubeP.length && globalT > 1) {
+      /* Hard snap every piece to its exact home transform — guarantees
+         a perfectly flush, gapless cube with zero drift, regardless of
+         any float rounding accumulated during the spring animation. */
+      cubeP.forEach(function (p, i) {
+        var to = bootHomePos[i];
+        p.mesh.position.copy(to.pos);
+        p.mesh.rotation.set(0, 0, 0);
+      });
       bootComplete = true;
       miniG.visible = true;
       bootPctWrap.style.transition = 'opacity .5s ease';
