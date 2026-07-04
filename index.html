@@ -8,21 +8,27 @@
 <link rel="stylesheet" href="css/global.css"/>
 
 <style>
-/* Boot hero — pinned crystal shatter intro, scroll-driven */
+/* Boot hero — pinned WHITE glass-cube intro, scroll-driven */
 #bootWrap{position:relative;height:230vh}
-#bootHero{position:sticky;top:0;height:100vh;overflow:hidden;background:#06060f}
+#bootHero{position:sticky;top:0;height:100vh;overflow:hidden;background:#fbfaff}
+#bootHero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 42%, rgba(123,97,255,.16) 0%, rgba(123,97,255,0) 70%),
+    radial-gradient(ellipse 40% 40% at 85% 80%, rgba(6,182,212,.08) 0%, rgba(6,182,212,0) 70%);
+}
 #bootCube{position:absolute;inset:0;width:100%;height:100%;display:block}
-.boot-veil{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(6,6,15,.92) 0%,rgba(6,6,15,.05) 40%,rgba(6,6,15,0) 65%,rgba(6,6,15,.6) 100%)}
+.boot-veil{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(251,250,255,.96) 0%,rgba(251,250,255,0) 26%,rgba(251,250,255,0) 68%,rgba(251,250,255,.85) 100%)}
 .boot-ui{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(20px,4vw,3rem) clamp(1.25rem,4vw,3rem);pointer-events:none}
 .boot-top{display:flex;align-items:center;justify-content:space-between}
-.boot-mark{font-family:var(--fm);font-size:.72rem;letter-spacing:.16em;color:var(--mut)}
-.boot-mark b{color:var(--txt)}
-.boot-headline h1{font-size:clamp(2.2rem,6vw,4.6rem);font-weight:700;letter-spacing:-.03em;line-height:1;color:#fff;max-width:640px}
-.boot-headline p{color:rgba(255,255,255,.55);font-size:1.02rem;max-width:440px;line-height:1.6;margin-top:1rem}
+.boot-mark{font-family:var(--fm);font-size:.72rem;letter-spacing:.16em;color:#6b6478}
+.boot-mark b{color:#141220}
+.boot-headline h1{font-size:clamp(2.2rem,6vw,4.6rem);font-weight:700;letter-spacing:-.03em;line-height:1;color:#141220;max-width:640px}
+.boot-headline p{color:#5c5468;font-size:1.02rem;max-width:440px;line-height:1.6;margin-top:1rem}
 .boot-bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
-.boot-cue{display:flex;flex-direction:column;align-items:center;gap:10px;font-family:var(--fm);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);transition:opacity .4s ease}
-.boot-cue .stick{width:1px;height:36px;background:linear-gradient(var(--plt),transparent);position:relative;overflow:hidden}
-.boot-cue .stick::after{content:'';position:absolute;left:0;top:-36px;width:100%;height:36px;background:linear-gradient(#fff,transparent);animation:bootCueDrop 1.8s ease-in-out infinite}
+.boot-cue{display:flex;flex-direction:column;align-items:center;gap:10px;font-family:var(--fm);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:#8a819c;transition:opacity .4s ease}
+.boot-cue .stick{width:1px;height:36px;background:linear-gradient(#7B61FF,transparent);position:relative;overflow:hidden}
+.boot-cue .stick::after{content:'';position:absolute;left:0;top:-36px;width:100%;height:36px;background:linear-gradient(#141220,transparent);animation:bootCueDrop 1.8s ease-in-out infinite}
 @keyframes bootCueDrop{0%{transform:translateY(0)}100%{transform:translateY(72px)}}
 
 .sec-title{font-size:clamp(2rem,4.5vw,3.5rem);font-weight:700;letter-spacing:-.025em;line-height:1.08;margin-bottom:1rem}
@@ -41,7 +47,7 @@
       </div>
       <div class="boot-bottom">
         <div class="boot-headline">
-          <div class="eyebrow" style="color:#A78BFA">Interactive Digital Studio</div>
+          <div class="eyebrow" style="color:#7B61FF">Interactive Digital Studio</div>
           <h1>We Build <span class="accent">Intelligent<br/>Experiences.</span></h1>
           <p>Interactive 3D websites, AI automations &amp; bots that don't just look good — they work.</p>
         </div>
@@ -118,17 +124,21 @@
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.15;
+  renderer.setClearColor(0xfbfaff, 1);
 
   var scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x06060f, 0.03);
+  scene.background = new THREE.Color(0xfbfaff);
+  scene.fog = new THREE.Fog(0xfbfaff, 9, 16);
 
-  var camera = new THREE.PerspectiveCamera(40, canvas.clientWidth/canvas.clientHeight, .1, 100);
-  camera.position.set(0, .3, 9.4);
+  var camera = new THREE.PerspectiveCamera(34, canvas.clientWidth/canvas.clientHeight, .1, 100);
+  camera.position.set(0, .25, 8.6);
 
-  var lights = JFCube.addLightsCrystal(scene);
-  JFCube.addStudioBackdrop(scene, { mode: 'crystal' });
-  var solid = JFCube.buildSolid(scene, { size: 2.6, label: 'JF' });
+  var lights = JFCube.addLightsWhite(scene);
+  JFCube.addStudioBackdrop(scene, { mode: 'white' });
+  scene.environment = JFCube.makeStudioEnvMap(renderer);
+
+  var solid = JFCube.buildSolid(scene, { size: 3.3, label: 'JF', mode: 'white' });
   var grp = solid.group;
 
   var clock = new THREE.Clock();
@@ -161,21 +171,21 @@
     var p = scrollP;
 
     /* slow continuous rotation, tilting further as you scroll */
-    grp.rotation.y = t * .28 + p * 2.6 + mouseX * .12;
-    grp.rotation.x = .22 + Math.sin(t * .3) * .06 + p * .5 + mouseY * .08;
-    grp.position.y = Math.sin(t * .45) * .08 - p * .35;
+    grp.rotation.y = t * .26 + p * 2.6 + mouseX * .12;
+    grp.rotation.x = .2 + Math.sin(t * .3) * .06 + p * .5 + mouseY * .08;
+    grp.position.y = Math.sin(t * .45) * .07 - p * .35;
 
     /* dolly + dissolve toward the page content instead of exploding */
-    camera.position.z = 9.4 - p * 4.6;
-    camera.fov = 40 + p * 14;
+    camera.position.z = 8.6 - p * 3.8;
+    camera.fov = 34 + p * 14;
     camera.updateProjectionMatrix();
 
-    lights.rim.intensity = 9 + Math.sin(t * 1.1) * 1.4;
-    lights.fill.intensity = 1.1 + Math.cos(t * .9) * .3;
+    lights.key.intensity = 22 + Math.sin(t * 1.1) * 3;
+    lights.kick.intensity = 10 + Math.cos(t * .8) * 1.6;
 
     var fade = 1 - smoothstep(.75, 1, p);
     grp.visible = fade > .01;
-    solid.mesh.scale.setScalar(1 + p * .4);
+    solid.mesh.scale.setScalar(1 + p * .35);
 
     renderer.render(scene, camera);
   }
