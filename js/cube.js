@@ -409,8 +409,96 @@ window.JFCube = (function () {
     return pieces.find(function (p) { return p.mesh === hits[0].object; }) || null;
   }
 
+  /* ── Etched normal-map texture: a faint "JF" cut into the glass ──
+     Built as a bump/normal map (not a flat color decal) so the mark
+     reads as a real facet cut catching light, not a sticker. */
+  function makeEtchNormalMap(label) {
+    var S = 512;
+    var cv = document.createElement('canvas'); cv.width = S; cv.height = S;
+    var c = cv.getContext('2d');
+
+    /* flat neutral normal (128,128,255) everywhere = "no bump" */
+    c.fillStyle = 'rgb(128,128,255)';
+    c.fillRect(0, 0, S, S);
+
+    /* draw the label as a soft-inset groove: dark halo (recess) with a
+       bright rim on the upper-left (simulated light catching the cut edge) */
+    c.font = '700 ' + Math.floor(S * .34) + 'px "Space Grotesk", sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+
+    c.save();
+    c.translate(1.5, 1.5);
+    c.fillStyle = 'rgb(90,90,255)';
+    c.fillText(label, S / 2, S / 2 + 6);
+    c.restore();
+
+    c.save();
+    c.translate(-1.5, -1.5);
+    c.fillStyle = 'rgb(170,170,255)';
+    c.fillText(label, S / 2, S / 2 + 6);
+    c.restore();
+
+    c.fillStyle = 'rgb(128,128,255)';
+    c.globalAlpha = .55;
+    c.fillText(label, S / 2, S / 2 + 6);
+    c.globalAlpha = 1;
+
+    var tex = new THREE.CanvasTexture(cv);
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  /* ── Single solid glass cube — one continuous volume, no panel grid,
+     no checker seams. "JF" is etched into the front face via a normal
+     map so it catches light as part of the glass rather than sitting
+     on top of it as a decal. ── */
+  function buildSolid(scene, opts) {
+    opts = opts || {};
+    var parent = opts.parent || scene;
+    var size = opts.size || 2.6;
+    var label = opts.label || 'JF';
+
+    var group = new THREE.Group();
+    parent.add(group);
+
+    var geo = new THREE.BoxGeometry(size, size, size, 1, 1, 1);
+
+    var plainGlass = new THREE.MeshPhysicalMaterial({
+      color: 0xcfe6ff,
+      metalness: 0,
+      roughness: .04,
+      transmission: .96,
+      thickness: 1.4,
+      ior: 1.5,
+      iridescence: .35,
+      iridescenceIOR: 1.3,
+      iridescenceThicknessRange: [80, 320],
+      clearcoat: 1,
+      clearcoatRoughness: .03,
+      attenuationColor: new THREE.Color(0x6a5cff),
+      attenuationDistance: 2.2,
+      envMapIntensity: 1.4
+    });
+
+    var etchedGlass = plainGlass.clone();
+    etchedGlass.normalMap = makeEtchNormalMap(label);
+    etchedGlass.normalScale = new THREE.Vector2(.9, .9);
+
+    /* box face order: +x, -x, +y, -y, +z (front), -z */
+    var mats = [plainGlass, plainGlass, plainGlass, plainGlass, etchedGlass, plainGlass];
+
+    var mesh = new THREE.Mesh(geo, mats);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+
+    return { group: group, mesh: mesh, material: plainGlass };
+  }
+
   return {
     build: build,
+    buildSolid: buildSolid,
     addLights: addLights,
     addLightsCrystal: addLightsCrystal,
     addStudioBackdrop: addStudioBackdrop,
