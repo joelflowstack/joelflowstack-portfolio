@@ -96,9 +96,9 @@
   var scene = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(44, canvas.clientWidth/canvas.clientHeight, .1, 100);
   camera.position.set(0, .5, 9); camera.lookAt(0,0,0);
-  var lights = JFCube.addLights(scene);
-  JFCube.addStudioBackdrop(scene);
-  var cube = JFCube.build(scene, []);
+  var lights = JFCube.addLightsCrystal(scene);
+  JFCube.addStudioBackdrop(scene, { mode: 'crystal' });
+  var cube = JFCube.build(scene, [], { mode: 'crystal' });
   var grp = cube.group;
   var clock = new THREE.Clock();
   function animate(){
