@@ -128,27 +128,8 @@
 
   var lights = JFCube.addLightsCrystal(scene);
   JFCube.addStudioBackdrop(scene, { mode: 'crystal' });
-  var cube = JFCube.build(scene, [], { mode: 'crystal' });
-  var grp = cube.group;
-
-  /* Precompute each piece's assembled position + a random explode target,
-     so the whole cube can fracture apart smoothly as the user scrolls. */
-  var targets = cube.pieces.map(function(p){
-    var assembled = p.mesh.position.clone();
-    var dir = assembled.clone();
-    if (dir.lengthSq() < 0.0001) dir.set(Math.random()-.5, Math.random()-.5, Math.random()-.5);
-    dir.normalize();
-    var dist = 4 + Math.random() * 7;
-    var exploded = assembled.clone()
-      .add(dir.multiplyScalar(dist))
-      .add(new THREE.Vector3((Math.random()-.5)*2.2, (Math.random()-.5)*2.2, (Math.random()-.5)*2.2));
-    return {
-      assembled: assembled,
-      exploded: exploded,
-      axis: new THREE.Vector3(Math.random()-.5, Math.random()-.5, Math.random()-.5).normalize(),
-      speed: .4 + Math.random() * 1.2
-    };
-  });
+  var solid = JFCube.buildSolid(scene, { size: 2.6, label: 'JF' });
+  var grp = solid.group;
 
   var clock = new THREE.Clock();
   var scrollP = 0;
@@ -166,35 +147,35 @@
   window.addEventListener('scroll', computeScroll, { passive: true });
   computeScroll();
 
-  function easeInCubic(x){ return x*x*x; }
   function smoothstep(a,b,x){ var t = Math.min(1, Math.max(0, (x-a)/(b-a))); return t*t*(3-2*t); }
+
+  var mouseX = 0, mouseY = 0;
+  window.addEventListener('pointermove', function(e){
+    mouseX = (e.clientX / window.innerWidth - .5) * 2;
+    mouseY = (e.clientY / window.innerHeight - .5) * 2;
+  }, { passive: true });
 
   function animate(){
     requestAnimationFrame(animate);
     var t = clock.getElapsedTime();
     var p = scrollP;
-    var eased = easeInCubic(p);
 
-    cube.pieces.forEach(function(piece, i){
-      var tg = targets[i];
-      piece.mesh.position.lerpVectors(tg.assembled, tg.exploded, eased);
-      var spin = t * tg.speed * (0.25 + p * 1.5);
-      piece.mesh.rotation.set(tg.axis.x*spin, tg.axis.y*spin, tg.axis.z*spin);
-    });
+    /* slow continuous rotation, tilting further as you scroll */
+    grp.rotation.y = t * .28 + p * 2.6 + mouseX * .12;
+    grp.rotation.x = .22 + Math.sin(t * .3) * .06 + p * .5 + mouseY * .08;
+    grp.position.y = Math.sin(t * .45) * .08 - p * .35;
 
-    grp.rotation.y = t * .22 + p * 2.2;
-    grp.rotation.x = .18 + Math.sin(t*.28)*.07 + p * .4;
-    grp.position.y = Math.sin(t*.4)*.1 - p * .3;
-
-    lights.rim.intensity = 9 + Math.sin(t*1.1)*1.4;
-    lights.fill.intensity = 1.1 + Math.cos(t*.9)*.3;
-
-    camera.position.z = 9.4 - p * 3.2;
-    camera.fov = 40 + p * 9;
+    /* dolly + dissolve toward the page content instead of exploding */
+    camera.position.z = 9.4 - p * 4.6;
+    camera.fov = 40 + p * 14;
     camera.updateProjectionMatrix();
 
-    var fade = 1 - smoothstep(.8, 1, p);
+    lights.rim.intensity = 9 + Math.sin(t * 1.1) * 1.4;
+    lights.fill.intensity = 1.1 + Math.cos(t * .9) * .3;
+
+    var fade = 1 - smoothstep(.75, 1, p);
     grp.visible = fade > .01;
+    solid.mesh.scale.setScalar(1 + p * .4);
 
     renderer.render(scene, camera);
   }
