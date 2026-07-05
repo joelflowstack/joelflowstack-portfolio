@@ -44,6 +44,15 @@ import * as THREE from "three";
 
   function init() {
     if (!canvas) return;
+    try {
+      run();
+    } catch (err) {
+      console.error("[cube.js] failed to initialize — check that assets/cube-video.mp4 " +
+        "and the three.js CDN import both loaded (see Network tab):", err);
+    }
+  }
+
+  function run() {
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -62,8 +71,15 @@ import * as THREE from "three";
     );
     camera.position.set(0, 0.15, 7.6);
 
-    /* ── neutral studio environment (for glass reflections) ─────────────── */
-    scene.environment = makeStudioEnv();
+    /* ── neutral studio environment (for glass reflections) ──────────────
+       Wrapped defensively: on a handful of GPUs, PMREMGenerator can throw.
+       If it does, the cube still renders — just without env reflections —
+       instead of the whole scene silently failing to appear. */
+    try {
+      scene.environment = makeStudioEnv();
+    } catch (err) {
+      console.warn("[cube.js] environment map skipped:", err);
+    }
 
     /* ── neutral white studio lights — fixed, never altered by interaction ── */
     scene.add(new THREE.AmbientLight(CONFIG.ambientColor, 1.5));
@@ -84,9 +100,22 @@ import * as THREE from "three";
     video = document.createElement("video");
     video.src = CONFIG.videoSrc;
     video.muted = true;
+    video.setAttribute("muted", "");
     video.loop = true;
     video.playsInline = true;
+    video.setAttribute("playsinline", "");
     video.autoplay = true;
+    video.crossOrigin = "anonymous";
+    // Some mobile browsers (notably iOS Safari) only reliably decode video
+    // used as a WebGL texture if the element is actually attached to the
+    // DOM. Keep it fully hidden but present, rather than detached in memory.
+    video.style.position = "fixed";
+    video.style.width = "1px";
+    video.style.height = "1px";
+    video.style.opacity = "0";
+    video.style.pointerEvents = "none";
+    document.body.appendChild(video);
+
     video.play().catch(() => {
       const resume = () => { video.play(); window.removeEventListener("pointerdown", resume); };
       window.addEventListener("pointerdown", resume, { once: true });
