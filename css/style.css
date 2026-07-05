@@ -36,6 +36,7 @@
 
 *{ box-sizing: border-box; }
 html{ scroll-behavior: smooth; }
+@view-transition{ navigation: auto; }
 ::selection{ background: var(--blue); color: #fff; }
 
 body{
