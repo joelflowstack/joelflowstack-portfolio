@@ -1,204 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Joel Flowstack — 3D Websites, AI Automations &amp; Bots</title>
-<meta name="description" content="Joel Flowstack builds interactive 3D websites, AI chatbots and agents, and bots deployed across Discord, Telegram and WhatsApp."/>
-<link rel="stylesheet" href="css/global.css"/>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Joel Flowstack — Intelligent Websites & AI Automation</title>
+<meta name="description" content="Joel Flowstack designs 3D interactive websites, AI chatbots, and automation systems that save time, scale systems, and grow businesses." />
+<meta property="og:title" content="Joel Flowstack — Build. Automate. Scale." />
+<meta property="og:description" content="Intelligent websites, AI automation, and bot systems, built by one studio." />
+<meta property="og:image" content="assets/logo.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="assets/logo.png" />
 
-<style>
-/* Boot hero — pinned WHITE glass-cube intro, scroll-driven */
-#bootWrap{position:relative;height:230vh}
-#bootHero{position:sticky;top:0;height:100vh;overflow:hidden;background:#fbfaff}
-#bootHero::before{
-  content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
-  background:
-    radial-gradient(ellipse 60% 55% at 50% 42%, rgba(123,97,255,.16) 0%, rgba(123,97,255,0) 70%),
-    radial-gradient(ellipse 40% 40% at 85% 80%, rgba(6,182,212,.08) 0%, rgba(6,182,212,0) 70%);
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+  }
 }
-#bootCube{position:absolute;inset:0;width:100%;height:100%;display:block}
-.boot-veil{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(251,250,255,.96) 0%,rgba(251,250,255,0) 26%,rgba(251,250,255,0) 68%,rgba(251,250,255,.85) 100%)}
-.boot-ui{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(20px,4vw,3rem) clamp(1.25rem,4vw,3rem);pointer-events:none}
-.boot-top{display:flex;align-items:center;justify-content:space-between}
-.boot-mark{font-family:var(--fm);font-size:.72rem;letter-spacing:.16em;color:#6b6478}
-.boot-mark b{color:#141220}
-.boot-headline h1{font-size:clamp(2.2rem,6vw,4.6rem);font-weight:700;letter-spacing:-.03em;line-height:1;color:#141220;max-width:640px}
-.boot-headline p{color:#5c5468;font-size:1.02rem;max-width:440px;line-height:1.6;margin-top:1rem}
-.boot-bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
-.boot-cue{display:flex;flex-direction:column;align-items:center;gap:10px;font-family:var(--fm);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:#8a819c;transition:opacity .4s ease}
-.boot-cue .stick{width:1px;height:36px;background:linear-gradient(#7B61FF,transparent);position:relative;overflow:hidden}
-.boot-cue .stick::after{content:'';position:absolute;left:0;top:-36px;width:100%;height:36px;background:linear-gradient(#141220,transparent);animation:bootCueDrop 1.8s ease-in-out infinite}
-@keyframes bootCueDrop{0%{transform:translateY(0)}100%{transform:translateY(72px)}}
-
-.sec-title{font-size:clamp(2rem,4.5vw,3.5rem);font-weight:700;letter-spacing:-.025em;line-height:1.08;margin-bottom:1rem}
-</style>
-</head>
-<body>
-
-<div id="bootWrap">
-  <div id="bootHero">
-    <canvas id="bootCube"></canvas>
-    <div class="boot-veil"></div>
-    <div class="boot-ui">
-      <div class="boot-top">
-        <div class="boot-mark"><b>JOEL FLOWSTACK</b> — STUDIO</div>
-        <div class="boot-mark">3D WEB / AI AGENTS / BOTS</div>
-      </div>
-      <div class="boot-bottom">
-        <div class="boot-headline">
-          <div class="eyebrow" style="color:#7B61FF">Interactive Digital Studio</div>
-          <h1>We Build <span class="accent">Intelligent<br/>Experiences.</span></h1>
-          <p>Interactive 3D websites, AI automations &amp; bots that don't just look good — they work.</p>
-        </div>
-        <div class="boot-cue" id="bootCue">
-          <span>Scroll</span>
-          <div class="stick"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="marq"><div class="marq-track"><span>3D Websites</span><span class="dot">✦</span><span>AI Automations</span><span class="dot">✦</span><span>Discord Bots</span><span class="dot">✦</span><span>Telegram Bots</span><span class="dot">✦</span><span>WhatsApp Bots</span><span class="dot">✦</span><span>n8n Workflows</span><span class="dot">✦</span><span>Bot Integrations</span><span class="dot">✦</span><span>Built to Scale</span><span class="dot">✦</span><span>3D Websites</span><span class="dot">✦</span><span>AI Automations</span><span class="dot">✦</span><span>Discord Bots</span><span class="dot">✦</span><span>Telegram Bots</span><span class="dot">✦</span><span>WhatsApp Bots</span><span class="dot">✦</span><span>n8n Workflows</span><span class="dot">✦</span><span>Bot Integrations</span><span class="dot">✦</span><span>Built to Scale</span><span class="dot">✦</span></div></div>
-
-<section class="section" style="background:var(--bg2)">
-  <div class="container" style="display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center">
-    <div class="reveal">
-      <div class="eyebrow">Live Demo</div>
-      <h2 class="sec-title">Watch bots &amp;<br/><span class="accent">automations in action.</span></h2>
-      <p style="color:var(--mut);line-height:1.75;margin-bottom:1rem">A real system built by Joel Flowstack — bots integrated directly into websites, Discord communities, Telegram groups and more.</p>
-      <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.75rem">
-        <span style="padding:.35rem .85rem;border-radius:50px;background:rgba(123,97,255,.12);border:1px solid rgba(123,97,255,.22);font-size:.8rem;color:var(--plt)">Discord Bots</span>
-        <span style="padding:.35rem .85rem;border-radius:50px;background:rgba(123,97,255,.12);border:1px solid rgba(123,97,255,.22);font-size:.8rem;color:var(--plt)">Telegram Bots</span>
-        <span style="padding:.35rem .85rem;border-radius:50px;background:rgba(123,97,255,.12);border:1px solid rgba(123,97,255,.22);font-size:.8rem;color:var(--plt)">WhatsApp Bots</span>
-        <span style="padding:.35rem .85rem;border-radius:50px;background:rgba(123,97,255,.12);border:1px solid rgba(123,97,255,.22);font-size:.8rem;color:var(--plt)">Website Chatbots</span>
-        <span style="padding:.35rem .85rem;border-radius:50px;background:rgba(123,97,255,.12);border:1px solid rgba(123,97,255,.22);font-size:.8rem;color:var(--plt)">AI Agents</span>
-      </div>
-      <a href="pages/services.html" class="btn btn-p">Explore Services →</a>
-    </div>
-    <div class="reveal d2">
-      <div style="border-radius:16px;overflow:hidden;border:1px solid var(--bdr);position:relative">
-        <video autoplay muted loop playsinline style="width:100%;display:block"><source src="assets/demo.mp4" type="video/mp4"/></video>
-        <div style="position:absolute;bottom:1rem;left:1rem;background:rgba(123,97,255,.88);backdrop-filter:blur(10px);padding:.45rem 1rem;border-radius:50px;font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:#fff;font-weight:700">🤖 Bot Demo — Live Build</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section" style="background:var(--bg)">
-  <div class="container">
-    <div style="text-align:center;margin-bottom:3.5rem" class="reveal">
-      <div class="eyebrow" style="justify-content:center">Core Skills</div>
-      <h2 class="sec-title">Every bot. <span class="accent">Every platform.</span></h2>
-      <p style="color:var(--mut);max-width:500px;margin:.75rem auto 0;line-height:1.7">If it has an API, it can have a bot. From community management to full AI automation pipelines.</p>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem">
-      <div class="card reveal d1" style="padding:1.75rem 1.5rem"><div style="width:42px;height:42px;border-radius:10px;background:rgba(88,101,242,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem">💬</div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem">Discord Bots</h3><p style="font-size:.87rem;color:var(--mut);line-height:1.6">Moderation, economy, tickets, leveling — fully custom to your server.</p></div>
-      <div class="card reveal d2" style="padding:1.75rem 1.5rem"><div style="width:42px;height:42px;border-radius:10px;background:rgba(42,171,238,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem">✈️</div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem">Telegram Bots</h3><p style="font-size:.87rem;color:var(--mut);line-height:1.6">Group management, broadcasts, payments, AI-powered conversations.</p></div>
-      <div class="card reveal d3" style="padding:1.75rem 1.5rem"><div style="width:42px;height:42px;border-radius:10px;background:rgba(37,211,102,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem">📱</div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem">WhatsApp Bots</h3><p style="font-size:.87rem;color:var(--mut);line-height:1.6">Support flows, booking, order tracking, lead qualification.</p></div>
-      <div class="card reveal d1" style="padding:1.75rem 1.5rem"><div style="width:42px;height:42px;border-radius:10px;background:rgba(123,97,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem">🌐</div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem">Website Chatbots</h3><p style="font-size:.87rem;color:var(--mut);line-height:1.6">Embedded AI assistants trained on your content and brand.</p></div>
-      <div class="card reveal d2" style="padding:1.75rem 1.5rem"><div style="width:42px;height:42px;border-radius:10px;background:rgba(6,182,212,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem">⚙️</div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem">Workflow Bots</h3><p style="font-size:.87rem;color:var(--mut);line-height:1.6">n8n, Make.com automations connecting your entire stack.</p></div>
-      <div class="card reveal d3" style="padding:1.75rem 1.5rem"><div style="width:42px;height:42px;border-radius:10px;background:rgba(236,72,153,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.1rem">🤖</div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem">AI Agents</h3><p style="font-size:.87rem;color:var(--mut);line-height:1.6">Autonomous agents powered by OpenAI or Claude — multi-step reasoning.</p></div>
-    </div>
-  </div>
-</section>
-
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;padding:3.5rem 2rem;max-width:1160px;margin:0 auto">
-  <div style="text-align:center;padding:2rem 1rem;background:var(--surf);border:1px solid var(--bdr);border-radius:16px" class="reveal d1"><span style="display:block;font-size:2.8rem;font-weight:700;line-height:1;margin-bottom:.3rem">50<span class="accent">+</span></span><span style="font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)">Projects</span></div>
-  <div style="text-align:center;padding:2rem 1rem;background:var(--surf);border:1px solid var(--bdr);border-radius:16px" class="reveal d2"><span style="display:block;font-size:2.8rem;font-weight:700;line-height:1;margin-bottom:.3rem">6</span><span style="font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)">Bot Platforms</span></div>
-  <div style="text-align:center;padding:2rem 1rem;background:var(--surf);border:1px solid var(--bdr);border-radius:16px" class="reveal d3"><span style="display:block;font-size:2.8rem;font-weight:700;line-height:1;margin-bottom:.3rem">3D</span><span style="font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)">Web Experiences</span></div>
-  <div style="text-align:center;padding:2rem 1rem;background:var(--surf);border:1px solid var(--bdr);border-radius:16px" class="reveal d4"><span style="display:block;font-size:2.8rem;font-weight:700;line-height:1;margin-bottom:.3rem">∞</span><span style="font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)">Automations</span></div>
-</div>
-
-<div class="cta-band"><div class="container cta-row"><div class="reveal"><div class="eyebrow">Ready?</div><h2>Let's build something <span class="accent">extraordinary.</span></h2></div><a href="pages/contact.html" class="btn btn-p reveal">Start a Project →</a></div></div>
-
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
-<script src="js/cube.js"></script>
-<script src="js/shared.js"></script>
-<script>
-(function(){
-  var canvas = document.getElementById('bootCube');
-  var renderer = new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:false});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
-  renderer.setClearColor(0xfbfaff, 1);
-
-  var scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xfbfaff);
-  scene.fog = new THREE.Fog(0xfbfaff, 9, 16);
-
-  var camera = new THREE.PerspectiveCamera(34, canvas.clientWidth/canvas.clientHeight, .1, 100);
-  camera.position.set(0, .25, 8.6);
-
-  var lights = JFCube.addLightsWhite(scene);
-  JFCube.addStudioBackdrop(scene, { mode: 'white' });
-  scene.environment = JFCube.makeStudioEnvMap(renderer);
-
-  var solid = JFCube.buildSolid(scene, { size: 3.3, label: 'JF', mode: 'white' });
-  var grp = solid.group;
-
-  var clock = new THREE.Clock();
-  var scrollP = 0;
-  var bootWrap = document.getElementById('bootWrap');
-  var bootCue = document.getElementById('bootCue');
-
-  function computeScroll(){
-    var rect = bootWrap.getBoundingClientRect();
-    var total = bootWrap.offsetHeight - window.innerHeight;
-    var scrolled = -rect.top;
-    var p = total > 0 ? scrolled / total : 0;
-    scrollP = Math.min(1, Math.max(0, p));
-    bootCue.style.opacity = scrollP > .04 ? '0' : '1';
-  }
-  window.addEventListener('scroll', computeScroll, { passive: true });
-  computeScroll();
-
-  function smoothstep(a,b,x){ var t = Math.min(1, Math.max(0, (x-a)/(b-a))); return t*t*(3-2*t); }
-
-  var mouseX = 0, mouseY = 0;
-  window.addEventListener('pointermove', function(e){
-    mouseX = (e.clientX / window.innerWidth - .5) * 2;
-    mouseY = (e.clientY / window.innerHeight - .5) * 2;
-  }, { passive: true });
-
-  function animate(){
-    requestAnimationFrame(animate);
-    var t = clock.getElapsedTime();
-    var p = scrollP;
-
-    /* slow continuous rotation, tilting further as you scroll */
-    grp.rotation.y = t * .26 + p * 2.6 + mouseX * .12;
-    grp.rotation.x = .2 + Math.sin(t * .3) * .06 + p * .5 + mouseY * .08;
-    grp.position.y = Math.sin(t * .45) * .07 - p * .35;
-
-    /* dolly + dissolve toward the page content instead of exploding */
-    camera.position.z = 8.6 - p * 3.8;
-    camera.fov = 34 + p * 14;
-    camera.updateProjectionMatrix();
-
-    lights.key.intensity = 22 + Math.sin(t * 1.1) * 3;
-    lights.kick.intensity = 10 + Math.cos(t * .8) * 1.6;
-
-    var fade = 1 - smoothstep(.75, 1, p);
-    grp.visible = fade > .01;
-    solid.mesh.scale.setScalar(1 + p * .35);
-
-    renderer.render(scene, camera);
-  }
-  animate();
-
-  window.addEventListener('resize', function(){
-    renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-    camera.aspect = canvas.clientWidth/canvas.clientHeight;
-    camera.updateProjectionMatrix();
-  });
-})();
 </script>
+</head>
+<body data-cube="center">
 
-<script src="js/flowbot.js"></script>
+<div id="loader">
+  <div class="loader-inner">
+    <div class="loader-jf">JF</div>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <p class="loader-text">Initializing Experience</p>
+  </div>
+</div>
+
+<canvas id="cube-canvas"></canvas>
+<div class="bg-veil"></div>
+<div class="grain"></div>
+
+<div data-include="partials/nav.html"></div>
+
+<main>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <div class="hero-badge glass" data-hero-in>
+          <span class="eyebrow">Web · Bots · Automation</span>
+        </div>
+        <h1 data-hero-in>We build <span class="accent">intelligent</span><br />websites &amp; automations</h1>
+        <p class="hero-sub" data-hero-in>
+          One studio, end to end: 3D interactive websites, AI chat &amp; support bots across Discord, Telegram and WhatsApp, and n8n workflows that connect your apps, APIs and databases.
+        </p>
+        <div class="hero-ctas" data-hero-in>
+          <a href="contact.html" class="btn btn-primary">Start a project <span class="btn-arrow">→</span></a>
+          <a href="work.html" class="btn btn-ghost">See the work</a>
+        </div>
+        <div class="hero-stats" data-hero-in>
+          <div class="hero-stat"><b data-count="40" data-suffix="+">0</b><span>Systems shipped</span></div>
+          <div class="hero-stat"><b data-count="3" data-suffix="+">0</b><span>Years building</span></div>
+          <div class="hero-stat"><b data-count="12" data-suffix="+">0</b><span>Platforms integrated</span></div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-visual-frame"></div>
+      </div>
+    </div>
+    <div class="scroll-indicator" id="scroll-indicator">
+      <span>Scroll</span>
+      <div class="line"></div>
+    </div>
+  </section>
+
+  <!-- ============ MARQUEE ============ -->
+  <section style="padding:40px 0;">
+    <div class="container" style="text-align:center;margin-bottom:26px;">
+      <span class="crumb">Powering platforms &amp; communities</span>
+    </div>
+    <div class="marquee-wrap">
+      <div class="marquee">
+        <span class="marquee-item"><i></i>Discord</span>
+        <span class="marquee-item"><i></i>Telegram</span>
+        <span class="marquee-item"><i></i>WhatsApp</span>
+        <span class="marquee-item"><i></i>YouTube</span>
+        <span class="marquee-item"><i></i>Instagram</span>
+        <span class="marquee-item"><i></i>TikTok</span>
+        <span class="marquee-item"><i></i>Shopify</span>
+        <span class="marquee-item"><i></i>Gmail</span>
+        <span class="marquee-item"><i></i>Notion</span>
+        <span class="marquee-item"><i></i>n8n</span>
+        <span class="marquee-item"><i></i>Discord</span>
+        <span class="marquee-item"><i></i>Telegram</span>
+        <span class="marquee-item"><i></i>WhatsApp</span>
+        <span class="marquee-item"><i></i>YouTube</span>
+        <span class="marquee-item"><i></i>Instagram</span>
+        <span class="marquee-item"><i></i>TikTok</span>
+        <span class="marquee-item"><i></i>Shopify</span>
+        <span class="marquee-item"><i></i>Gmail</span>
+        <span class="marquee-item"><i></i>Notion</span>
+        <span class="marquee-item"><i></i>n8n</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SERVICES OVERVIEW ============ -->
+  <section id="services">
+    <div class="container">
+      <div class="section-header" data-reveal>
+        <span class="eyebrow">What I build</span>
+        <h2>Three disciplines, one integrated system</h2>
+        <p>Every engagement draws from the same toolkit — so your site, your bots, and your workflows all speak to each other.</p>
+      </div>
+      <div class="grid-3">
+        <div class="card glass" data-reveal>
+          <div class="card-icon">◧</div>
+          <h3>Web Development</h3>
+          <p>Modern, responsive, 3D-interactive websites built to convert — deployed straight from GitHub to Vercel.</p>
+          <div class="tag-row"><span class="tag">Three.js</span><span class="tag">Next.js</span><span class="tag">Vercel</span></div>
+        </div>
+        <div class="card glass" data-reveal>
+          <div class="card-icon">◈</div>
+          <h3>Bot Automation</h3>
+          <p>Chat, support and engagement bots across Discord, Telegram and WhatsApp — built to moderate, convert and assist 24/7.</p>
+          <div class="tag-row"><span class="tag">Discord</span><span class="tag">WhatsApp</span><span class="tag">Groq</span></div>
+        </div>
+        <div class="card glass" data-reveal>
+          <div class="card-icon">◫</div>
+          <h3>Workflow Creation</h3>
+          <p>End-to-end n8n automations that connect your apps, APIs and databases — so busywork disappears.</p>
+          <div class="tag-row"><span class="tag">n8n</span><span class="tag">Webhooks</span><span class="tag">APIs</span></div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:44px;" data-reveal>
+        <a href="services.html" class="btn btn-ghost">Explore all services <span class="btn-arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WORK PREVIEW ============ -->
+  <section id="work">
+    <div class="container">
+      <div class="section-header" data-reveal>
+        <span class="eyebrow">Selected work</span>
+        <h2>Systems built to demo themselves</h2>
+        <p>A sample of recent builds — full case studies live on the Work page.</p>
+      </div>
+    </div>
+    <div class="container" style="display:flex;flex-direction:column;gap:22px;">
+      <div class="work-item glass" data-reveal>
+        <div class="work-media"><img src="assets/work-1.jpg" alt="Flow V3 AI chatbot" /></div>
+        <div class="work-body">
+          <span class="eyebrow">AI Product</span>
+          <h3>Flow V3 — AI Chat &amp; Screen Control</h3>
+          <p>A Vercel-hosted assistant with a Chrome extension for gesture-based screen control, backed by Groq's Llama 3.3 70B.</p>
+          <div class="work-meta"><span class="tag">Groq</span><span class="tag">MediaPipe</span><span class="tag">Chrome Ext.</span></div>
+        </div>
+      </div>
+      <div class="work-item reverse glass" data-reveal>
+        <div class="work-media"><img src="assets/work-2.jpg" alt="Product Motion Lab" /></div>
+        <div class="work-body">
+          <span class="eyebrow">Content Brand</span>
+          <h3>Product Motion Lab</h3>
+          <p>Luxury AI-generated product motion videos — scroll-stopping ads produced end-to-end with AI video pipelines.</p>
+          <div class="work-meta"><span class="tag">AI Video</span><span class="tag">TikTok</span><span class="tag">Ads</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="container" style="text-align:center;margin-top:44px;" data-reveal>
+      <a href="work.html" class="btn btn-primary">View full portfolio <span class="btn-arrow">→</span></a>
+    </div>
+  </section>
+
+  <!-- ============ QUOTE ============ -->
+  <section>
+    <div class="container">
+      <div class="quote-block glass" data-reveal>
+        <p>"Every project is both a working product and a portfolio signal — if it can't demo itself, it isn't finished."</p>
+        <div class="quote-attr">— Joel, on how Joel Flowstack builds</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CTA ============ -->
+  <section>
+    <div class="container">
+      <div class="cta-band glass" data-reveal>
+        <span class="eyebrow">Let's build</span>
+        <h2 style="margin-top:14px;">Have a system in mind?</h2>
+        <p>Tell me what's slow, manual, or missing — I'll tell you what to automate first.</p>
+        <a href="contact.html" class="btn btn-primary">Start a project <span class="btn-arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div data-include="partials/footer.html"></div>
+
+<script type="module" src="js/cube.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>

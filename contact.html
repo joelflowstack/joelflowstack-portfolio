@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contact — Joel Flowstack</title>
+<meta name="description" content="Start a project with Joel Flowstack — 3D websites, AI bots, and automation workflows." />
+<link rel="icon" href="assets/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body data-cube="corner">
+
+<div id="loader">
+  <div class="loader-inner">
+    <div class="loader-jf">JF</div>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <p class="loader-text">Initializing Experience</p>
+  </div>
+</div>
+
+<canvas id="cube-canvas"></canvas>
+<div class="bg-veil"></div>
+<div class="grain"></div>
+
+<div data-include="partials/nav.html"></div>
+
+<main>
+  <section class="page-hero" style="min-height:40vh;">
+    <div class="container">
+      <span class="crumb">Home / <b>Contact</b></span>
+      <span class="eyebrow" style="margin-top:18px;display:inline-flex;">Let's talk</span>
+      <h1>Tell me what you're building</h1>
+      <p class="lead">Reply within 24 hours. The more specific the ask, the faster I can scope it.</p>
+    </div>
+  </section>
+
+  <section style="padding-top:0;">
+    <div class="container contact-grid">
+      <div data-reveal>
+        <div class="contact-info-item">
+          <div class="ci-icon">✉</div>
+          <div><b>Email</b><span>joelflowstack@gmail.com</span></div>
+        </div>
+        <div class="contact-info-item">
+          <div class="ci-icon">𝕏</div>
+          <div><b>X (Twitter)</b><span>@JoelFlowstack</span></div>
+        </div>
+        <div class="contact-info-item">
+          <div class="ci-icon">◎</div>
+          <div><b>Instagram &amp; TikTok</b><span>@JoelFlowstack</span></div>
+        </div>
+        <div class="contact-info-item">
+          <div class="ci-icon">⏱</div>
+          <div><b>Response time</b><span>Within 24 hours, most days sooner</span></div>
+        </div>
+        <div class="social-row">
+          <a href="https://x.com/JoelFlowstack" target="_blank" rel="noopener" aria-label="X">𝕏</a>
+          <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram">◎</a>
+          <a href="https://youtube.com" target="_blank" rel="noopener" aria-label="YouTube">▶</a>
+          <a href="mailto:joelflowstack@gmail.com" aria-label="Email">✉</a>
+        </div>
+      </div>
+
+      <div class="glass form" data-reveal>
+        <!-- Replace YOUR_FORM_ID with your Formspree endpoint -->
+        <form id="contact-form" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+          <div class="form-row">
+            <div class="field">
+              <label for="name">Name</label>
+              <input type="text" id="name" name="name" required />
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" required />
+            </div>
+          </div>
+          <div class="field">
+            <label for="service">What do you need?</label>
+            <select id="service" name="service">
+              <option>3D Website</option>
+              <option>AI Bot / Automation</option>
+              <option>n8n Workflow</option>
+              <option>Something else</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="message">Project details</label>
+            <textarea id="message" name="message" required placeholder="What's slow, manual, or missing right now?"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Send message</button>
+          <p id="form-status" style="margin-top:16px;font-size:13.5px;"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div data-include="partials/footer.html"></div>
+
+<script type="module" src="js/cube.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
