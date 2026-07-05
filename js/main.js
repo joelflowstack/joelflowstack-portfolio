@@ -169,7 +169,7 @@
       btn.disabled = true;
 
       try {
-        const res = await fetch(form.action, {
+        const res = await fetch(form.getAttribute("data-ajax-action") || form.action, {
           method: "POST",
           body: new FormData(form),
           headers: { Accept: "application/json" },
