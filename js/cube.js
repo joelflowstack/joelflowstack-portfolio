@@ -1,18 +1,20 @@
 /**
  * JOEL FLOWSTACK — cube.js
- * The glass cube with the supplied circuit video playing across its faces.
- * On index.html it drives a pinned scroll intro (cube fills the screen,
- * then shrinks/settles into a corner as the page content rises over it).
- * On every other page it sits quietly in the corner, same material, same
- * lighting — one continuous object site-wide.
+ * A glass cube with a procedurally-generated "circuit crystal" core — no
+ * video, no stock footage, no watermark. The circuit pattern is drawn on
+ * canvas at runtime (see makeCircuitTexture) in the site's own cyan/violet
+ * palette. On index.html it drives a pinned scroll intro (cube fills the
+ * screen, then shrinks/settles into a corner as the page content rises
+ * over it). On every other page it sits quietly in the corner, same
+ * material, same lighting — one continuous object site-wide.
  *
  * RULE: interaction only ever changes TRANSFORM — never color, material,
  * or lighting.
  *
  * DIAGNOSTICS: if you see the background gradient but no cube, open
  * DevTools → Console. This file logs a clear [cube.js] message for every
- * failure mode (WebGL unavailable, video 404, three.js not loaded) instead
- * of failing silently — copy that message back if you need help.
+ * failure mode (WebGL unavailable, three.js not loaded) instead of failing
+ * silently — copy that message back if you need help.
  */
 
 import * as THREE from "three";
@@ -23,7 +25,6 @@ import * as THREE from "three";
   const canvas = document.getElementById("cube-canvas");
 
   const CONFIG = {
-    videoSrc: "assets/cube-video.mp4",
     glassColor: 0xeef2ff,
     ambientColor: 0xffffff,
     keyLightColor: 0xbcd4ff,
@@ -37,7 +38,6 @@ import * as THREE from "three";
   };
 
   let renderer, scene, camera, cubeGroup, core, shell, edges, shadowMesh;
-  let video, videoTexture;
   let targetX = 0, targetY = 0, curX = 0, curY = 0;
   let clock = new THREE.Clock();
   let elapsed = 0;
@@ -100,37 +100,32 @@ import * as THREE from "three";
     top.position.set(0, 4.5, 2);
     scene.add(top);
 
-    video = document.createElement("video");
-    video.src = CONFIG.videoSrc;
-    video.muted = true;
-    video.setAttribute("muted", "");
-    video.loop = true;
-    video.playsInline = true;
-    video.setAttribute("playsinline", "");
-    video.autoplay = true;
-    video.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;";
-    document.body.appendChild(video);
-
-    video.addEventListener("error", () => {
-      showFallback("assets/cube-video.mp4 failed to load (404 or bad path) — the cube will show as plain glass without its video core.");
-    });
-    video.play().catch(() => {
-      const resume = () => { video.play(); window.removeEventListener("pointerdown", resume); };
-      window.addEventListener("pointerdown", resume, { once: true });
-    });
-
-    videoTexture = new THREE.VideoTexture(video);
-    videoTexture.colorSpace = THREE.SRGBColorSpace;
-    videoTexture.minFilter = THREE.LinearFilter;
-    videoTexture.magFilter = THREE.LinearFilter;
-
     cubeGroup = new THREE.Group();
     scene.add(cubeGroup);
 
+    // ── procedural circuit-crystal core ─────────────────────────────────
+    // No video, no stock footage, no watermark — the "chip inside glass"
+    // look from the reference is rebuilt from scratch as drawn canvas
+    // textures (PCB-style traces + nested via squares), one per cube face,
+    // in the site's own cyan/violet palette. A handful of "trace nodes"
+    // pulse on a slow interval for a powered-circuit feel.
+    const faceTextures = [0, 1, 2].map((i) => makeCircuitTexture(i));
     const coreGeo = new THREE.BoxGeometry(CONFIG.coreSize, CONFIG.coreSize, CONFIG.coreSize);
-    const coreMat = new THREE.MeshBasicMaterial({ map: videoTexture, toneMapped: false });
-    core = new THREE.Mesh(coreGeo, coreMat);
+    const coreMats = [
+      new THREE.MeshBasicMaterial({ map: faceTextures[0].texture, toneMapped: false }),
+      new THREE.MeshBasicMaterial({ map: faceTextures[0].texture, toneMapped: false }),
+      new THREE.MeshBasicMaterial({ map: faceTextures[1].texture, toneMapped: false }),
+      new THREE.MeshBasicMaterial({ map: faceTextures[1].texture, toneMapped: false }),
+      new THREE.MeshBasicMaterial({ map: faceTextures[2].texture, toneMapped: false }),
+      new THREE.MeshBasicMaterial({ map: faceTextures[2].texture, toneMapped: false }),
+    ];
+    core = new THREE.Mesh(coreGeo, coreMats);
     cubeGroup.add(core);
+
+    // repaint traces every 220ms for a subtle "live circuit" pulse —
+    // cheap (canvas redraw, not per-frame) and never touches the glass
+    // shell's material at all
+    setInterval(() => faceTextures.forEach((f) => f.pulse()), 220);
 
     const shellGeo = new THREE.BoxGeometry(CONFIG.shellSize, CONFIG.shellSize, CONFIG.shellSize);
     // NOTE: deliberately no `transmission` here. Tested side-by-side:
@@ -195,6 +190,88 @@ import * as THREE from "three";
     onScroll();
 
     animate();
+  }
+
+  function makeCircuitTexture(seed) {
+    const size = 512;
+    const c = document.createElement("canvas");
+    c.width = size; c.height = size;
+    const ctx = c.getContext("2d");
+
+    const rand = mulberry32(seed * 977 + 13);
+    const cyan = "127,224,255";
+    const violet = "178,140,255";
+
+    // base: near-black glass fill so the traces read like an embedded chip
+    ctx.fillStyle = "#050a1c";
+    ctx.fillRect(0, 0, size, size);
+
+    // nested "chip" square, off-center like the reference
+    const cx = size * (0.35 + rand() * 0.3);
+    const cy = size * (0.35 + rand() * 0.3);
+    for (let r = 90; r > 14; r -= 16) {
+      ctx.strokeStyle = `rgba(${rand() > 0.5 ? cyan : violet},${0.35 + rand() * 0.3})`;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(cx - r / 2, cy - r / 2, r, r);
+    }
+
+    // rectilinear PCB traces radiating outward
+    const traceCount = 10 + Math.floor(rand() * 6);
+    const nodes = [];
+    for (let i = 0; i < traceCount; i++) {
+      let x = cx, y = cy;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      const segs = 2 + Math.floor(rand() * 3);
+      for (let s = 0; s < segs; s++) {
+        if (rand() > 0.5) x += (rand() - 0.5) * size * 0.6;
+        else y += (rand() - 0.5) * size * 0.6;
+        ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = `rgba(${rand() > 0.4 ? cyan : violet},0.5)`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      nodes.push({ x, y });
+    }
+
+    ctx.__nodes = nodes;
+    ctx.__cx = cx; ctx.__cy = cy;
+
+    const texture = new THREE.CanvasTexture(c);
+    texture.colorSpace = THREE.SRGBColorSpace;
+
+    function pulse() {
+      // redraw just a couple of glowing via-nodes each tick, cheap and subtle
+      const n = nodes[Math.floor(Math.random() * nodes.length)];
+      if (!n) return;
+      const hue = Math.random() > 0.5 ? cyan : violet;
+      ctx.clearRect(n.x - 6, n.y - 6, 12, 12);
+      ctx.fillStyle = `rgba(${hue},${0.5 + Math.random() * 0.4})`;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+      texture.needsUpdate = true;
+    }
+
+    // seed a few permanent via-node dots
+    nodes.forEach((n) => {
+      ctx.fillStyle = `rgba(${cyan},0.6)`;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    return { texture, pulse };
+  }
+
+  // deterministic tiny PRNG so each face gets a stable-but-different pattern
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
   }
 
   function makeGlowTexture() {
