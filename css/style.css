@@ -227,6 +227,8 @@ section{ padding: 110px 0; position:relative; }
 .hero-pin{
   position: sticky; top: 0; height: 100svh;
   display:flex; align-items:center; overflow:hidden;
+  padding-top: 96px; /* clears the fixed navbar (~74px) plus breathing room */
+  box-sizing: border-box;
 }
 .hero-grid{ display:grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items:center; width:100%; }
 .hero-copy{
