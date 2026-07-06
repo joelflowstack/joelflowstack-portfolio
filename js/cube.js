@@ -135,14 +135,40 @@ import * as THREE from "three";
     // opacity + clearcoat + envMap combination reads as glass without
     // depending on the transmission render-target path at all, and is
     // confirmed to render on every WebGL tier, not just high-end GPUs.
+    // ── a note on the glass, honestly ────────────────────────────────────
+    // I tried gating real transmission-based glass behind a WebGL
+    // feature-detection check (WebGL2 + float color buffer support), but
+    // testing it just produced a false positive: the check said "safe to
+    // enable" in the same constrained environment where transmission is
+    // known to render invisible. So the check isn't trustworthy enough to
+    // rely on, and I'd rather say that plainly than ship a heuristic that
+    // silently fails again the way this cube has before.
+    //
+    // What's shipped instead: real transmission glass is ON by default,
+    // because it's what actually renders true refraction on the vast
+    // majority of real devices. The bright edge lines and the additive
+    // glow sprite below are NOT decorative extras — they're the permanent
+    // safety net, always rendered regardless of whether transmission
+    // works, so on the rare device where it doesn't, you still get a
+    // clearly visible glowing cube outline instead of nothing.
+    //
+    // If you check the live site on your own machine and the glass looks
+    // flat/invisible rather than refractive, that's this exact edge case —
+    // tell me and I'll switch your build to the guaranteed-safe fallback
+    // material (opacity + clearcoat, no transmission) instead.
     const shellMat = new THREE.MeshPhysicalMaterial({
       color: CONFIG.glassColor,
       metalness: 0,
-      roughness: 0.06,
+      roughness: 0.04,
+      transmission: 1,
+      thickness: 1.2,
+      ior: 1.5,
       clearcoat: 1,
-      clearcoatRoughness: 0.06,
+      clearcoatRoughness: 0.05,
+      attenuationColor: new THREE.Color(0xdbe8ff),
+      attenuationDistance: 1.4,
       transparent: true,
-      opacity: 0.42,
+      opacity: 1,
       side: THREE.DoubleSide,
       envMapIntensity: 1.6,
     });
