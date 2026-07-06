@@ -230,7 +230,7 @@ section{ padding: 110px 0; position:relative; }
   padding-top: 96px; /* clears the fixed navbar (~74px) plus breathing room */
   box-sizing: border-box;
 }
-.hero-grid{ display:grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items:center; width:100%; }
+.hero-grid{ display:grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items:center; }
 .hero-copy{
   opacity: calc(1 - var(--hero-p) * 1.35);
   transform: translateY(calc(var(--hero-p) * -70px)) scale(calc(1 - var(--hero-p) * 0.06));
