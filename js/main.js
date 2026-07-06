@@ -39,6 +39,23 @@
     initYear();
     initForm();
     initCounters();
+    initFlowLauncher();
+  }
+
+  /* ── FLOW LAUNCHER (placeholder) ─────────────────────────────────────────
+     When the real Flow bot is ready: replace the body of this click
+     handler with whatever mounts/opens the actual widget into
+     #flow-widget-root, and delete the tooltip fallback below it. */
+  function initFlowLauncher() {
+    const btn = document.getElementById("flow-launcher");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      console.info("[flow-launcher] Flow bot isn't wired in yet — this is the placeholder click handler in js/main.js.");
+      btn.animate(
+        [{ transform: "scale(1)" }, { transform: "scale(0.9)" }, { transform: "scale(1)" }],
+        { duration: 260, easing: "ease-out" }
+      );
+    });
   }
 
   /* ── LOADER ──────────────────────────────────────────────────────────── */
@@ -57,8 +74,8 @@
     document.querySelectorAll("[data-hero-in]").forEach((el, i) => {
       setTimeout(() => el.classList.add("in-hero"), 120 + i * 110);
     });
-    const scrollInd = document.getElementById("scroll-indicator");
-    if (scrollInd) setTimeout(() => (scrollInd.style.opacity = "1"), 1000);
+    // scroll-indicator opacity is now owned by the --hero-p CSS var
+    // (written every frame by cube.js), so nothing to do here.
   }
 
   /* ── NAVBAR SCROLL STATE ─────────────────────────────────────────────── */
