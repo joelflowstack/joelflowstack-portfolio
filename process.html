@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Process — Joel Flowstack</title>
+<meta name="description" content="How a project with Joel Flowstack runs, from first message to a live, automated system." />
+<link rel="icon" href="assets/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body data-cube="corner">
+
+<div id="loader">
+  <div class="loader-inner">
+    <div class="loader-jf">JF</div>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <p class="loader-text">Initializing Experience</p>
+  </div>
+</div>
+
+<canvas id="cube-canvas"></canvas>
+<div class="bg-veil"></div>
+<div class="grain"></div>
+
+<div data-include="partials/nav.html"></div>
+
+<main>
+  <section class="page-hero">
+    <div class="container">
+      <span class="crumb">Home / <b>Process</b></span>
+      <span class="eyebrow" style="margin-top:18px;display:inline-flex;">How it runs</span>
+      <h1>Four stages.<br />No surprises in between.</h1>
+      <p class="lead">This is the same sequence for a 3D website, a bot, or a full workflow build — only the details inside each stage change.</p>
+    </div>
+  </section>
+
+  <section style="padding-top:0;">
+    <div class="container" style="display:flex;flex-direction:column;gap:22px;">
+
+      <div class="work-item glass" data-reveal>
+        <div class="work-media" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(127,224,255,.12),rgba(178,140,255,.08));">
+          <div style="font-family:var(--font-display);font-size:80px;opacity:.5;">01</div>
+        </div>
+        <div class="work-body">
+          <span class="eyebrow">Scope &amp; plan</span>
+          <h3>One short conversation, not a 40-page proposal</h3>
+          <p>We find the single system that matters most right now, agree on what "done" looks like, and set a rough timeline. Usually a same-day turnaround from first message to a clear scope.</p>
+        </div>
+      </div>
+
+      <div class="work-item reverse glass" data-reveal>
+        <div class="work-media" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(178,140,255,.12),rgba(127,224,255,.08));">
+          <div style="font-family:var(--font-display);font-size:80px;opacity:.5;">02</div>
+        </div>
+        <div class="work-body">
+          <span class="eyebrow">Build in the open</span>
+          <h3>Working previews, shipped early and often</h3>
+          <p>Everything ships through GitHub and deploys live on Vercel as it's built — you're looking at a real, working preview within days, not a mockup at the end of the project.</p>
+        </div>
+      </div>
+
+      <div class="work-item glass" data-reveal>
+        <div class="work-media" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(127,224,255,.12),rgba(178,140,255,.08));">
+          <div style="font-family:var(--font-display);font-size:80px;opacity:.5;">03</div>
+        </div>
+        <div class="work-body">
+          <span class="eyebrow">Launch</span>
+          <h3>Domain, monitoring, and analytics — wired up before go-live</h3>
+          <p>No loose ends at launch: DNS, SSL, error monitoring, and basic analytics are in place before the link goes out to your audience or customers.</p>
+        </div>
+      </div>
+
+      <div class="work-item reverse glass" data-reveal>
+        <div class="work-media" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(178,140,255,.12),rgba(127,224,255,.08));">
+          <div style="font-family:var(--font-display);font-size:80px;opacity:.5;">04</div>
+        </div>
+        <div class="work-body">
+          <span class="eyebrow">Automate what's next</span>
+          <h3>The system tells us what to remove next</h3>
+          <p>Once something's live, the next bottleneck is usually obvious — a manual step, a repeated message, a spreadsheet doing a database's job. That becomes the next build.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="section-header" data-reveal>
+        <span class="eyebrow">What's coming</span>
+        <h2>An AI layer is joining this process</h2>
+        <p>Flow — the same assistant behind the Flow V3 project on the Work page — is being wired into this site directly, so questions about scope, pricing, or timelines get answered on the spot instead of waiting on email.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="cta-band glass" data-reveal>
+        <span class="eyebrow">Start here</span>
+        <h2 style="margin-top:14px;">Ready for stage one?</h2>
+        <p>Tell me what's slow, manual, or missing — that's the scoping call, already started.</p>
+        <a href="contact.html" class="btn btn-primary">Start a project <span class="btn-arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div data-include="partials/footer.html"></div>
+
+<script type="module" src="js/cube.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
