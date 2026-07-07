@@ -25,10 +25,10 @@ import * as THREE from "three";
   const canvas = document.getElementById("cube-canvas");
 
   const CONFIG = {
-    glassColor: 0xeef2ff,
+    glassColor: 0xf7f1ff,
     ambientColor: 0xffffff,
-    keyLightColor: 0xbcd4ff,
-    fillLightColor: 0xd9c4ff,
+    keyLightColor: 0xffe0a0,
+    fillLightColor: 0xc9a0ff,
     coreSize: 1.5,
     shellSize: 2.0,
     tumbleX: 0.11,
@@ -37,7 +37,7 @@ import * as THREE from "three";
     parallaxStrength: 0.18,
   };
 
-  let renderer, scene, camera, cubeGroup, core, shell, edges, shadowMesh;
+  let renderer, scene, camera, cubeGroup, core, shell, shadowMesh;
   let targetX = 0, targetY = 0, curX = 0, curY = 0;
   let clock = new THREE.Clock();
   let elapsed = 0;
@@ -104,6 +104,12 @@ import * as THREE from "three";
     cubeGroup = new THREE.Group();
     scene.add(cubeGroup);
 
+    // warm gold light from the cube's own core, catching the undersides
+    // of the panels the way the reference's interior glow does
+    const coreGlow = new THREE.PointLight(0xffd23f, 4.5, 8, 2);
+    coreGlow.position.set(0, 0, 0);
+    cubeGroup.add(coreGlow);
+
     // ── procedural circuit-crystal core ─────────────────────────────────
     // No video, no stock footage, no watermark — the "chip inside glass"
     // look from the reference is rebuilt from scratch as drawn canvas
@@ -135,49 +141,16 @@ import * as THREE from "three";
       pulseTick++;
     }, 450);
 
-    const shellGeo = new THREE.BoxGeometry(CONFIG.shellSize, CONFIG.shellSize, CONFIG.shellSize);
-    // NOTE: deliberately no `transmission` here. Tested side-by-side:
-    // MeshPhysicalMaterial with transmission:1 renders fully invisible
-    // (zero alpha, no error thrown) on software/constrained WebGL — that's
-    // almost certainly what's been happening on real devices too. This
-    // opacity + clearcoat + envMap combination reads as glass without
-    // depending on the transmission render-target path at all, and is
-    // ── a note on the glass, honestly (updated) ──────────────────────────
-    // Real transmission-based glass looked great, but measured 3-9x slower
-    // per frame than this version in direct side-by-side testing — it
-    // forces an extra full-scene render pass every frame. Given lag was
-    // already a concern, that's not a trade worth making for marginally
-    // more realistic refraction. This "frosty" look — higher roughness,
-    // opacity instead of transmission, clearcoat for a glossy edge — gets
-    // close to the same feel for a fraction of the render cost, and it's
-    // the version already confirmed to render reliably on every device
-    // tested.
-    const shellMat = new THREE.MeshPhysicalMaterial({
-      color: CONFIG.glassColor,
-      metalness: 0,
-      roughness: 0.26,
-      clearcoat: 0.6,
-      clearcoatRoughness: 0.3,
-      transparent: true,
-      opacity: 0.4,
-      side: THREE.DoubleSide,
-      envMapIntensity: 1.6,
-    });
-    shell = new THREE.Mesh(shellGeo, shellMat);
+    // Tested side-by-side: transmission-based "real glass" costs 3-9x more
+    // per frame (it forces an extra full-scene render pass) and even
+    // opaque MeshPhysicalMaterial has meaningfully more shader cost than
+    // MeshStandardMaterial for something this instanced. Given lag has
+    // been a recurring, explicit concern, the panel shell below trades a
+    // touch of material realism for a build that stays cheap no matter
+    // how many panels it's made of — it's all ONE draw call regardless of
+    // panel count, via InstancedMesh, rather than 50+ separate objects.
+    shell = buildPanelShell();
     cubeGroup.add(shell);
-
-    // thin bright edges on the shell so the cube reads clearly even at
-    // low opacity — a glass box needs a visible silhouette to look like
-    // an object rather than a haze
-    const edgeGeo = new THREE.EdgesGeometry(shellGeo);
-    const edgeMat = new THREE.LineBasicMaterial({ color: 0xeaf5ff, transparent: true, opacity: 0.85 });
-    edges = new THREE.LineSegments(edgeGeo, edgeMat);
-    cubeGroup.add(edges);
-
-    // NOTE: there used to be two additive glow-halo sprites here, removed
-    // on request ("clear the light around the cube") — the shell's edges
-    // now carry the whole job of making the cube read clearly on its own,
-    // with no soft light bleeding out around it.
 
     const shadowTex = makeShadowTexture();
     shadowMesh = new THREE.Mesh(
@@ -198,6 +171,89 @@ import * as THREE from "three";
     animate();
   }
 
+  // Builds the fragmented panel shell from the reference: a grid of small
+  // panels across all 6 faces, most sitting flush to form the cube's
+  // silhouette, a handful pushed outward/rotated like they're mid-explode.
+  // Everything here is ONE THREE.InstancedMesh — one draw call no matter
+  // how many panels, so "more panels" never means "more render cost" the
+  // way 50+ separate Mesh objects would.
+  function buildPanelShell() {
+    const grid = 3; // 3x3 panels per face
+    const faceSize = CONFIG.shellSize;
+    const panelSize = faceSize / grid;
+    const gap = panelSize * 0.12;
+    const panelGeo = new THREE.BoxGeometry(panelSize - gap, panelSize - gap, panelSize * 0.18);
+    const panelMat = new THREE.MeshStandardMaterial({
+      color: CONFIG.glassColor,
+      roughness: 0.35,
+      metalness: 0.15,
+      emissive: 0x2a0a55,
+      emissiveIntensity: 0.4,
+    });
+
+    const faces = [
+      { normal: [1, 0, 0], u: [0, 1, 0], v: [0, 0, 1] },
+      { normal: [-1, 0, 0], u: [0, 1, 0], v: [0, 0, -1] },
+      { normal: [0, 1, 0], u: [1, 0, 0], v: [0, 0, -1] },
+      { normal: [0, -1, 0], u: [1, 0, 0], v: [0, 0, 1] },
+      { normal: [0, 0, 1], u: [1, 0, 0], v: [0, 1, 0] },
+      { normal: [0, 0, -1], u: [-1, 0, 0], v: [0, 1, 0] },
+    ];
+    const count = faces.length * grid * grid;
+    const mesh = new THREE.InstancedMesh(panelGeo, panelMat, count);
+
+    const rand = mulberry32(4242);
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const half = faceSize / 2;
+    let i = 0;
+
+    faces.forEach((f) => {
+      const n = new THREE.Vector3(...f.normal);
+      const u = new THREE.Vector3(...f.u);
+      const v = new THREE.Vector3(...f.v);
+      for (let gx = 0; gx < grid; gx++) {
+        for (let gy = 0; gy < grid; gy++) {
+          const cu = (gx - (grid - 1) / 2) * panelSize;
+          const cv = (gy - (grid - 1) / 2) * panelSize;
+          const pos = new THREE.Vector3()
+            .addScaledVector(u, cu)
+            .addScaledVector(v, cv)
+            .addScaledVector(n, half);
+
+          const exploded = rand() < 0.16; // ~16% of panels "mid-explode", like the reference's floating top pieces
+          if (exploded) {
+            pos.addScaledVector(n, 0.35 + rand() * 0.5);
+            pos.addScaledVector(u, (rand() - 0.5) * 0.25);
+            pos.addScaledVector(v, (rand() - 0.5) * 0.25);
+          }
+
+          // orient the panel flat against the face, facing outward along n
+          const targetQuat = new THREE.Quaternion().setFromUnitVectors(
+            new THREE.Vector3(0, 0, 1),
+            n
+          );
+          if (exploded) {
+            q.copy(targetQuat).multiply(
+              new THREE.Quaternion().setFromEuler(
+                new THREE.Euler((rand() - 0.5) * 0.6, (rand() - 0.5) * 0.6, (rand() - 0.5) * 0.6)
+              )
+            );
+          } else {
+            q.copy(targetQuat);
+          }
+
+          m.compose(pos, q, new THREE.Vector3(1, 1, 1));
+          mesh.setMatrixAt(i, m);
+          i++;
+        }
+      }
+    });
+
+    mesh.instanceMatrix.needsUpdate = true;
+    return mesh;
+  }
+
   function makeCircuitTexture(seed) {
     const size = 320;
     const c = document.createElement("canvas");
@@ -205,18 +261,27 @@ import * as THREE from "three";
     const ctx = c.getContext("2d");
 
     const rand = mulberry32(seed * 977 + 13);
-    const cyan = "127,224,255";
-    const violet = "178,140,255";
+    const gold = "255,210,63";
+    const amber = "255,150,40";
 
-    // base: near-black glass fill so the traces read like an embedded chip
-    ctx.fillStyle = "#050a1c";
+    // base: warm dark fill with a bright gold glow pooling at the center,
+    // like light spilling out from inside — matches the reference's
+    // interior glow instead of the old cyan "chip" look
+    ctx.fillStyle = "#1a0a00";
+    ctx.fillRect(0, 0, size, size);
+    const cx0 = size * (0.35 + rand() * 0.3);
+    const cy0 = size * (0.35 + rand() * 0.3);
+    const glowGrad = ctx.createRadialGradient(cx0, cy0, 0, cx0, cy0, size * 0.55);
+    glowGrad.addColorStop(0, "rgba(255,225,110,0.9)");
+    glowGrad.addColorStop(0.4, "rgba(255,180,40,0.55)");
+    glowGrad.addColorStop(1, "rgba(26,10,0,0)");
+    ctx.fillStyle = glowGrad;
     ctx.fillRect(0, 0, size, size);
 
     // nested "chip" square, off-center like the reference
-    const cx = size * (0.35 + rand() * 0.3);
-    const cy = size * (0.35 + rand() * 0.3);
+    const cx = cx0, cy = cy0;
     for (let r = 90; r > 14; r -= 16) {
-      ctx.strokeStyle = `rgba(${rand() > 0.5 ? cyan : violet},${0.35 + rand() * 0.3})`;
+      ctx.strokeStyle = `rgba(${rand() > 0.5 ? gold : amber},${0.4 + rand() * 0.35})`;
       ctx.lineWidth = 1.5;
       ctx.strokeRect(cx - r / 2, cy - r / 2, r, r);
     }
@@ -234,7 +299,7 @@ import * as THREE from "three";
         else y += (rand() - 0.5) * size * 0.6;
         ctx.lineTo(x, y);
       }
-      ctx.strokeStyle = `rgba(${rand() > 0.4 ? cyan : violet},0.5)`;
+      ctx.strokeStyle = `rgba(${rand() > 0.4 ? gold : amber},0.6)`;
       ctx.lineWidth = 1;
       ctx.stroke();
       nodes.push({ x, y });
@@ -250,7 +315,7 @@ import * as THREE from "three";
       // redraw just a couple of glowing via-nodes each tick, cheap and subtle
       const n = nodes[Math.floor(Math.random() * nodes.length)];
       if (!n) return;
-      const hue = Math.random() > 0.5 ? cyan : violet;
+      const hue = Math.random() > 0.5 ? gold : amber;
       ctx.clearRect(n.x - 6, n.y - 6, 12, 12);
       ctx.fillStyle = `rgba(${hue},${0.5 + Math.random() * 0.4})`;
       ctx.beginPath();
@@ -261,7 +326,7 @@ import * as THREE from "three";
 
     // seed a few permanent via-node dots
     nodes.forEach((n) => {
-      ctx.fillStyle = `rgba(${cyan},0.6)`;
+      ctx.fillStyle = `rgba(${gold},0.7)`;
       ctx.beginPath();
       ctx.arc(n.x, n.y, 2.2, 0, Math.PI * 2);
       ctx.fill();
@@ -287,12 +352,12 @@ import * as THREE from "three";
     c.width = size; c.height = size;
     const ctx = c.getContext("2d");
     const g = ctx.createLinearGradient(0, 0, 0, size);
-    g.addColorStop(0, "#1b2350");
-    g.addColorStop(0.5, "#0b0f2a");
-    g.addColorStop(1, "#020310");
+    g.addColorStop(0, "#c9a0ff");
+    g.addColorStop(0.5, "#6a00d8");
+    g.addColorStop(1, "#2a0060");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = "rgba(127,224,255,0.18)";
+    ctx.fillStyle = "rgba(255,210,63,0.22)";
     ctx.fillRect(0, size * 0.4, size, size * 0.05);
 
     const tex = new THREE.CanvasTexture(c);
@@ -370,7 +435,6 @@ import * as THREE from "three";
     shell.rotation.y = cubeGroup.rotation.y + curY;
     shell.rotation.z = cubeGroup.rotation.z;
     core.rotation.copy(shell.rotation);
-    edges.rotation.copy(shell.rotation);
 
     cubeGroup.position.y = Math.sin(elapsed * 0.5) * 0.12;
 
