@@ -5,26 +5,26 @@
    ========================================================================== */
 
 :root{
-  /* Pulled directly from pixel samples of the Flow V3 demo video:
-     bg corner ~#020516, orb core cycling #98e3ff (cyan) → #dcc8ff (violet). */
-  --bg:        #030614;
-  --bg-2:      #080d26;
-  --surface:   rgba(255,255,255,0.05);
-  --surface-2: rgba(255,255,255,0.09);
-  --border:    rgba(255,255,255,0.10);
-  --border-hi: rgba(255,255,255,0.22);
+  /* Matched directly to pixel samples from the reference image: bg
+     ~rgb(115,0,228), panel faces near-white, interior glow ~rgb(255,255,0). */
+  --bg:        #6a00d8;
+  --bg-2:      #55009f;
+  --surface:   rgba(255,255,255,0.08);
+  --surface-2: rgba(255,255,255,0.14);
+  --border:    rgba(255,255,255,0.16);
+  --border-hi: rgba(255,255,255,0.32);
 
-  --blue:      #4d8bff;
-  --blue-deep: #16244f;
-  --violet:    #b28cff;
-  --cyan:      #7fe0ff;
+  --blue:      #b28cff;
+  --blue-deep: #3a0a80;
+  --violet:    #c9a0ff;
+  --cyan:      #ffd23f;
 
-  --ink:       #f4f7fd;
-  --muted:     #94a0c2;
-  --muted-2:   #5b6488;
+  --ink:       #ffffff;
+  --muted:     #d9c3ff;
+  --muted-2:   #a780e8;
 
   --grad-brand: linear-gradient(120deg, var(--cyan) 0%, var(--violet) 100%);
-  --grad-line:  linear-gradient(90deg, rgba(127,224,255,0), rgba(127,224,255,.5), rgba(178,140,255,0));
+  --grad-line:  linear-gradient(90deg, rgba(255,210,63,0), rgba(255,210,63,.55), rgba(201,160,255,0));
 
   --font-display: 'Space Grotesk', sans-serif;
   --font-body:    'Inter', sans-serif;
@@ -101,32 +101,33 @@ button{ font-family: inherit; }
   height: 140%;
   z-index: 1;
   pointer-events: none;
-  opacity: 0.16;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><defs><filter id='g' x='-50%25' y='-50%25' width='200%25' height='200%25'><feGaussianBlur stdDeviation='2.6'/></filter></defs><g filter='url(%23g)' fill='none' stroke='%237fe0ff' stroke-width='2.4' opacity='0.9'><path d='M20 20h60v40h40'/><path d='M120 60v80h60'/><path d='M180 20v60h40'/><path d='M20 140h30v60h80v-30h50'/><rect x='95' y='95' width='26' height='26'/><rect x='101' y='101' width='14' height='14'/></g><g fill='none' stroke='%23bfeeff' stroke-width='1' opacity='0.8'><path d='M20 20h60v40h40'/><path d='M120 60v80h60'/><path d='M180 20v60h40'/><path d='M20 140h30v60h80v-30h50'/><rect x='95' y='95' width='26' height='26'/><rect x='101' y='101' width='14' height='14'/></g><g filter='url(%23g)' fill='%23b28cff'><circle cx='80' cy='60' r='3.6'/><circle cx='180' cy='140' r='3.6'/><circle cx='50' cy='200' r='3.6'/></g><g fill='%23dfc8ff'><circle cx='80' cy='60' r='1.8'/><circle cx='180' cy='140' r='1.8'/><circle cx='50' cy='200' r='1.8'/></g><g filter='url(%23g)' fill='%237fe0ff'><circle cx='220' cy='80' r='3'/><circle cx='130' cy='160' r='3'/></g><g fill='%23d6f6ff'><circle cx='220' cy='80' r='1.5'/><circle cx='130' cy='160' r='1.5'/></g></svg>");
+  opacity: 0.4;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><g fill='none' stroke='%23f3ebff' stroke-width='2' stroke-linecap='square' opacity='0.85'><path d='M10 10h50v40h60v-30h40'/><path d='M160 20v50h60v40h50'/><path d='M20 90h40v60h70'/><path d='M90 150h60v-40h50v70h60'/><path d='M10 200h60v50h80v-30h90'/><path d='M250 10v60h-40v50'/><path d='M180 220v50h70'/><path d='M40 260v30h100v-60h90'/><path d='M270 120h20v100'/><path d='M120 40v-30'/></g><g fill='none' stroke='%23ffffff' stroke-width='1' opacity='0.7'><path d='M10 10h50v40h60v-30h40'/><path d='M160 20v50h60v40h50'/><path d='M20 90h40v60h70'/><path d='M90 150h60v-40h50v70h60'/><path d='M10 200h60v50h80v-30h90'/><path d='M250 10v60h-40v50'/><path d='M180 220v50h70'/><path d='M40 260v30h100v-60h90'/><path d='M270 120h20v100'/></g><g fill='%23ffd23f'><circle cx='60' cy='10' r='3'/><circle cx='150' cy='150' r='3'/><circle cx='230' cy='270' r='3'/></g><g fill='%23ffffff'><circle cx='120' cy='90' r='2.4'/><circle cx='220' cy='70' r='2.4'/><circle cx='40' cy='230' r='2.4'/><circle cx='270' cy='190' r='2.4'/></g></svg>");
   background-repeat: repeat;
-  background-size: 240px 240px;
-  animation: circuitDrift 70s linear infinite, circuitPulse 5s ease-in-out infinite;
+  background-size: 300px 300px;
+  animation: circuitDrift 80s linear infinite, circuitPulse 5s ease-in-out infinite;
   will-change: transform, opacity;
 }
 /* transform-only drift — GPU-compositable, unlike animating
    background-position which forces a repaint every frame */
-@keyframes circuitDrift{ from{ transform: translate3d(0,0,0); } to{ transform: translate3d(-240px,-240px,0); } }
-@keyframes circuitPulse{ 0%,100%{ opacity: 0.12; } 50%{ opacity: 0.22; } }
+@keyframes circuitDrift{ from{ transform: translate3d(0,0,0); } to{ transform: translate3d(-300px,-300px,0); } }
+@keyframes circuitPulse{ 0%,100%{ opacity: 0.34; } 50%{ opacity: 0.48; } }
 
 .bg-veil{
   position: fixed;
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  /* Flow V3's own backdrop: a soft cyan/violet ambient glow, matched from
-     pixel samples of the demo video. IMPORTANT: no opaque layer here —
-     this sits in front of #cube-canvas in the stacking order (z-index 2
-     vs 0), so anything opaque here paints over and completely hides the
-     cube. The solid dark base color lives on <body> instead, underneath
-     the canvas, where it can't block anything. */
+  /* Matched to the reference: rich purple field with a warm gold glow
+     pooling behind the cube. IMPORTANT: no opaque layer here — this sits
+     in front of #cube-canvas in the stacking order (z-index 2 vs 0), so
+     anything opaque here paints over and completely hides the cube. The
+     solid purple base color lives on <body> instead, underneath the
+     canvas, where it can't block anything. */
   background:
-    radial-gradient(ellipse 55% 45% at 50% 15%, rgba(127,224,255,.10), transparent 60%),
-    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(178,140,255,.09), transparent 62%);
+    radial-gradient(ellipse 50% 42% at 50% 42%, rgba(255,210,63,.16), transparent 62%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(30,0,60,.35), transparent 65%),
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(30,0,60,.3), transparent 65%);
 }
 .grain{
   position: fixed; inset:0; z-index:3; pointer-events:none; opacity:.03; mix-blend-mode: overlay;
