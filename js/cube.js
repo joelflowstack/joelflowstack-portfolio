@@ -37,7 +37,7 @@ import * as THREE from "three";
     parallaxStrength: 0.18,
   };
 
-  let renderer, scene, camera, cubeGroup, core, shell, edges, glow, glowOuter, shadowMesh;
+  let renderer, scene, camera, cubeGroup, core, shell, edges, shadowMesh;
   let targetX = 0, targetY = 0, curX = 0, curY = 0;
   let clock = new THREE.Clock();
   let elapsed = 0;
@@ -73,7 +73,7 @@ import * as THREE from "three";
     heroEl = document.getElementById("scroll-hero");
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -126,7 +126,14 @@ import * as THREE from "three";
     // repaint traces every 220ms for a subtle "live circuit" pulse —
     // cheap (canvas redraw, not per-frame) and never touches the glass
     // shell's material at all
-    setInterval(() => faceTextures.forEach((f) => f.pulse()), 220);
+    // perf: only repaint ONE face's texture per tick, round-robin, instead
+    // of re-uploading all three to the GPU simultaneously — same subtle
+    // "live circuit" effect, a third of the texture-upload cost per tick
+    let pulseTick = 0;
+    setInterval(() => {
+      faceTextures[pulseTick % faceTextures.length].pulse();
+      pulseTick++;
+    }, 450);
 
     const shellGeo = new THREE.BoxGeometry(CONFIG.shellSize, CONFIG.shellSize, CONFIG.shellSize);
     // NOTE: deliberately no `transmission` here. Tested side-by-side:
@@ -135,17 +142,16 @@ import * as THREE from "three";
     // almost certainly what's been happening on real devices too. This
     // opacity + clearcoat + envMap combination reads as glass without
     // depending on the transmission render-target path at all, and is
-    // confirmed to render on every WebGL tier, not just high-end GPUs.
     // ── a note on the glass, honestly (updated) ──────────────────────────
     // Real transmission-based glass looked great, but measured 3-9x slower
     // per frame than this version in direct side-by-side testing — it
     // forces an extra full-scene render pass every frame. Given lag was
     // already a concern, that's not a trade worth making for marginally
     // more realistic refraction. This "frosty" look — higher roughness,
-    // opacity instead of transmission, clearcoat for a glossy edge, plus
-    // the pulsing glow sprites below — gets close to the same feel for a
-    // fraction of the render cost, and it's the version already confirmed
-    // to render reliably on every device tested.
+    // opacity instead of transmission, clearcoat for a glossy edge — gets
+    // close to the same feel for a fraction of the render cost, and it's
+    // the version already confirmed to render reliably on every device
+    // tested.
     const shellMat = new THREE.MeshPhysicalMaterial({
       color: CONFIG.glassColor,
       metalness: 0,
@@ -168,35 +174,10 @@ import * as THREE from "three";
     edges = new THREE.LineSegments(edgeGeo, edgeMat);
     cubeGroup.add(edges);
 
-    // additive glow halo behind the cube — plain unlit sprite, doesn't
-    // depend on any lighting/transmission pipeline at all, so it's the
-    // one element guaranteed to render on absolutely any WebGL tier. Also
-    // doubles as the "glow" cue from the Flow V3 orb aesthetic.
-    glow = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: makeGlowTexture(),
-      color: 0x9fd8ff,
-      transparent: true,
-      opacity: 0.5,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    }));
-    glow.scale.set(4.6, 4.6, 1);
-    glow.position.z = -0.3;
-    cubeGroup.add(glow);
-
-    // second, larger, slower-breathing halo layered behind the first —
-    // gives the pulse some depth instead of one flat sprite blinking
-    glowOuter = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: makeGlowTexture(),
-      color: 0xc9a8ff,
-      transparent: true,
-      opacity: 0.22,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    }));
-    glowOuter.scale.set(7, 7, 1);
-    glowOuter.position.z = -0.6;
-    cubeGroup.add(glowOuter);
+    // NOTE: there used to be two additive glow-halo sprites here, removed
+    // on request ("clear the light around the cube") — the shell's edges
+    // now carry the whole job of making the cube read clearly on its own,
+    // with no soft light bleeding out around it.
 
     const shadowTex = makeShadowTexture();
     shadowMesh = new THREE.Mesh(
@@ -218,7 +199,7 @@ import * as THREE from "three";
   }
 
   function makeCircuitTexture(seed) {
-    const size = 512;
+    const size = 320;
     const c = document.createElement("canvas");
     c.width = size; c.height = size;
     const ctx = c.getContext("2d");
@@ -299,19 +280,6 @@ import * as THREE from "three";
     };
   }
 
-  function makeGlowTexture() {
-    const size = 256;
-    const c = document.createElement("canvas");
-    c.width = size; c.height = size;
-    const ctx = c.getContext("2d");
-    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    g.addColorStop(0, "rgba(255,255,255,0.9)");
-    g.addColorStop(0.35, "rgba(159,216,255,0.5)");
-    g.addColorStop(1, "rgba(159,216,255,0)");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, size, size);
-    return new THREE.CanvasTexture(c);
-  }
 
   function makeStudioEnv() {
     const size = 256;
@@ -405,16 +373,6 @@ import * as THREE from "three";
     edges.rotation.copy(shell.rotation);
 
     cubeGroup.position.y = Math.sin(elapsed * 0.5) * 0.12;
-
-    // frosty glass "breathing" pulse — two sprites already exist for the
-    // safety net, so this just modulates scale/opacity on them each frame;
-    // no new objects, no extra draw calls, negligible cost.
-    const pulse1 = 0.5 + Math.sin(elapsed * 1.3) * 0.5; // 0..1
-    const pulse2 = 0.5 + Math.sin(elapsed * 0.8 + 1.1) * 0.5;
-    glow.material.opacity = 0.38 + pulse1 * 0.28;
-    glow.scale.setScalar(4.3 + pulse1 * 0.5);
-    glowOuter.material.opacity = 0.14 + pulse2 * 0.16;
-    glowOuter.scale.setScalar(6.6 + pulse2 * 0.9);
 
     if (heroEl) {
       // scroll-pinned intro: cube starts big and centered, ends small and
