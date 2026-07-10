@@ -42,19 +42,115 @@
     initFlowLauncher();
   }
 
-  /* ── FLOW LAUNCHER (placeholder) ─────────────────────────────────────────
-     When the real Flow bot is ready: replace the body of this click
-     handler with whatever mounts/opens the actual widget into
-     #flow-widget-root, and delete the tooltip fallback below it. */
+  /* ── FLOW CHAT — real backend, not a placeholder ─────────────────────────
+     Calls the live flow-v3-mu.vercel.app/api/chat endpoint (open CORS,
+     confirmed from the flow-V3 repo). System prompt below is deliberately
+     scoped to public studio/portfolio questions — it does NOT include
+     Joel's personal Flow V3 memory/context (facts, location, goals, notes),
+     since anyone visiting this site can open this widget. Same real model
+     chain (Cerebras → OpenRouter → Groq → HuggingFace) as the Flow V3
+     project itself, just a different, public-safe brief. */
+  const FLOW_API = "https://flow-v3-mu.vercel.app/api/chat";
+  const FLOW_SYSTEM_PROMPT =
+    "You are Flow, the AI assistant built by Joel Flowstack, running live on his studio's portfolio site as a real demo of what you can do. " +
+    "Joel Flowstack is a solo digital studio: 3D interactive websites, AI bot automation (Discord/Telegram/WhatsApp), and n8n workflow automation, everything deployed via GitHub + Vercel. " +
+    "You are the same assistant behind the Flow V3 project shown on the site's Work page. " +
+    "Help visitors with questions about Joel's services, process, and pricing approach — a first working preview usually ships within days; cost depends entirely on scope, so point people to the contact form on this site for a real quote rather than guessing a number. " +
+    "If asked something you genuinely don't know about Joel's specific business, say so plainly and point to the contact form. " +
+    "Keep replies short and conversational — a few sentences, not an essay, unless the person clearly wants depth. " +
+    "You can't actually send emails, book calls, or access Joel's calendar from this chat — be upfront about that and point to the contact form for those. " +
+    "Never pretend to take an action you haven't actually taken.";
+
+  let flowHistory = [];
+  let flowSending = false;
+
   function initFlowLauncher() {
-    const btn = document.getElementById("flow-launcher");
-    if (!btn) return;
-    btn.addEventListener("click", () => {
-      console.info("[flow-launcher] Flow bot isn't wired in yet — this is the placeholder click handler in js/main.js.");
-      btn.animate(
-        [{ transform: "scale(1)" }, { transform: "scale(0.9)" }, { transform: "scale(1)" }],
-        { duration: 260, easing: "ease-out" }
-      );
+    const launcher = document.getElementById("flow-launcher");
+    const panel = document.getElementById("flow-panel");
+    const closeBtn = document.getElementById("flow-close");
+    const form = document.getElementById("flow-form");
+    const input = document.getElementById("flow-input");
+    const messages = document.getElementById("flow-messages");
+    if (!launcher || !panel || !form || !input || !messages) return;
+
+    const setOpen = (open) => {
+      panel.classList.toggle("open", open);
+      launcher.classList.toggle("open", open);
+      panel.setAttribute("aria-hidden", String(!open));
+      if (open) setTimeout(() => input.focus(), 150);
+    };
+
+    launcher.addEventListener("click", () => setOpen(!panel.classList.contains("open")));
+    closeBtn && closeBtn.addEventListener("click", () => setOpen(false));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && panel.classList.contains("open")) setOpen(false);
+    });
+
+    function addMessage(text, role) {
+      const el = document.createElement("div");
+      el.className = `flow-msg flow-msg-${role}`;
+      el.textContent = text;
+      messages.appendChild(el);
+      messages.scrollTop = messages.scrollHeight;
+      return el;
+    }
+
+    function addThinking() {
+      const el = document.createElement("div");
+      el.className = "flow-msg flow-msg-thinking";
+      el.innerHTML = "<span></span><span></span><span></span>";
+      messages.appendChild(el);
+      messages.scrollTop = messages.scrollHeight;
+      return el;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      // Enter key submits the <form> natively — no separate keydown
+      // handler needed for that part.
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text || flowSending) return;
+
+      input.value = "";
+      addMessage(text, "user");
+      flowHistory.push({ role: "user", content: text });
+      flowSending = true;
+      input.disabled = true;
+
+      const thinkingEl = addThinking();
+
+      try {
+        const res = await fetch(FLOW_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [
+              { role: "system", content: FLOW_SYSTEM_PROMPT },
+              ...flowHistory.slice(-16), // keep the request small; this is a widget, not the full app
+            ],
+          }),
+        });
+
+        thinkingEl.remove();
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.reply) throw new Error("empty reply");
+
+        addMessage(data.reply, "bot");
+        flowHistory.push({ role: "assistant", content: data.reply });
+      } catch (err) {
+        thinkingEl.remove();
+        console.warn("[flow-chat] request failed:", err);
+        addMessage(
+          "Couldn't reach Flow just now — the connection might be down. Try again in a moment, or use the contact form above.",
+          "error"
+        );
+      } finally {
+        flowSending = false;
+        input.disabled = false;
+        input.focus();
+      }
     });
   }
 
