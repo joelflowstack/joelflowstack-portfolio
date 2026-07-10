@@ -41,11 +41,21 @@
 
 <div data-include="partials/nav.html"></div>
 
+<!-- Landing-only brand mark — visible from the very first frame, independent
+     of #navbar (which stays hidden until the scroll transition completes).
+     Fades out via --hero-p as the real navbar takes over that corner. -->
+<a href="index.html" id="landing-brand" aria-label="Joel Flowstack — home">
+  <img src="assets/logo.png" alt="" />
+  <span>JOEL FLOWSTACK</span>
+</a>
+
 <main>
 
   <!-- ============ SCROLL-PINNED HERO ============
        #scroll-hero is read by js/cube.js — its scroll position drives the
-       cube from big-and-centered down to small-and-corner. The CSS var
+       cube from big-and-centered down to small-and-corner, AND fades the
+       real #navbar in from nothing so the landing genuinely starts with no
+       nav bar, just the brand mark above and the cube. The CSS var
        --hero-p is written every frame by cube.js so this copy fades/lifts
        in exact sync with the cube, instead of two separate scroll maths
        drifting apart. -->
@@ -53,9 +63,6 @@
     <div class="hero-pin">
       <div class="container hero-grid">
         <div class="hero-copy">
-          <div class="hero-badge glass" data-hero-in>
-            <span class="eyebrow">Web · Bots · Automation</span>
-          </div>
           <h1 data-hero-in>We build <span class="accent">intelligent</span><br />websites &amp; automations</h1>
           <p class="hero-sub" data-hero-in>
             One studio, end to end: 3D interactive websites, AI chat &amp; support bots across Discord, Telegram and WhatsApp, and n8n workflows that connect your apps, APIs and databases.
@@ -63,11 +70,6 @@
           <div class="hero-ctas" data-hero-in>
             <a href="contact.html" class="btn btn-primary">Start a project <span class="btn-arrow">→</span></a>
             <a href="work.html" class="btn btn-ghost">See the work</a>
-          </div>
-          <div class="hero-stats" data-hero-in>
-            <div class="hero-stat"><b data-count="40" data-suffix="+">0</b><span>Systems shipped</span></div>
-            <div class="hero-stat"><b data-count="3" data-suffix="+">0</b><span>Years building</span></div>
-            <div class="hero-stat"><b data-count="12" data-suffix="+">0</b><span>Platforms integrated</span></div>
           </div>
         </div>
         <div class="hero-visual"></div>
@@ -106,6 +108,17 @@
         <span class="marquee-item"><i></i>Gmail</span>
         <span class="marquee-item"><i></i>Notion</span>
         <span class="marquee-item"><i></i>n8n</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATS STRIP (relocated from hero for a cleaner landing) === -->
+  <section style="padding:0 0 40px;">
+    <div class="container">
+      <div class="hero-stats" style="justify-content:center;" data-reveal>
+        <div class="hero-stat"><b data-count="40" data-suffix="+">0</b><span>Systems shipped</span></div>
+        <div class="hero-stat"><b data-count="3" data-suffix="+">0</b><span>Years building</span></div>
+        <div class="hero-stat"><b data-count="12" data-suffix="+">0</b><span>Platforms integrated</span></div>
       </div>
     </div>
   </section>
