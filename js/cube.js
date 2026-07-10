@@ -42,6 +42,7 @@ import * as THREE from "three";
   let clock = new THREE.Clock();
   let elapsed = 0;
   let heroEl = null; // #scroll-hero, only present on index.html
+  let navbarEl = null;
   let lastWrittenHeroP = -1;
   let heroProgress = 0; // 0 = top of hero, 1 = fully scrolled past
 
@@ -457,6 +458,15 @@ import * as THREE from "three";
       if (Math.abs(p - lastWrittenHeroP) > 0.0015) {
         document.documentElement.style.setProperty("--hero-p", p.toFixed(4));
         lastWrittenHeroP = p;
+
+        // the real #navbar is hidden (opacity + pointer-events:none) until
+        // the landing's scroll transition is well underway — flip it
+        // "live" past that point so it's actually clickable, not just
+        // faintly visible. Looked up lazily since the navbar is injected
+        // async via partials/nav.html and may not exist on the very first
+        // few frames.
+        if (!navbarEl) navbarEl = document.getElementById("navbar");
+        if (navbarEl) navbarEl.classList.toggle("nav-live", p > 0.32);
       }
     }
 
