@@ -43,14 +43,29 @@
 </footer>
 
 <!--
-  FLOW WIDGET PLACEHOLDER — inert for now, ready for the real bot.
-  When Flow is wired in as the site's live assistant, mount it into
-  #flow-widget-root and swap the click handler in js/main.js
-  (search "flow-launcher") to open the real widget instead of the
-  "coming soon" tooltip. API reference: flow-v3-mu.vercel.app/api/chat
+  FLOW — live, real backend. Panel markup below; behavior (open/close,
+  send, and the actual fetch() to flow-v3-mu.vercel.app/api/chat) lives in
+  js/main.js under initFlowLauncher(). The system prompt sent with every
+  request is deliberately scoped to public studio/portfolio questions —
+  it does NOT carry Joel's personal Flow V3 memory/context, since this
+  widget is reachable by any site visitor.
 -->
-<div id="flow-widget-root" data-flow-widget-placeholder="true"></div>
-<button id="flow-launcher" aria-label="Chat with Flow (coming soon)" type="button">
+<div id="flow-panel" aria-hidden="true">
+  <div class="flow-panel-header">
+    <span class="flow-wordmark">FLOW</span>
+    <button id="flow-close" type="button" aria-label="Close chat">&times;</button>
+  </div>
+  <div id="flow-messages">
+    <div class="flow-msg flow-msg-bot">Hey — I'm Flow, Joel's AI assistant. Ask me about the studio, a project idea, or how this chat is actually wired up.</div>
+  </div>
+  <form id="flow-form" autocomplete="off">
+    <input id="flow-input" type="text" placeholder="Ask Flow anything…" aria-label="Message Flow" />
+    <button type="submit" aria-label="Send">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </form>
+</div>
+<button id="flow-launcher" aria-label="Chat with Flow" type="button">
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
     <path d="M4 5h16v10H8l-4 4V5Z"/>
     <circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/>
@@ -58,4 +73,3 @@
     <circle cx="16" cy="10" r="1" fill="currentColor" stroke="none"/>
   </svg>
 </button>
-<div id="flow-tooltip" role="status">Flow is joining soon</div>
