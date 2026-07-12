@@ -40,6 +40,22 @@
     initForm();
     initCounters();
     initFlowLauncher();
+    initLightTrails();
+  }
+
+  /* ── LIGHT TRAILS ─────────────────────────────────────────────────────
+     Five small glints that ride fixed CSS motion paths behind the content
+     (see .light-trail in style.css) — "light passing through the lines,
+     consecutively." Injected once here instead of pasted into all six
+     HTML pages. */
+  function initLightTrails() {
+    if (window.matchMedia("(max-width: 900px)").matches) return; // CSS also skips these; save the DOM nodes too
+    if (document.querySelector(".light-trail")) return;
+    const wrap = document.createElement("div");
+    wrap.innerHTML = ['t1', 't2', 't3', 't4', 't5']
+      .map((cls) => `<div class="light-trail ${cls}"></div>`)
+      .join("");
+    while (wrap.firstChild) document.body.appendChild(wrap.firstChild);
   }
 
   /* ── FLOW CHAT — real backend, not a placeholder ─────────────────────────
