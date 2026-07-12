@@ -25,10 +25,10 @@ import * as THREE from "three";
   const canvas = document.getElementById("cube-canvas");
 
   const CONFIG = {
-    glassColor: 0xf7f1ff,
+    glassColor: 0xd8d8d8,
     ambientColor: 0xffffff,
-    keyLightColor: 0xffe0a0,
-    fillLightColor: 0xc9a0ff,
+    keyLightColor: 0xffffff,
+    fillLightColor: 0xc9c9c9,
     coreSize: 1.5,
     shellSize: 2.0,
     tumbleX: 0.11,
@@ -105,9 +105,9 @@ import * as THREE from "three";
     cubeGroup = new THREE.Group();
     scene.add(cubeGroup);
 
-    // warm gold light from the cube's own core, catching the undersides
-    // of the panels the way the reference's interior glow does
-    const coreGlow = new THREE.PointLight(0xffd23f, 4.5, 8, 2);
+    // soft white light from the cube's own core, catching the undersides
+    // of the panels — subtle, not a colored glow
+    const coreGlow = new THREE.PointLight(0xe8e8e8, 4, 8, 2);
     coreGlow.position.set(0, 0, 0);
     cubeGroup.add(coreGlow);
 
@@ -184,12 +184,15 @@ import * as THREE from "three";
     const panelSize = faceSize / grid;
     const gap = panelSize * 0.12;
     const panelGeo = new THREE.BoxGeometry(panelSize - gap, panelSize - gap, panelSize * 0.18);
+    // base material stays neutral white so per-instance colors (below)
+    // multiply cleanly — the reference cube alternates matte-black and
+    // glossy-silver panels rather than one flat tone, so instance color
+    // gets us that checkered variation without needing separate materials
+    // (which would break the single-draw-call InstancedMesh approach).
     const panelMat = new THREE.MeshStandardMaterial({
-      color: CONFIG.glassColor,
-      roughness: 0.35,
-      metalness: 0.15,
-      emissive: 0x2a0a55,
-      emissiveIntensity: 0.4,
+      color: 0xffffff,
+      roughness: 0.32,
+      metalness: 0.45,
     });
 
     const faces = [
@@ -246,12 +249,19 @@ import * as THREE from "three";
 
           m.compose(pos, q, new THREE.Vector3(1, 1, 1));
           mesh.setMatrixAt(i, m);
+
+          // checkered black/silver, weighted toward dark like the reference
+          const shade = rand();
+          const tone = shade < 0.55 ? 0x141414 : shade < 0.85 ? 0x8f8f8f : 0xd8d8d8;
+          mesh.setColorAt(i, new THREE.Color(tone));
+
           i++;
         }
       }
     });
 
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     return mesh;
   }
 
@@ -262,20 +272,21 @@ import * as THREE from "three";
     const ctx = c.getContext("2d");
 
     const rand = mulberry32(seed * 977 + 13);
-    const gold = "255,210,63";
-    const amber = "255,150,40";
+    const gold = "232,232,232";
+    const amber = "150,150,150";
 
-    // base: warm dark fill with a bright gold glow pooling at the center,
-    // like light spilling out from inside — matches the reference's
-    // interior glow instead of the old cyan "chip" look
-    ctx.fillStyle = "#1a0a00";
+    // base: near-black fill with a faint white glow pooling at the
+    // center — subtle, since the reference cube reads as matte/glossy
+    // panels reflecting studio light, not an internal light source. This
+    // just keeps the gaps between panels from reading as pure dead-black.
+    ctx.fillStyle = "#0a0a0a";
     ctx.fillRect(0, 0, size, size);
     const cx0 = size * (0.35 + rand() * 0.3);
     const cy0 = size * (0.35 + rand() * 0.3);
     const glowGrad = ctx.createRadialGradient(cx0, cy0, 0, cx0, cy0, size * 0.55);
-    glowGrad.addColorStop(0, "rgba(255,225,110,0.9)");
-    glowGrad.addColorStop(0.4, "rgba(255,180,40,0.55)");
-    glowGrad.addColorStop(1, "rgba(26,10,0,0)");
+    glowGrad.addColorStop(0, "rgba(230,230,230,0.55)");
+    glowGrad.addColorStop(0.4, "rgba(150,150,150,0.28)");
+    glowGrad.addColorStop(1, "rgba(10,10,10,0)");
     ctx.fillStyle = glowGrad;
     ctx.fillRect(0, 0, size, size);
 
@@ -353,12 +364,12 @@ import * as THREE from "three";
     c.width = size; c.height = size;
     const ctx = c.getContext("2d");
     const g = ctx.createLinearGradient(0, 0, 0, size);
-    g.addColorStop(0, "#c9a0ff");
-    g.addColorStop(0.5, "#6a00d8");
-    g.addColorStop(1, "#2a0060");
+    g.addColorStop(0, "#4a4a4a");
+    g.addColorStop(0.5, "#141414");
+    g.addColorStop(1, "#000000");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = "rgba(255,210,63,0.22)";
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
     ctx.fillRect(0, size * 0.4, size, size * 0.05);
 
     const tex = new THREE.CanvasTexture(c);
