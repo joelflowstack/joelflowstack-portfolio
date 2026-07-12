@@ -5,26 +5,27 @@
    ========================================================================== */
 
 :root{
-  /* Matched directly to pixel samples from the reference image: bg
-     ~rgb(115,0,228), panel faces near-white, interior glow ~rgb(255,255,0). */
-  --bg:        #6a00d8;
-  --bg-2:      #55009f;
-  --surface:   rgba(255,255,255,0.08);
-  --surface-2: rgba(255,255,255,0.14);
-  --border:    rgba(255,255,255,0.16);
-  --border-hi: rgba(255,255,255,0.32);
+  /* Matched to pixel samples from the black cube reference: bg pure
+     #000000, panels ranging matte black to silver #c5c5c5 — a genuine
+     greyscale palette, zero color tint anywhere. */
+  --bg:        #000000;
+  --bg-2:      #0a0a0a;
+  --surface:   rgba(255,255,255,0.05);
+  --surface-2: rgba(255,255,255,0.09);
+  --border:    rgba(255,255,255,0.12);
+  --border-hi: rgba(255,255,255,0.26);
 
-  --blue:      #b28cff;
-  --blue-deep: #3a0a80;
-  --violet:    #c9a0ff;
-  --cyan:      #ffd23f;
+  --blue:      #c9c9c9;
+  --blue-deep: #1a1a1a;
+  --violet:    #9a9a9a;
+  --cyan:      #e8e8e8;
 
   --ink:       #ffffff;
-  --muted:     #d9c3ff;
-  --muted-2:   #a780e8;
+  --muted:     #a3a3a3;
+  --muted-2:   #6b6b6b;
 
-  --grad-brand: linear-gradient(120deg, var(--cyan) 0%, var(--violet) 100%);
-  --grad-line:  linear-gradient(90deg, rgba(255,210,63,0), rgba(255,210,63,.55), rgba(201,160,255,0));
+  --grad-brand: linear-gradient(120deg, #e8e8e8 0%, #8a8a8a 100%);
+  --grad-line:  linear-gradient(90deg, rgba(232,232,232,0), rgba(232,232,232,.5), rgba(138,138,138,0));
 
   --font-display: 'Space Grotesk', sans-serif;
   --font-body:    'Inter', sans-serif;
@@ -102,7 +103,7 @@ button{ font-family: inherit; }
   z-index: 1;
   pointer-events: none;
   opacity: 0.4;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><g fill='none' stroke='%23f3ebff' stroke-width='2' stroke-linecap='square' opacity='0.85'><path d='M10 10h50v40h60v-30h40'/><path d='M160 20v50h60v40h50'/><path d='M20 90h40v60h70'/><path d='M90 150h60v-40h50v70h60'/><path d='M10 200h60v50h80v-30h90'/><path d='M250 10v60h-40v50'/><path d='M180 220v50h70'/><path d='M40 260v30h100v-60h90'/><path d='M270 120h20v100'/><path d='M120 40v-30'/></g><g fill='none' stroke='%23ffffff' stroke-width='1' opacity='0.7'><path d='M10 10h50v40h60v-30h40'/><path d='M160 20v50h60v40h50'/><path d='M20 90h40v60h70'/><path d='M90 150h60v-40h50v70h60'/><path d='M10 200h60v50h80v-30h90'/><path d='M250 10v60h-40v50'/><path d='M180 220v50h70'/><path d='M40 260v30h100v-60h90'/><path d='M270 120h20v100'/></g><g fill='%23ffd23f'><circle cx='60' cy='10' r='3'/><circle cx='150' cy='150' r='3'/><circle cx='230' cy='270' r='3'/></g><g fill='%23ffffff'><circle cx='120' cy='90' r='2.4'/><circle cx='220' cy='70' r='2.4'/><circle cx='40' cy='230' r='2.4'/><circle cx='270' cy='190' r='2.4'/></g></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><g fill='none' stroke='%23c9c9c9' stroke-width='2' stroke-linecap='square' opacity='0.85'><path d='M10 10h50v40h60v-30h40'/><path d='M160 20v50h60v40h50'/><path d='M20 90h40v60h70'/><path d='M90 150h60v-40h50v70h60'/><path d='M10 200h60v50h80v-30h90'/><path d='M250 10v60h-40v50'/><path d='M180 220v50h70'/><path d='M40 260v30h100v-60h90'/><path d='M270 120h20v100'/><path d='M120 40v-30'/></g><g fill='none' stroke='%23ffffff' stroke-width='1' opacity='0.65'><path d='M10 10h50v40h60v-30h40'/><path d='M160 20v50h60v40h50'/><path d='M20 90h40v60h70'/><path d='M90 150h60v-40h50v70h60'/><path d='M10 200h60v50h80v-30h90'/><path d='M250 10v60h-40v50'/><path d='M180 220v50h70'/><path d='M40 260v30h100v-60h90'/><path d='M270 120h20v100'/></g><g fill='%23e8e8e8'><circle cx='60' cy='10' r='3'/><circle cx='150' cy='150' r='3'/><circle cx='230' cy='270' r='3'/></g><g fill='%23ffffff'><circle cx='120' cy='90' r='2.4'/><circle cx='220' cy='70' r='2.4'/><circle cx='40' cy='230' r='2.4'/><circle cx='270' cy='190' r='2.4'/></g></svg>");
   background-repeat: repeat;
   background-size: 300px 300px;
   animation: circuitDrift 80s linear infinite, circuitPulse 5s ease-in-out infinite;
@@ -113,21 +114,51 @@ button{ font-family: inherit; }
 @keyframes circuitDrift{ from{ transform: translate3d(0,0,0); } to{ transform: translate3d(-300px,-300px,0); } }
 @keyframes circuitPulse{ 0%,100%{ opacity: 0.34; } 50%{ opacity: 0.48; } }
 
+/* ── TRAVELING LIGHT ─────────────────────────────────────────────────────
+   "Light passing through the lines, consecutively" — a handful of small
+   glints ride fixed motion paths (CSS offset-path), each on its own timer.
+   This is transform-only motion (the browser moves the element along the
+   path as a compositor operation), so it costs about the same as any
+   other CSS transform animation — nothing like animating an SVG
+   stroke-dashoffset per line, which would force a repaint every frame. */
+.light-trail{
+  position: fixed; top:0; left:0; z-index: 1; pointer-events:none;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, rgba(255,255,255,.6) 40%, transparent 75%);
+  box-shadow: 0 0 10px 2px rgba(255,255,255,.65);
+  offset-rotate: 0deg;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: offset-distance, opacity;
+}
+.light-trail.t1{ offset-path: path("M 40 90 L 150 90 L 150 240 L 340 240"); animation: travel1 7s infinite; }
+.light-trail.t2{ offset-path: path("M 630 60 L 630 220 L 470 220 L 470 380"); animation: travel2 8.5s infinite; animation-delay: 1.2s; }
+.light-trail.t3{ offset-path: path("M 90 420 L 90 560 L 320 560 L 320 680"); animation: travel3 6.2s infinite; animation-delay: 2.6s; }
+.light-trail.t4{ offset-path: path("M 900 140 L 780 140 L 780 40"); animation: travel4 5.4s infinite; animation-delay: .6s; }
+.light-trail.t5{ offset-path: path("M 1080 480 L 1080 620 L 920 620"); animation: travel5 7.8s infinite; animation-delay: 3.4s; }
+@keyframes travel1{ 0%{ offset-distance:0%; opacity:0; } 8%{ opacity:1; } 92%{ opacity:1; } 100%{ offset-distance:100%; opacity:0; } }
+@keyframes travel2{ 0%{ offset-distance:0%; opacity:0; } 8%{ opacity:1; } 92%{ opacity:1; } 100%{ offset-distance:100%; opacity:0; } }
+@keyframes travel3{ 0%{ offset-distance:0%; opacity:0; } 8%{ opacity:1; } 92%{ opacity:1; } 100%{ offset-distance:100%; opacity:0; } }
+@keyframes travel4{ 0%{ offset-distance:0%; opacity:0; } 8%{ opacity:1; } 92%{ opacity:1; } 100%{ offset-distance:100%; opacity:0; } }
+@keyframes travel5{ 0%{ offset-distance:0%; opacity:0; } 8%{ opacity:1; } 92%{ opacity:1; } 100%{ offset-distance:100%; opacity:0; } }
+@media (max-width: 900px){ .light-trail{ display:none; } } /* skip on small screens — the paths are tuned for wide viewports */
+
+
 .bg-veil{
   position: fixed;
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  /* Matched to the reference: rich purple field with a warm gold glow
-     pooling behind the cube. IMPORTANT: no opaque layer here — this sits
-     in front of #cube-canvas in the stacking order (z-index 2 vs 0), so
-     anything opaque here paints over and completely hides the cube. The
-     solid purple base color lives on <body> instead, underneath the
-     canvas, where it can't block anything. */
+  /* Matched to the reference: pure black field with a soft white/silver
+     glow pooling behind the cube — no color tint anywhere. IMPORTANT: no
+     opaque layer here — this sits in front of #cube-canvas in the
+     stacking order (z-index 2 vs 0), so anything opaque here paints over
+     and completely hides the cube. The solid black base color lives on
+     <body> instead, underneath the canvas, where it can't block anything. */
   background:
-    radial-gradient(ellipse 50% 42% at 50% 42%, rgba(255,210,63,.16), transparent 62%),
-    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(30,0,60,.35), transparent 65%),
-    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(30,0,60,.3), transparent 65%);
+    radial-gradient(ellipse 50% 42% at 50% 42%, rgba(255,255,255,.09), transparent 62%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(255,255,255,.04), transparent 65%),
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(255,255,255,.04), transparent 65%);
 }
 .grain{
   position: fixed; inset:0; z-index:3; pointer-events:none; opacity:.03; mix-blend-mode: overlay;
