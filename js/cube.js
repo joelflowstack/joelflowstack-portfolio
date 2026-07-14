@@ -1,20 +1,38 @@
 /**
  * JOEL FLOWSTACK — cube.js
- * A glass cube with a procedurally-generated "circuit crystal" core — no
- * video, no stock footage, no watermark. The circuit pattern is drawn on
- * canvas at runtime (see makeCircuitTexture) in the site's own cyan/violet
- * palette. On index.html it drives a pinned scroll intro (cube fills the
- * screen, then shrinks/settles into a corner as the page content rises
- * over it). On every other page it sits quietly in the corner, same
- * material, same lighting — one continuous object site-wide.
+ * ------------------------------------------------------------------
+ * A 26-piece Rubik's cube (hollow center, like a real cube) rendered
+ * in glossy black/charcoal checkerboard — matching the studio-black
+ * reference video. Two modes, chosen automatically per page:
  *
- * RULE: interaction only ever changes TRANSFORM — never color, material,
- * or lighting.
+ *   PORTAL MODE  (#scroll-hero present, i.e. index.html)
+ *     Scroll drives one continuous animation: tumble -> zoom -> lock
+ *     face-forward. Once locked, the 8 outer front tiles become
+ *     clickable nav squares; the center front tile shows a small
+ *     nested decorative mini-cube. Clicking a tile scatters all 26
+ *     pieces outward, then navigates.
  *
- * DIAGNOSTICS: if you see the background gradient but no cube, open
- * DevTools → Console. This file logs a clear [cube.js] message for every
- * failure mode (WebGL unavailable, three.js not loaded) instead of failing
- * silently — copy that message back if you need help.
+ *   DECORATIVE MODE  (#cube-canvas present, no #scroll-hero)
+ *     Same engine, same materials, gentle idle tumble + mouse
+ *     parallax. No nav behaviour.
+ *
+ * ARCHITECTURE — READ BEFORE EDITING
+ *   The scroll-driven animation is fully STATELESS: every rotation,
+ *   camera, and opacity value is recomputed from scratch each frame
+ *   from `elapsed` (clock time) and `P` (scroll progress 0..1) using
+ *   smoothstep/easing. Nothing is incrementally integrated frame to
+ *   frame. This was a deliberate rewrite of an earlier phase-machine
+ *   version that desynced; do not reintroduce mutable "current angle"
+ *   state for the scroll animation.
+ *
+ *   The BOOT-SOLVE fly-in is the one place with real state (each
+ *   piece's home/scattered position + a start timestamp), because it
+ *   only runs once. Its easing (easeOutBack) legitimately overshoots
+ *   past 1.0 before settling — do NOT clamp the eased output to 1,
+ *   only clamp the time fraction that feeds into it. A hard final
+ *   snap-to-exact-position runs once the timer passes duration, to
+ *   kill any float drift.
+ * ------------------------------------------------------------------
  */
 
 import * as THREE from "three";
@@ -23,40 +41,71 @@ import * as THREE from "three";
   "use strict";
 
   const canvas = document.getElementById("cube-canvas");
+  if (!canvas) {
+    console.warn("[cube.js] no #cube-canvas on this page — skipping.");
+    return;
+  }
+  if (!window.WebGLRenderingContext) {
+    showFallback("This browser doesn't support WebGL, so the 3D cube can't render here. Everything else on the site still works.");
+    return;
+  }
+
+  const heroEl = document.getElementById("scroll-hero");
+  const PORTAL_MODE = !!heroEl;
+
+  const NAV_ITEMS = [
+    { key: "home",      label: "Home",      href: "pages/home.html" },
+    { key: "about",     label: "About",     href: "pages/about.html" },
+    { key: "services",  label: "Services",  href: "pages/services.html" },
+    { key: "portfolio", label: "Portfolio", href: "pages/portfolio.html" },
+    { key: "blog",      label: "Blog",      href: "pages/blog.html" },
+    { key: "contact",   label: "Contact",   href: "pages/contact.html" },
+    { key: "youtube",   label: "YouTube",   href: "https://youtube.com/@joelflowstack" },
+    { key: "tiktok",    label: "TikTok",    href: "https://tiktok.com/@joelflowstack" },
+  ];
+  // Grid positions (x,y) on the front face (z = +1), in reading order
+  // matching NAV_ITEMS above, skipping the center (0,0) which gets
+  // the decorative mini-cube instead of a nav link.
+  const FRONT_GRID = [
+    [-1, 1], [0, 1], [1, 1],
+    [-1, 0],         [1, 0],
+    [-1,-1], [0,-1], [1,-1],
+  ];
 
   const CONFIG = {
-    glassColor: 0xd8d8d8,
-    ambientColor: 0xffffff,
-    keyLightColor: 0xffffff,
-    fillLightColor: 0xc9c9c9,
-    coreSize: 1.5,
-    shellSize: 2.0,
-    tumbleX: 0.11,
-    tumbleY: 0.16,
-    tumbleZ: 0.045,
-    parallaxStrength: 0.18,
+    pieceSize: 0.94,
+    gap: 0.06,
+    tileColorA: 0x0c0c0d,   // near-black checker square
+    tileColorB: 0x1c1d20,   // charcoal checker square
+    plasticColor: 0x030303,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.18,
+    roughness: 0.32,
+    metalness: 0.08,
+    bootDuration: 1.5,      // seconds
+    scatterDuration: 0.75,  // seconds
   };
 
-  let renderer, scene, camera, cubeGroup, core, shell, shadowMesh;
-  let targetX = 0, targetY = 0, curX = 0, curY = 0;
+  let renderer, scene, camera, cubeGroup, shadowCatcher;
+  let pieces = []; // {mesh, grid:{x,y,z}, home:Vector3, scattered:Vector3, delay:number, isFrontOuter:bool, navIndex:number}
   let clock = new THREE.Clock();
-  let elapsed = 0;
-  let heroEl = null; // #scroll-hero, only present on index.html
-  let navbarEl = null;
-  let lastWrittenHeroP = -1;
-  let heroProgress = 0; // 0 = top of hero, 1 = fully scrolled past
+  let raycaster = new THREE.Raycaster();
+  let pointer = new THREE.Vector2();
+  let mouseTargetX = 0, mouseTargetY = 0, mouseCurX = 0, mouseCurY = 0;
+  let bootStart = null;
+  let bootDone = false;
+  let scatterActive = false;
+  let scatterStart = 0;
+  let scatterTargetHref = null;
+  let scrollP = 0; // 0..1, updated on scroll (portal mode only)
+  let labelEls = new Map(); // navIndex -> DOM label element
 
-  if (!canvas) {
-    console.warn("[cube.js] no #cube-canvas element on this page — skipping.");
-  } else if (!window.WebGLRenderingContext) {
-    showFallback("This browser doesn't support WebGL, so the 3D cube can't render here. Everything else on the site still works.");
-  } else {
-    try {
-      run();
-    } catch (err) {
-      console.error("[cube.js] failed to initialize:", err);
-      showFallback("The 3D cube failed to load (see console for details). Everything else on the site still works.");
-    }
+  try {
+    init();
+    animate();
+  } catch (err) {
+    console.error("[cube.js] failed to initialize:", err);
+    showFallback("The 3D cube failed to load (see console for details). Everything else on the site still works.");
   }
 
   function showFallback(msg) {
@@ -64,423 +113,473 @@ import * as THREE from "three";
     note.textContent = msg;
     note.style.cssText =
       "position:fixed;bottom:16px;left:16px;z-index:9999;max-width:320px;" +
-      "background:rgba(10,14,30,.92);color:#cfe0ff;border:1px solid rgba(127,224,255,.3);" +
-      "border-radius:10px;padding:12px 14px;font:12.5px/1.4 system-ui,sans-serif;";
+      "background:#0a0a0b;color:#ccc;border:1px solid #38393e;" +
+      "border-radius:4px;padding:12px 14px;font:12.5px/1.4 monospace;";
     document.body.appendChild(note);
     console.warn("[cube.js]", msg);
   }
 
-  function run() {
-    heroEl = document.getElementById("scroll-hero");
-
+  // ---------------------------------------------------------------
+  // INIT
+  // ---------------------------------------------------------------
+  function init() {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.05;
 
     scene = new THREE.Scene();
+    scene.background = null; // page background (pure black) shows through
 
-    camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0.15, 7.6);
+    camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0.2, PORTAL_MODE ? 11 : 6.2);
 
-    try {
-      scene.environment = makeStudioEnv();
-    } catch (err) {
-      console.warn("[cube.js] environment map skipped (non-fatal):", err);
-    }
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
 
-    scene.add(new THREE.AmbientLight(CONFIG.ambientColor, 1.4));
-    const key = new THREE.DirectionalLight(CONFIG.keyLightColor, 3);
-    key.position.set(3.5, 5.5, 6);
+    // single sharp specular key light, matching the reference video
+    const key = new THREE.DirectionalLight(0xffffff, 3.2);
+    key.position.set(4, 6, 6.5);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(CONFIG.fillLightColor, 1.6);
-    fill.position.set(-4, -1, 4);
+
+    const fill = new THREE.DirectionalLight(0xaeb0b5, 0.5);
+    fill.position.set(-5, -2, 3);
     scene.add(fill);
-    const top = new THREE.PointLight(0xffffff, 3.5, 20, 2);
-    top.position.set(0, 4.5, 2);
-    scene.add(top);
+
+    const rim = new THREE.DirectionalLight(0xffffff, 0.8);
+    rim.position.set(-2, 3, -6);
+    scene.add(rim);
 
     cubeGroup = new THREE.Group();
     scene.add(cubeGroup);
 
-    // soft white light from the cube's own core, catching the undersides
-    // of the panels — subtle, not a colored glow
-    const coreGlow = new THREE.PointLight(0xe8e8e8, 4, 8, 2);
-    coreGlow.position.set(0, 0, 0);
-    cubeGroup.add(coreGlow);
+    buildPieces();
+    buildShadowCatcher();
 
-    // ── procedural circuit-crystal core ─────────────────────────────────
-    // No video, no stock footage, no watermark — the "chip inside glass"
-    // look from the reference is rebuilt from scratch as drawn canvas
-    // textures (PCB-style traces + nested via squares), one per cube face,
-    // in the site's own cyan/violet palette. A handful of "trace nodes"
-    // pulse on a slow interval for a powered-circuit feel.
-    const faceTextures = [0, 1, 2].map((i) => makeCircuitTexture(i));
-    const coreGeo = new THREE.BoxGeometry(CONFIG.coreSize, CONFIG.coreSize, CONFIG.coreSize);
-    const coreMats = [
-      new THREE.MeshBasicMaterial({ map: faceTextures[0].texture, toneMapped: false }),
-      new THREE.MeshBasicMaterial({ map: faceTextures[0].texture, toneMapped: false }),
-      new THREE.MeshBasicMaterial({ map: faceTextures[1].texture, toneMapped: false }),
-      new THREE.MeshBasicMaterial({ map: faceTextures[1].texture, toneMapped: false }),
-      new THREE.MeshBasicMaterial({ map: faceTextures[2].texture, toneMapped: false }),
-      new THREE.MeshBasicMaterial({ map: faceTextures[2].texture, toneMapped: false }),
-    ];
-    core = new THREE.Mesh(coreGeo, coreMats);
-    cubeGroup.add(core);
+    if (PORTAL_MODE) {
+      buildNavLabels();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+      canvas.addEventListener("pointerdown", onPortalClick);
+      canvas.style.cursor = "default";
+    }
 
-    // repaint traces every 220ms for a subtle "live circuit" pulse —
-    // cheap (canvas redraw, not per-frame) and never touches the glass
-    // shell's material at all
-    // perf: only repaint ONE face's texture per tick, round-robin, instead
-    // of re-uploading all three to the GPU simultaneously — same subtle
-    // "live circuit" effect, a third of the texture-upload cost per tick
-    let pulseTick = 0;
-    setInterval(() => {
-      faceTextures[pulseTick % faceTextures.length].pulse();
-      pulseTick++;
-    }, 450);
-
-    // Tested side-by-side: transmission-based "real glass" costs 3-9x more
-    // per frame (it forces an extra full-scene render pass) and even
-    // opaque MeshPhysicalMaterial has meaningfully more shader cost than
-    // MeshStandardMaterial for something this instanced. Given lag has
-    // been a recurring, explicit concern, the panel shell below trades a
-    // touch of material realism for a build that stays cheap no matter
-    // how many panels it's made of — it's all ONE draw call regardless of
-    // panel count, via InstancedMesh, rather than 50+ separate objects.
-    shell = buildPanelShell();
-    cubeGroup.add(shell);
-
-    const shadowTex = makeShadowTexture();
-    shadowMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(4.2, 2.4),
-      new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false, opacity: 0.5 })
-    );
-    shadowMesh.position.set(0, -1.7, -0.3);
-    shadowMesh.rotation.x = -Math.PI / 2.35;
-    scene.add(shadowMesh);
-
-    positionForMode();
-
+    window.addEventListener("mousemove", onMouseMove, { passive: true });
     window.addEventListener("resize", onResize);
-    window.addEventListener("pointermove", onPointerMove, { passive: true });
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
 
-    animate();
+    bootStart = performance.now();
   }
 
-  // Builds the fragmented panel shell from the reference: a grid of small
-  // panels across all 6 faces, most sitting flush to form the cube's
-  // silhouette, a handful pushed outward/rotated like they're mid-explode.
-  // Everything here is ONE THREE.InstancedMesh — one draw call no matter
-  // how many panels, so "more panels" never means "more render cost" the
-  // way 50+ separate Mesh objects would.
-  function buildPanelShell() {
-    const grid = 3; // 3x3 panels per face
-    const faceSize = CONFIG.shellSize;
-    const panelSize = faceSize / grid;
-    const gap = panelSize * 0.12;
-    const panelGeo = new THREE.BoxGeometry(panelSize - gap, panelSize - gap, panelSize * 0.18);
-    // base material stays neutral white so per-instance colors (below)
-    // multiply cleanly — the reference cube alternates matte-black and
-    // glossy-silver panels rather than one flat tone, so instance color
-    // gets us that checkered variation without needing separate materials
-    // (which would break the single-draw-call InstancedMesh approach).
-    const panelMat = new THREE.MeshStandardMaterial({
+  // ---------------------------------------------------------------
+  // GEOMETRY / MATERIALS
+  // ---------------------------------------------------------------
+  function makeCheckerTexture(seedOffset) {
+    const size = 256;
+    const c = document.createElement("canvas");
+    c.width = c.height = size;
+    const ctx = c.getContext("2d");
+    const squares = 4;
+    const step = size / squares;
+    for (let y = 0; y < squares; y++) {
+      for (let x = 0; x < squares; x++) {
+        const isA = (x + y + seedOffset) % 2 === 0;
+        ctx.fillStyle = isA ? "#0c0c0d" : "#1c1d20";
+        ctx.fillRect(x * step, y * step, step, step);
+      }
+    }
+    // subtle vignette for depth
+    const grad = ctx.createRadialGradient(size/2, size/2, size*0.1, size/2, size/2, size*0.7);
+    grad.addColorStop(0, "rgba(255,255,255,0.04)");
+    grad.addColorStop(1, "rgba(0,0,0,0.25)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  function makePlasticMaterial(seedOffset) {
+    return new THREE.MeshPhysicalMaterial({
+      map: makeCheckerTexture(seedOffset),
       color: 0xffffff,
-      roughness: 0.32,
-      metalness: 0.45,
+      roughness: CONFIG.roughness,
+      metalness: CONFIG.metalness,
+      clearcoat: CONFIG.clearcoat,
+      clearcoatRoughness: CONFIG.clearcoatRoughness,
     });
+  }
 
-    const faces = [
-      { normal: [1, 0, 0], u: [0, 1, 0], v: [0, 0, 1] },
-      { normal: [-1, 0, 0], u: [0, 1, 0], v: [0, 0, -1] },
-      { normal: [0, 1, 0], u: [1, 0, 0], v: [0, 0, -1] },
-      { normal: [0, -1, 0], u: [1, 0, 0], v: [0, 0, 1] },
-      { normal: [0, 0, 1], u: [1, 0, 0], v: [0, 1, 0] },
-      { normal: [0, 0, -1], u: [-1, 0, 0], v: [0, 1, 0] },
-    ];
-    const count = faces.length * grid * grid;
-    const mesh = new THREE.InstancedMesh(panelGeo, panelMat, count);
+  function makeBlackFaceMaterial() {
+    return new THREE.MeshPhysicalMaterial({
+      color: CONFIG.plasticColor,
+      roughness: 0.55,
+      metalness: 0.05,
+      clearcoat: 0.6,
+      clearcoatRoughness: 0.3,
+    });
+  }
 
-    const rand = mulberry32(4242);
-    const m = new THREE.Matrix4();
-    const q = new THREE.Quaternion();
-    const half = faceSize / 2;
-    let i = 0;
+  function makeLabelMaterial(text) {
+    const size = 256;
+    const c = document.createElement("canvas");
+    c.width = c.height = size;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#0c0c0d";
+    ctx.fillRect(0, 0, size, size);
+    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(10, 10, size - 20, size - 20);
+    ctx.fillStyle = "#e9e9e8";
+    ctx.font = "600 26px 'IBM Plex Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    // wrap long labels onto two lines if needed
+    if (text.length > 8) {
+      ctx.font = "600 22px 'IBM Plex Mono', monospace";
+    }
+    ctx.fillText(text.toUpperCase(), size / 2, size / 2);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return new THREE.MeshPhysicalMaterial({
+      map: tex, color: 0xffffff,
+      roughness: CONFIG.roughness, metalness: CONFIG.metalness,
+      clearcoat: CONFIG.clearcoat, clearcoatRoughness: CONFIG.clearcoatRoughness,
+    });
+  }
 
-    faces.forEach((f) => {
-      const n = new THREE.Vector3(...f.normal);
-      const u = new THREE.Vector3(...f.u);
-      const v = new THREE.Vector3(...f.v);
-      for (let gx = 0; gx < grid; gx++) {
-        for (let gy = 0; gy < grid; gy++) {
-          const cu = (gx - (grid - 1) / 2) * panelSize;
-          const cv = (gy - (grid - 1) / 2) * panelSize;
-          const pos = new THREE.Vector3()
-            .addScaledVector(u, cu)
-            .addScaledVector(v, cv)
-            .addScaledVector(n, half);
+  function buildPieces() {
+    const s = CONFIG.pieceSize;
+    const gap = CONFIG.gap;
+    const step = s + gap;
+    let navIndex = 0;
 
-          const exploded = rand() < 0.16; // ~16% of panels "mid-explode", like the reference's floating top pieces
-          if (exploded) {
-            pos.addScaledVector(n, 0.35 + rand() * 0.5);
-            pos.addScaledVector(u, (rand() - 0.5) * 0.25);
-            pos.addScaledVector(v, (rand() - 0.5) * 0.25);
+    for (let x = -1; x <= 1; x++) {
+      for (let y = -1; y <= 1; y++) {
+        for (let z = -1; z <= 1; z++) {
+          if (x === 0 && y === 0 && z === 0) continue; // hollow center
+
+          const geo = new THREE.BoxGeometry(s, s, s);
+          // material order: [+x,-x,+y,-y,+z,-z]
+          const isFrontOuterFace = (z === 1);
+          const gridKeyMatch = isFrontOuterFace
+            ? FRONT_GRID.findIndex(([gx, gy]) => gx === x && gy === y)
+            : -1;
+
+          let frontMat;
+          let isCenterTile = false;
+          if (z === 1 && x === 0 && y === 0) {
+            isCenterTile = true;
+            frontMat = makePlasticMaterial(0); // plain checker, mini-cube sits on top
+          } else if (gridKeyMatch >= 0) {
+            frontMat = makeLabelMaterial(NAV_ITEMS[gridKeyMatch].label);
+          } else if (z === 1) {
+            frontMat = makePlasticMaterial(x + y);
           }
 
-          // orient the panel flat against the face, facing outward along n
-          const targetQuat = new THREE.Quaternion().setFromUnitVectors(
-            new THREE.Vector3(0, 0, 1),
-            n
+          const materials = [
+            x === 1  ? makePlasticMaterial(y + 1) : makeBlackFaceMaterial(), // +x
+            x === -1 ? makePlasticMaterial(y + 2) : makeBlackFaceMaterial(), // -x
+            y === 1  ? makePlasticMaterial(x + 1) : makeBlackFaceMaterial(), // +y
+            y === -1 ? makePlasticMaterial(x + 2) : makeBlackFaceMaterial(), // -y
+            z === 1  ? frontMat : makePlasticMaterial(x + y + 3),            // +z
+            z === -1 ? makePlasticMaterial(x + y + 4) : makeBlackFaceMaterial(), // -z
+          ];
+
+          const mesh = new THREE.Mesh(geo, materials);
+          const home = new THREE.Vector3(x * step, y * step, z * step);
+
+          // scattered start position: pushed far out along its own
+          // direction from center, with jitter, for the boot-solve fly-in
+          const dir = home.clone().normalize();
+          if (dir.lengthSq() === 0) dir.set(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize();
+          const scattered = dir.multiplyScalar(7 + Math.random() * 4).add(
+            new THREE.Vector3((Math.random()-0.5)*2, (Math.random()-0.5)*2, (Math.random()-0.5)*2)
           );
-          if (exploded) {
-            q.copy(targetQuat).multiply(
-              new THREE.Quaternion().setFromEuler(
-                new THREE.Euler((rand() - 0.5) * 0.6, (rand() - 0.5) * 0.6, (rand() - 0.5) * 0.6)
-              )
-            );
-          } else {
-            q.copy(targetQuat);
-          }
 
-          m.compose(pos, q, new THREE.Vector3(1, 1, 1));
-          mesh.setMatrixAt(i, m);
+          mesh.position.copy(scattered);
+          mesh.rotation.set(
+            (Math.random()-0.5) * Math.PI,
+            (Math.random()-0.5) * Math.PI,
+            (Math.random()-0.5) * Math.PI
+          );
 
-          // checkered black/silver, weighted toward dark like the reference
-          const shade = rand();
-          const tone = shade < 0.55 ? 0x141414 : shade < 0.85 ? 0x8f8f8f : 0xd8d8d8;
-          mesh.setColorAt(i, new THREE.Color(tone));
+          cubeGroup.add(mesh);
 
-          i++;
+          const piece = {
+            mesh, home, scattered,
+            delay: Math.random() * 0.35,
+            isNavTile: gridKeyMatch >= 0,
+            isCenterTile,
+            navIndex: gridKeyMatch,
+          };
+          pieces.push(piece);
+
+          if (isCenterTile) buildMiniCube(mesh);
         }
       }
+    }
+  }
+
+  // small nested decorative cube on the center front tile
+  function buildMiniCube(parentMesh) {
+    const geo = new THREE.BoxGeometry(0.32, 0.32, 0.32);
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: 0xe7e7e6, roughness: 0.2, metalness: 0.15,
+      clearcoat: 1, clearcoatRoughness: 0.1,
     });
-
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    return mesh;
+    const mini = new THREE.Mesh(geo, mat);
+    mini.position.set(0, 0, CONFIG.pieceSize / 2 + 0.2);
+    mini.name = "miniCube";
+    parentMesh.add(mini);
   }
 
-  function makeCircuitTexture(seed) {
-    const size = 320;
-    const c = document.createElement("canvas");
-    c.width = size; c.height = size;
-    const ctx = c.getContext("2d");
+  function buildShadowCatcher() {
+    const geo = new THREE.PlaneGeometry(20, 20);
+    const mat = new THREE.ShadowMaterial({ opacity: 0.0 }); // kept subtle/off; page bg is pure black
+    shadowCatcher = new THREE.Mesh(geo, mat);
+    shadowCatcher.position.y = -3;
+    shadowCatcher.rotation.x = -Math.PI / 2;
+    shadowCatcher.visible = false; // reference video has no visible ground plane in this crop
+  }
 
-    const rand = mulberry32(seed * 977 + 13);
-    const gold = "232,232,232";
-    const amber = "150,150,150";
-
-    // base: near-black fill with a faint white glow pooling at the
-    // center — subtle, since the reference cube reads as matte/glossy
-    // panels reflecting studio light, not an internal light source. This
-    // just keeps the gaps between panels from reading as pure dead-black.
-    ctx.fillStyle = "#0a0a0a";
-    ctx.fillRect(0, 0, size, size);
-    const cx0 = size * (0.35 + rand() * 0.3);
-    const cy0 = size * (0.35 + rand() * 0.3);
-    const glowGrad = ctx.createRadialGradient(cx0, cy0, 0, cx0, cy0, size * 0.55);
-    glowGrad.addColorStop(0, "rgba(230,230,230,0.55)");
-    glowGrad.addColorStop(0.4, "rgba(150,150,150,0.28)");
-    glowGrad.addColorStop(1, "rgba(10,10,10,0)");
-    ctx.fillStyle = glowGrad;
-    ctx.fillRect(0, 0, size, size);
-
-    // nested "chip" square, off-center like the reference
-    const cx = cx0, cy = cy0;
-    for (let r = 90; r > 14; r -= 16) {
-      ctx.strokeStyle = `rgba(${rand() > 0.5 ? gold : amber},${0.4 + rand() * 0.35})`;
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(cx - r / 2, cy - r / 2, r, r);
-    }
-
-    // rectilinear PCB traces radiating outward
-    const traceCount = 10 + Math.floor(rand() * 6);
-    const nodes = [];
-    for (let i = 0; i < traceCount; i++) {
-      let x = cx, y = cy;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      const segs = 2 + Math.floor(rand() * 3);
-      for (let s = 0; s < segs; s++) {
-        if (rand() > 0.5) x += (rand() - 0.5) * size * 0.6;
-        else y += (rand() - 0.5) * size * 0.6;
-        ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = `rgba(${rand() > 0.4 ? gold : amber},0.6)`;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      nodes.push({ x, y });
-    }
-
-    ctx.__nodes = nodes;
-    ctx.__cx = cx; ctx.__cy = cy;
-
-    const texture = new THREE.CanvasTexture(c);
-    texture.colorSpace = THREE.SRGBColorSpace;
-
-    function pulse() {
-      // redraw just a couple of glowing via-nodes each tick, cheap and subtle
-      const n = nodes[Math.floor(Math.random() * nodes.length)];
-      if (!n) return;
-      const hue = Math.random() > 0.5 ? gold : amber;
-      ctx.clearRect(n.x - 6, n.y - 6, 12, 12);
-      ctx.fillStyle = `rgba(${hue},${0.5 + Math.random() * 0.4})`;
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, 2.4, 0, Math.PI * 2);
-      ctx.fill();
-      texture.needsUpdate = true;
-    }
-
-    // seed a few permanent via-node dots
-    nodes.forEach((n) => {
-      ctx.fillStyle = `rgba(${gold},0.7)`;
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, 2.2, 0, Math.PI * 2);
-      ctx.fill();
+  // ---------------------------------------------------------------
+  // NAV LABELS (2D DOM overlay, positioned each frame from 3D)
+  // ---------------------------------------------------------------
+  function buildNavLabels() {
+    const wrap = document.getElementById("nav-tile-labels");
+    if (!wrap) return;
+    NAV_ITEMS.forEach((item, i) => {
+      const el = document.createElement("a");
+      el.className = "tile-label";
+      el.textContent = item.label;
+      el.href = item.href;
+      wrap.appendChild(el);
+      labelEls.set(i, el);
     });
-
-    return { texture, pulse };
   }
 
-  // deterministic tiny PRNG so each face gets a stable-but-different pattern
-  function mulberry32(a) {
-    return function () {
-      a |= 0; a = (a + 0x6d2b79f5) | 0;
-      let t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
+  function updateNavLabels(lockAmount) {
+    if (!PORTAL_MODE) return;
+    const vector = new THREE.Vector3();
+    pieces.forEach((p) => {
+      if (!p.isNavTile) return;
+      const el = labelEls.get(p.navIndex);
+      if (!el) return;
+      vector.setFromMatrixPosition(p.mesh.matrixWorld);
+      vector.project(camera);
+      const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+      el.style.left = x + "px";
+      el.style.top = y + "px";
+      el.style.opacity = String(lockAmount);
+      el.style.pointerEvents = lockAmount > 0.9 ? "auto" : "none";
+    });
   }
 
-
-  function makeStudioEnv() {
-    const size = 256;
-    const c = document.createElement("canvas");
-    c.width = size; c.height = size;
-    const ctx = c.getContext("2d");
-    const g = ctx.createLinearGradient(0, 0, 0, size);
-    g.addColorStop(0, "#4a4a4a");
-    g.addColorStop(0.5, "#141414");
-    g.addColorStop(1, "#000000");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = "rgba(255,255,255,0.15)";
-    ctx.fillRect(0, size * 0.4, size, size * 0.05);
-
-    const tex = new THREE.CanvasTexture(c);
-    tex.mapping = THREE.EquirectangularReflectionMapping;
-    tex.colorSpace = THREE.SRGBColorSpace;
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const envRT = pmrem.fromEquirectangular(tex);
-    tex.dispose();
-    pmrem.dispose();
-    return envRT.texture;
-  }
-
-  function makeShadowTexture() {
-    const size = 256;
-    const c = document.createElement("canvas");
-    c.width = size; c.height = size;
-    const ctx = c.getContext("2d");
-    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    g.addColorStop(0, "rgba(0,0,0,0.6)");
-    g.addColorStop(0.6, "rgba(0,0,0,0.25)");
-    g.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, size, size);
-    return new THREE.CanvasTexture(c);
-  }
-
-  function positionForMode() {
-    if (!heroEl) {
-      // inner pages: cube lives in the corner, always
-      const mode = document.body.getAttribute("data-cube") || "center";
-      if (mode === "corner") {
-        cubeGroup.position.set(1.9, 0.2, 0);
-        shadowMesh.position.x = 1.9;
-        camera.position.set(0, 0.15, 8.3);
-      }
-    }
-    // if heroEl exists (index.html), positioning is driven every frame
-    // from heroProgress inside animate() instead.
+  // ---------------------------------------------------------------
+  // EVENTS
+  // ---------------------------------------------------------------
+  function onMouseMove(e) {
+    mouseTargetX = (e.clientX / window.innerWidth - 0.5) * 2;
+    mouseTargetY = (e.clientY / window.innerHeight - 0.5) * 2;
   }
 
   function onResize() {
+    renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  }
-
-  function onPointerMove(e) {
-    const nx = (e.clientX / window.innerWidth) * 2 - 1;
-    const ny = (e.clientY / window.innerHeight) * 2 - 1;
-    targetY = nx * CONFIG.parallaxStrength;
-    targetX = ny * CONFIG.parallaxStrength;
   }
 
   function onScroll() {
-    if (heroEl) {
-      const rect = heroEl.getBoundingClientRect();
-      const total = heroEl.offsetHeight - window.innerHeight;
-      const scrolled = -rect.top;
-      heroProgress = total > 0 ? Math.min(Math.max(scrolled / total, 0), 1) : 0;
-    }
+    if (!heroEl) return;
+    const rect = heroEl.getBoundingClientRect();
+    const total = heroEl.offsetHeight - window.innerHeight;
+    const scrolled = -rect.top;
+    scrollP = total > 0 ? Math.min(1, Math.max(0, scrolled / total)) : 0;
   }
 
+  function onPortalClick(e) {
+    if (scatterActive || bootStart === null || !bootDone) return;
+    if (scrollP < 0.92) return; // only interactive once locked forward
+
+    pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    const navMeshes = pieces.filter(p => p.isNavTile).map(p => p.mesh);
+    const hits = raycaster.intersectObjects(navMeshes, false);
+    if (hits.length === 0) return;
+    const hitMesh = hits[0].object;
+    const piece = pieces.find(p => p.mesh === hitMesh);
+    if (!piece) return;
+
+    startScatter(NAV_ITEMS[piece.navIndex].href);
+  }
+
+  function startScatter(href) {
+    scatterActive = true;
+    scatterStart = performance.now();
+    scatterTargetHref = href;
+  }
+
+  // ---------------------------------------------------------------
+  // EASING
+  // ---------------------------------------------------------------
+  function smoothstep(edge0, edge1, x) {
+    const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+    return t * t * (3 - 2 * t);
+  }
+  function easeOutBack(x) {
+    const c1 = 1.70158, c3 = c1 + 1;
+    return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+  }
+  function easeInOutCubic(x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  }
+
+  // ---------------------------------------------------------------
+  // ANIMATE
+  // ---------------------------------------------------------------
   function animate() {
     requestAnimationFrame(animate);
-    const dt = Math.min(clock.getDelta(), 0.05);
-    elapsed += dt;
+    const elapsed = clock.getElapsedTime();
 
-    cubeGroup.rotation.x += CONFIG.tumbleX * dt;
-    cubeGroup.rotation.y += CONFIG.tumbleY * dt * (heroEl ? 1 + heroProgress * 1.5 : 1);
-    cubeGroup.rotation.z += CONFIG.tumbleZ * dt;
+    mouseCurX += (mouseTargetX - mouseCurX) * 0.06;
+    mouseCurY += (mouseTargetY - mouseCurY) * 0.06;
 
-    curX += (targetX - curX) * 0.04;
-    curY += (targetY - curY) * 0.04;
-    shell.rotation.x = cubeGroup.rotation.x + curX;
-    shell.rotation.y = cubeGroup.rotation.y + curY;
-    shell.rotation.z = cubeGroup.rotation.z;
-    core.rotation.copy(shell.rotation);
-
-    cubeGroup.position.y = Math.sin(elapsed * 0.5) * 0.12;
-
-    if (heroEl) {
-      // scroll-pinned intro: cube starts big and centered, ends small and
-      // tucked into the corner as the page content rises over it — the
-      // "slow transition into the page" effect.
-      const p = heroProgress;
-      const scale = 1.35 - p * 0.85;
-      cubeGroup.scale.setScalar(scale);
-      cubeGroup.position.x = p * 2.1;
-      cubeGroup.position.y += -p * 0.3;
-      camera.position.z = 7.6 - p * 0.4;
-      shadowMesh.position.x = cubeGroup.position.x;
-      shadowMesh.material.opacity = 0.5 * (1 - p * 0.5);
-      // perf: writing a custom property every frame forces a style
-      // recalc on whatever reads it via calc() — most frames the value
-      // hasn't actually moved (user isn't mid-scroll), so skip the write
-      // unless it changed by more than a hair.
-      if (Math.abs(p - lastWrittenHeroP) > 0.0015) {
-        document.documentElement.style.setProperty("--hero-p", p.toFixed(4));
-        lastWrittenHeroP = p;
-
-        // the real #navbar is hidden (opacity + pointer-events:none) until
-        // the landing's scroll transition is well underway — flip it
-        // "live" past that point so it's actually clickable, not just
-        // faintly visible. Looked up lazily since the navbar is injected
-        // async via partials/nav.html and may not exist on the very first
-        // few frames.
-        if (!navbarEl) navbarEl = document.getElementById("navbar");
-        if (navbarEl) navbarEl.classList.toggle("nav-live", p > 0.32);
-      }
+    updateBoot();
+    if (scatterActive) {
+      updateScatter();
+    } else if (PORTAL_MODE) {
+      updatePortalFrame(elapsed);
+    } else {
+      updateDecorativeFrame(elapsed);
     }
 
     renderer.render(scene, camera);
+  }
+
+  // ---- boot-solve fly-in (runs once at load, real state by design) ----
+  function updateBoot() {
+    if (bootDone || bootStart === null) return;
+    const now = performance.now();
+    let allSettled = true;
+    let sumFrac = 0;
+
+    pieces.forEach((p) => {
+      const localStart = bootStart + p.delay * 1000;
+      const rawFrac = (now - localStart) / (CONFIG.bootDuration * 1000);
+      const x = Math.min(1, Math.max(0, rawFrac)); // clamp TIME, not the eased output
+      sumFrac += x;
+      if (x < 1) allSettled = false;
+
+      const e = easeOutBack(x); // legitimately overshoots past 1 — do not clamp this
+      // Vector3.lerpVectors(a, b, alpha) = a + (b-a)*alpha, with no internal
+      // clamp on alpha — this is what lets the overshoot actually render.
+      p.mesh.position.lerpVectors(p.scattered, p.home, e);
+
+      if (x >= 1) {
+        p.mesh.position.copy(p.home); // hard snap — kill float drift from overshoot
+        p.mesh.rotation.set(0, 0, 0);
+      } else {
+        p.mesh.rotation.x *= (1 - x * 0.15);
+        p.mesh.rotation.y *= (1 - x * 0.15);
+      }
+    });
+
+    const loaderPct = document.querySelector("#boot-loader .pct");
+    const loader = document.getElementById("boot-loader");
+    if (loaderPct) {
+      const pct = Math.round((sumFrac / pieces.length) * 100);
+      loaderPct.textContent = Math.min(100, pct) + "%";
+    }
+    if (allSettled) {
+      bootDone = true;
+      if (loader) {
+        loader.classList.add("hidden");
+        setTimeout(() => loader.remove(), 600);
+      }
+    }
+  }
+
+  // ---- scatter-on-click, then navigate (own local timer, fine to be stateful: one-shot) ----
+  function updateScatter() {
+    const t = (performance.now() - scatterStart) / (CONFIG.scatterDuration * 1000);
+    const x = Math.min(1, t);
+    const e = easeInOutCubic(x);
+    pieces.forEach((p) => {
+      const dir = p.home.clone().normalize();
+      if (dir.lengthSq() === 0) dir.set(0, 0, 1);
+      const flungTarget = p.home.clone().add(dir.multiplyScalar(14));
+      p.mesh.position.lerpVectors(p.home, flungTarget, e);
+      p.mesh.rotation.x += 0.15;
+      p.mesh.rotation.y += 0.2;
+    });
+    const wrap = document.getElementById("nav-tile-labels");
+    if (wrap) wrap.style.opacity = String(1 - e);
+
+    if (x >= 1 && scatterTargetHref) {
+      const href = scatterTargetHref;
+      scatterTargetHref = null;
+      window.location.href = href;
+    }
+  }
+
+  // ---- PORTAL MODE: stateless, recomputed fresh from elapsed + scrollP ----
+  function updatePortalFrame(elapsed) {
+    const P = scrollP;
+
+    // Phase A 0 -> .45: dramatic tumble (multiple full rotations + idle wobble)
+    const tumbleAmt = smoothstep(0, 0.45, P);
+    const tumbleX = tumbleAmt * Math.PI * 2.4 + Math.sin(elapsed * 0.3) * 0.05;
+    const tumbleY = tumbleAmt * Math.PI * 3.1 + Math.cos(elapsed * 0.25) * 0.05;
+
+    // Phase B .45 -> .85: rotation lerps toward locked-forward (0,0,0)
+    const lockAmt = smoothstep(0.45, 0.85, P);
+    const rotX = tumbleX * (1 - lockAmt);
+    const rotY = tumbleY * (1 - lockAmt);
+
+    cubeGroup.rotation.set(
+      rotX + mouseCurY * 0.05 * (1 - lockAmt),
+      rotY + mouseCurX * 0.05 * (1 - lockAmt),
+      Math.sin(elapsed * 0.2) * 0.015 * (1 - lockAmt)
+    );
+
+    // camera zoom: 11 -> 3.4 across phase B
+    const zoomAmt = smoothstep(0.45, 0.85, P);
+    camera.position.z = 11 - zoomAmt * (11 - 3.4);
+    camera.position.y = 0.2 - zoomAmt * 0.2;
+
+    // Phase C .85 -> 1: fully locked; hero copy fades, nav labels fade in
+    const heroCopy = document.querySelector("#scroll-hero .hero-copy");
+    if (heroCopy) heroCopy.style.opacity = String(1 - smoothstep(0.7, 0.95, P));
+    const scrollCue = document.querySelector("#scroll-hero .scroll-cue");
+    if (scrollCue) scrollCue.style.opacity = String(1 - smoothstep(0, 0.08, P));
+
+    const labelAmt = smoothstep(0.82, 0.98, P);
+    updateNavLabels(labelAmt);
+
+    // gentle idle spin on the mini-cube regardless of phase
+    pieces.forEach((p) => {
+      if (p.isCenterTile) {
+        const mini = p.mesh.getObjectByName("miniCube");
+        if (mini) { mini.rotation.y = elapsed * 0.6; mini.rotation.x = elapsed * 0.35; }
+      }
+    });
+  }
+
+  // ---- DECORATIVE MODE: idle tumble + mouse parallax ----
+  function updateDecorativeFrame(elapsed) {
+    cubeGroup.rotation.set(
+      Math.sin(elapsed * 0.18) * 0.25 + mouseCurY * 0.15,
+      elapsed * 0.14 + mouseCurX * 0.2,
+      Math.sin(elapsed * 0.11) * 0.06
+    );
+    pieces.forEach((p) => {
+      if (p.isCenterTile) {
+        const mini = p.mesh.getObjectByName("miniCube");
+        if (mini) { mini.rotation.y = elapsed * 0.5; mini.rotation.x = elapsed * 0.3; }
+      }
+    });
   }
 })();
