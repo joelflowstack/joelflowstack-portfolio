@@ -41,17 +41,23 @@
     // gtag("event", "page_engagement", payload);
   });
 
+  const LOGO_SVG = `
+    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="46" height="46" rx="10" fill="#0c0c0d" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+      <text x="24" y="31" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="19" fill="#f0f0ee">JF</text>
+    </svg>`;
+
   function buildWidget() {
     const launcher = document.createElement("button");
     launcher.id = "flowbot-launcher";
     launcher.setAttribute("aria-label", "Chat with Flow");
-    launcher.textContent = "FLOW";
+    launcher.innerHTML = LOGO_SVG;
     document.body.appendChild(launcher);
 
     const panel = document.createElement("div");
     panel.id = "flowbot-panel";
     panel.innerHTML = `
-      <div class="fb-head">Flow V3 — capability demo</div>
+      <div class="fb-head">${LOGO_SVG.replace('viewBox="0 0 48 48"', 'viewBox="0 0 48 48" width="18" height="18"')} Flow V3 — capability demo</div>
       <div class="fb-log" id="fb-log">
         <div class="fb-msg bot">Hey — I'm Flow, a live demo of the kind of AI agent Joel builds. Ask me anything about the studio's services.</div>
       </div>
