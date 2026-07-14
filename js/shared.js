@@ -41,7 +41,7 @@
 
     mount.innerHTML = `
       <nav class="site-nav">
-        <a class="logo" href="../index.html"><b>JOEL</b> FLOWSTACK</a>
+        <a class="logo" href="index.html"><b>JOEL</b> FLOWSTACK</a>
         <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
         <ul id="nav-links">${links}</ul>
       </nav>`;
@@ -88,9 +88,24 @@
     els.forEach(el => io.observe(el));
   }
 
+  function initTabs() {
+    document.querySelectorAll("[data-tabs]").forEach((group) => {
+      const buttons = group.querySelectorAll(".tab-btn");
+      const panels = group.querySelectorAll(".tab-panel");
+      buttons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const target = btn.getAttribute("data-tab");
+          buttons.forEach(b => b.classList.toggle("active", b === btn));
+          panels.forEach(p => p.classList.toggle("active", p.getAttribute("data-panel") === target));
+        });
+      });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     injectNav();
     injectFooter();
     initReveal();
+    initTabs();
   });
 })();
