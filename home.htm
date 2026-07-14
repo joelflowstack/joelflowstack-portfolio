@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Home — Joel Flowstack</title>
+<meta name="description" content="Joel Flowstack: 3D interactive websites, AI chatbots and agents, Discord/Telegram/WhatsApp bots, and n8n workflow automation." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/global.css" />
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<header class="page-hero">
+  <canvas id="cube-canvas"></canvas>
+  <div class="container hero-copy">
+    <span class="eyebrow">Digital studio</span>
+    <h1>Interfaces that think back.</h1>
+    <p>A one-person studio building 3D websites, AI chatbots and agents, chat-platform bots, and the automation glue behind them.</p>
+    <a class="btn btn-solid" href="contact.html">Start a project</a>
+  </div>
+</header>
+
+<section class="container">
+  <div class="grid-3">
+    <div class="card" data-reveal>
+      <span class="eyebrow">01</span>
+      <h3>3D web</h3>
+      <p>Three.js builds where the interface is the product — like the cube on the landing page.</p>
+    </div>
+    <div class="card" data-reveal>
+      <span class="eyebrow">02</span>
+      <h3>AI agents</h3>
+      <p>Chatbots and assistants wired to real APIs, not scripted demos. See Flow V3 in the corner of this page.</p>
+    </div>
+    <div class="card" data-reveal>
+      <span class="eyebrow">03</span>
+      <h3>Automation</h3>
+      <p>Discord, Telegram, and WhatsApp bots, plus n8n workflows connecting the tools you already use.</p>
+    </div>
+  </div>
+</section>
+
+<section class="container" data-reveal>
+  <span class="eyebrow">How it works</span>
+  <h2>No committees. One build, one point of contact.</h2>
+  <p>Everything here — this site, the cube, Flow V3 — was shipped through GitHub's web UI and Vercel, no local dev environment required. If that sounds like how you'd want your own project built: fast, direct, no unnecessary process, get in touch.</p>
+  <a class="btn" href="services.html">See what's on offer</a>
+</section>
+
+<div id="site-footer"></div>
+
+<script type="module" src="../js/cube.js"></script>
+<script src="../js/shared.js"></script>
+<script src="../js/flowbot.js"></script>
+</body>
+</html>
