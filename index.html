@@ -3,18 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Joel Flowstack — Intelligent Websites & AI Automation</title>
-<meta name="description" content="Joel Flowstack designs 3D interactive websites, AI chatbots, and automation systems that save time, scale systems, and grow businesses." />
-<meta property="og:title" content="Joel Flowstack — Build. Automate. Scale." />
-<meta property="og:description" content="Intelligent websites, AI automation, and bot systems, built by one studio." />
-<meta property="og:image" content="assets/logo.png" />
-<meta name="twitter:card" content="summary_large_image" />
-<link rel="icon" href="assets/logo.png" />
+<title>Joel Flowstack — 3D Web, AI Agents & Automation</title>
+<meta name="description" content="Joel Flowstack: 3D interactive websites, AI chatbots and agents, Discord/Telegram/WhatsApp bots, and n8n workflow automation." />
 
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/global.css" />
 
 <script type="importmap">
 {
@@ -24,200 +19,81 @@
 }
 </script>
 </head>
-<body data-cube="center">
+<body>
 
-<div id="loader">
-  <div class="loader-inner">
-    <div class="loader-jf">JF</div>
-    <div class="loader-bar"><div class="loader-fill"></div></div>
-    <p class="loader-text">Initializing Experience</p>
+<div id="boot-loader"><div class="pct">0%</div></div>
+
+<div id="site-nav"></div>
+
+<section id="scroll-hero">
+  <div class="pin-stage">
+    <canvas id="cube-canvas"></canvas>
+    <div id="nav-tile-labels"></div>
+    <div class="hero-copy">
+      <span class="eyebrow">3D web &middot; AI agents &middot; automation</span>
+      <h1>Every square is a door.</h1>
+      <p>Scroll to lock the cube, then click a tile to step through.</p>
+    </div>
+    <div class="scroll-cue">Scroll</div>
   </div>
-</div>
+</section>
 
-<canvas id="cube-canvas"></canvas>
-<div class="circuit-veil"></div>
-<div class="bg-veil"></div>
-<div class="grain"></div>
+<section class="container" data-reveal>
+  <span class="eyebrow">If scroll isn't your thing</span>
+  <h2>Or just pick a page.</h2>
+  <p>The cube above is the front door — this is the fire escape. Same six destinations, no scrolling required.</p>
+  <div class="grid-3" style="margin-top:40px;">
+    <a class="card" href="pages/home.html" data-reveal>
+      <h3>Home</h3>
+      <p>The overview: what the studio does and who it's for.</p>
+    </a>
+    <a class="card" href="pages/services.html" data-reveal>
+      <h3>Services</h3>
+      <p>3D sites, AI agents, bots, and n8n automation, itemized.</p>
+    </a>
+    <a class="card" href="pages/portfolio.html" data-reveal>
+      <h3>Portfolio</h3>
+      <p>Shipped work, including Flow V3, the bot running in the corner.</p>
+    </a>
+    <a class="card" href="pages/about.html" data-reveal>
+      <h3>About</h3>
+      <p>Who's building this, and how the studio operates.</p>
+    </a>
+    <a class="card" href="pages/blog.html" data-reveal>
+      <h3>Blog</h3>
+      <p>Build notes, mostly about the cube you just scrolled through.</p>
+    </a>
+    <a class="card" href="pages/contact.html" data-reveal>
+      <h3>Contact</h3>
+      <p>Start a project, or just say hello.</p>
+    </a>
+  </div>
+</section>
 
-<div data-include="partials/nav.html"></div>
-
-<!-- Landing-only brand mark — visible from the very first frame, independent
-     of #navbar (which stays hidden until the scroll transition completes).
-     Fades out via --hero-p as the real navbar takes over that corner. -->
-<a href="index.html" id="landing-brand" aria-label="Joel Flowstack — home">
-  <img src="assets/logo.png" alt="" />
-  <span>JOEL FLOWSTACK</span>
-</a>
-
-<main>
-
-  <!-- ============ SCROLL-PINNED HERO ============
-       #scroll-hero is read by js/cube.js — its scroll position drives the
-       cube from big-and-centered down to small-and-corner, AND fades the
-       real #navbar in from nothing so the landing genuinely starts with no
-       nav bar, just the brand mark above and the cube. The CSS var
-       --hero-p is written every frame by cube.js so this copy fades/lifts
-       in exact sync with the cube, instead of two separate scroll maths
-       drifting apart. -->
-  <section id="scroll-hero">
-    <div class="hero-pin">
-      <div class="container hero-grid">
-        <div class="hero-copy">
-          <h1 data-hero-in>We build <span class="accent">intelligent</span><br />websites &amp; automations</h1>
-          <p class="hero-sub" data-hero-in>
-            One studio, end to end: 3D interactive websites, AI chat &amp; support bots across Discord, Telegram and WhatsApp, and n8n workflows that connect your apps, APIs and databases.
-          </p>
-          <div class="hero-ctas" data-hero-in>
-            <a href="contact.html" class="btn btn-primary">Start a project <span class="btn-arrow">→</span></a>
-            <a href="work.html" class="btn btn-ghost">See the work</a>
-          </div>
-        </div>
-        <div class="hero-visual"></div>
-      </div>
-      <div class="scroll-indicator" id="scroll-indicator">
-        <span>Scroll</span>
-        <div class="line"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ MARQUEE ============ -->
-  <section style="padding:40px 0;">
-    <div class="container" style="text-align:center;margin-bottom:26px;">
-      <span class="crumb">Powering platforms &amp; communities</span>
-    </div>
-    <div class="marquee-wrap">
-      <div class="marquee">
-        <span class="marquee-item"><i></i>Discord</span>
-        <span class="marquee-item"><i></i>Telegram</span>
-        <span class="marquee-item"><i></i>WhatsApp</span>
-        <span class="marquee-item"><i></i>YouTube</span>
-        <span class="marquee-item"><i></i>Instagram</span>
-        <span class="marquee-item"><i></i>TikTok</span>
-        <span class="marquee-item"><i></i>Shopify</span>
-        <span class="marquee-item"><i></i>Gmail</span>
-        <span class="marquee-item"><i></i>Notion</span>
-        <span class="marquee-item"><i></i>n8n</span>
-        <span class="marquee-item"><i></i>Discord</span>
-        <span class="marquee-item"><i></i>Telegram</span>
-        <span class="marquee-item"><i></i>WhatsApp</span>
-        <span class="marquee-item"><i></i>YouTube</span>
-        <span class="marquee-item"><i></i>Instagram</span>
-        <span class="marquee-item"><i></i>TikTok</span>
-        <span class="marquee-item"><i></i>Shopify</span>
-        <span class="marquee-item"><i></i>Gmail</span>
-        <span class="marquee-item"><i></i>Notion</span>
-        <span class="marquee-item"><i></i>n8n</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ STATS STRIP (relocated from hero for a cleaner landing) === -->
-  <section style="padding:0 0 40px;">
-    <div class="container">
-      <div class="hero-stats" style="justify-content:center;" data-reveal>
-        <div class="hero-stat"><b data-count="40" data-suffix="+">0</b><span>Systems shipped</span></div>
-        <div class="hero-stat"><b data-count="3" data-suffix="+">0</b><span>Years building</span></div>
-        <div class="hero-stat"><b data-count="12" data-suffix="+">0</b><span>Platforms integrated</span></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ SERVICES OVERVIEW ============ -->
-  <section id="services">
-    <div class="container">
-      <div class="section-header" data-reveal>
-        <span class="eyebrow">What I build</span>
-        <h2>Three disciplines, one integrated system</h2>
-        <p>Every engagement draws from the same toolkit — so your site, your bots, and your workflows all speak to each other.</p>
-      </div>
-      <div class="grid-3">
-        <div class="card glass" data-reveal>
-          <div class="card-icon">◧</div>
-          <h3>Web Development</h3>
-          <p>Modern, responsive, 3D-interactive websites built to convert — deployed straight from GitHub to Vercel.</p>
-          <div class="tag-row"><span class="tag">Three.js</span><span class="tag">Next.js</span><span class="tag">Vercel</span></div>
-        </div>
-        <div class="card glass" data-reveal>
-          <div class="card-icon">◈</div>
-          <h3>Bot Automation</h3>
-          <p>Chat, support and engagement bots across Discord, Telegram and WhatsApp — built to moderate, convert and assist 24/7.</p>
-          <div class="tag-row"><span class="tag">Discord</span><span class="tag">WhatsApp</span><span class="tag">Groq</span></div>
-        </div>
-        <div class="card glass" data-reveal>
-          <div class="card-icon">◫</div>
-          <h3>Workflow Creation</h3>
-          <p>End-to-end n8n automations that connect your apps, APIs and databases — so busywork disappears.</p>
-          <div class="tag-row"><span class="tag">n8n</span><span class="tag">Webhooks</span><span class="tag">APIs</span></div>
-        </div>
-      </div>
-      <div style="text-align:center;margin-top:44px;" data-reveal>
-        <a href="services.html" class="btn btn-ghost">Explore all services <span class="btn-arrow">→</span></a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ WORK PREVIEW ============ -->
-  <section id="work">
-    <div class="container">
-      <div class="section-header" data-reveal>
-        <span class="eyebrow">Selected work</span>
-        <h2>Systems built to demo themselves</h2>
-        <p>A sample of recent builds — full case studies live on the Work page.</p>
-      </div>
-    </div>
-    <div class="container" style="display:flex;flex-direction:column;gap:22px;">
-      <div class="work-item glass" data-reveal>
-        <div class="work-media"><img src="assets/flow-v3-poster.jpg" alt="Flow V3 AI chatbot interface" width="1280" height="720" loading="lazy" decoding="async" /></div>
-        <div class="work-body">
-          <span class="eyebrow">AI Product</span>
-          <h3>Flow V3 — AI Chat &amp; Screen Control</h3>
-          <p>A Vercel-hosted assistant with a Chrome extension for gesture-based screen control, backed by Groq's Llama 3.3 70B.</p>
-          <div class="work-meta"><span class="tag">Groq</span><span class="tag">MediaPipe</span><span class="tag">Chrome Ext.</span></div>
-        </div>
-      </div>
-      <div class="work-item reverse glass" data-reveal>
-        <div class="work-media"><img src="assets/work-2.jpg" alt="Product Motion Lab" width="1168" height="784" loading="lazy" decoding="async" /></div>
-        <div class="work-body">
-          <span class="eyebrow">Content Brand</span>
-          <h3>Product Motion Lab</h3>
-          <p>Luxury AI-generated product motion videos — scroll-stopping ads produced end-to-end with AI video pipelines.</p>
-          <div class="work-meta"><span class="tag">AI Video</span><span class="tag">TikTok</span><span class="tag">Ads</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="container" style="text-align:center;margin-top:44px;" data-reveal>
-      <a href="work.html" class="btn btn-primary">View full portfolio <span class="btn-arrow">→</span></a>
-    </div>
-  </section>
-
-  <!-- ============ QUOTE ============ -->
-  <section>
-    <div class="container">
-      <div class="quote-block glass" data-reveal>
-        <p>"Every project is both a working product and a portfolio signal — if it can't demo itself, it isn't finished."</p>
-        <div class="quote-attr">— Joel, on how Joel Flowstack builds</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ CTA ============ -->
-  <section>
-    <div class="container">
-      <div class="cta-band glass" data-reveal>
-        <span class="eyebrow">Let's build</span>
-        <h2 style="margin-top:14px;">Have a system in mind?</h2>
-        <p>Tell me what's slow, manual, or missing — I'll tell you what to automate first.</p>
-        <a href="contact.html" class="btn btn-primary">Start a project <span class="btn-arrow">→</span></a>
-      </div>
-    </div>
-  </section>
-
-</main>
-
-<div data-include="partials/footer.html"></div>
+<div id="site-footer"></div>
 
 <script type="module" src="js/cube.js"></script>
-<script src="js/main.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/flowbot.js"></script>
+<script>
+  // index.html doesn't use the pages/ nav partial paths (../), so
+  // override the two relative links shared.js assumes for inner pages.
+  document.addEventListener("DOMContentLoaded", () => {
+    const mount = document.getElementById("site-nav");
+    if (!mount) return;
+    const check = setInterval(() => {
+      const logo = mount.querySelector(".logo");
+      const links = mount.querySelectorAll("#nav-links a");
+      if (logo && links.length) {
+        logo.setAttribute("href", "index.html");
+        links.forEach(a => {
+          const href = a.getAttribute("href");
+          if (href && !href.startsWith("http")) a.setAttribute("href", "pages/" + href);
+        });
+        clearInterval(check);
+      }
+    }, 30);
+  });
+</script>
 </body>
 </html>
