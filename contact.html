@@ -4,165 +4,75 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Contact — Joel Flowstack</title>
-<meta name="description" content="Start a project with Joel Flowstack — 3D websites, AI bots, and automation workflows." />
-<link rel="icon" href="assets/logo.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/global.css" />
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
+<style>
+  form { display: flex; flex-direction: column; gap: 18px; max-width: 480px; }
+  form label { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--grey-dim); }
+  form input, form textarea {
+    background: var(--obsidian); border: 1px solid var(--line); color: var(--white);
+    font-family: var(--font-body); font-size: .95rem; padding: 12px 14px; margin-top: 6px;
+  }
+  form input:focus, form textarea:focus { outline: none; border-color: var(--white); }
+  form textarea { min-height: 120px; resize: vertical; }
+</style>
 </head>
-<body data-cube="corner">
+<body>
 
-<div id="loader">
-  <div class="loader-inner">
-    <div class="loader-jf">JF</div>
-    <div class="loader-bar"><div class="loader-fill"></div></div>
-    <p class="loader-text">Initializing Experience</p>
+<div id="site-nav"></div>
+
+<header class="page-hero" style="min-height:42vh;">
+  <canvas id="cube-canvas"></canvas>
+  <div class="container hero-copy">
+    <span class="eyebrow">Contact</span>
+    <h1>Tell me what you're building.</h1>
   </div>
-</div>
+</header>
 
-<canvas id="cube-canvas"></canvas>
-<div class="circuit-veil"></div>
-<div class="bg-veil"></div>
-<div class="grain"></div>
-
-<div data-include="partials/nav.html"></div>
-
-<main>
-  <section class="page-hero" style="min-height:40vh;">
-    <div class="container">
-      <span class="crumb">Home / <b>Contact</b></span>
-      <span class="eyebrow" style="margin-top:18px;display:inline-flex;">Let's talk</span>
-      <h1>Tell me what you're building</h1>
-      <p class="lead">Reply within 24 hours. The more specific the ask, the faster I can scope it.</p>
+<section class="container">
+  <div class="grid-2">
+    <div data-reveal>
+      <!--
+        FORMSPREE SETUP: replace YOUR_FORM_ID below with your real
+        Formspree form ID (create one free at formspree.io — takes
+        about two minutes, no code). Until then this form won't
+        actually deliver submissions anywhere.
+      -->
+      <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+        <div>
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" required />
+        </div>
+        <div>
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required />
+        </div>
+        <div>
+          <label for="message">Project details</label>
+          <textarea id="message" name="message" required></textarea>
+        </div>
+        <button class="btn btn-solid" type="submit">Send message</button>
+      </form>
     </div>
-  </section>
-
-  <section style="padding-top:0;">
-    <div class="container contact-grid">
-      <div data-reveal>
-        <div class="contact-info-item">
-          <div class="ci-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg></div>
-          <div><b>Email</b><span>joelflowstack@gmail.com</span></div>
-        </div>
-        <div class="contact-info-item">
-          <div class="ci-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23.3 22h-7L11 15.9 4.9 22H1.8l8.1-9.3L1 2h7.2l5 6.6L18.9 2Zm-1.2 18h1.7L7.4 3.9H5.6L17.7 20Z"/></svg></div>
-          <div><b>X (Twitter)</b><span>@Joelfowstack</span></div>
-        </div>
-        <div class="contact-info-item">
-          <div class="ci-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></div>
-          <div><b>Instagram</b><span>@joel.fflowstack</span></div>
-        </div>
-        <div class="contact-info-item">
-          <div class="ci-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M14.5 2h3.1c.2 1.9 1.5 3.5 3.4 4v3.1a7.6 7.6 0 0 1-3.4-1v6.6a6.1 6.1 0 1 1-6.1-6.1c.2 0 .5 0 .7.1v3.2a2.9 2.9 0 1 0 2.3 2.8V2Z"/></svg></div>
-          <div><b>TikTok</b><span>@joelflowstack8</span></div>
-        </div>
-        <div class="contact-info-item">
-          <div class="ci-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12.2 3.3c4.2 0 6.9 2.8 6.9 8.2s-2.9 8.9-7.3 8.9c-3.4 0-5.5-1.7-5.5-4.2 0-2.4 2-3.8 5.2-3.8 1.1 0 2.2.2 3.1.5"/><path d="M13.9 9.2c-3.4-.7-6 .7-6 3.3 0 1.9 1.6 3 3.4 3 2.7 0 4.3-1.9 4.3-5.2 0-3.8-2-6.1-5.9-6.1"/></svg></div>
-          <div><b>Threads</b><span>@joel.fflowstack</span></div>
-        </div>
-        <div class="contact-info-item">
-          <div class="ci-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div>
-          <div><b>Response time</b><span>Within 24 hours, most days sooner</span></div>
-        </div>
-        <div class="social-row">
-          <a href="https://x.com/Joelfowstack" target="_blank" rel="noopener" aria-label="X"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23.3 22h-7L11 15.9 4.9 22H1.8l8.1-9.3L1 2h7.2l5 6.6L18.9 2Zm-1.2 18h1.7L7.4 3.9H5.6L17.7 20Z"/></svg></a>
-          <a href="https://www.instagram.com/joel.fflowstack/" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></a>
-          <a href="https://www.tiktok.com/@joelflowstack8" target="_blank" rel="noopener" aria-label="TikTok"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M14.5 2h3.1c.2 1.9 1.5 3.5 3.4 4v3.1a7.6 7.6 0 0 1-3.4-1v6.6a6.1 6.1 0 1 1-6.1-6.1c.2 0 .5 0 .7.1v3.2a2.9 2.9 0 1 0 2.3 2.8V2Z"/></svg></a>
-          <a href="https://www.threads.com/@joel.fflowstack" target="_blank" rel="noopener" aria-label="Threads"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12.2 3.3c4.2 0 6.9 2.8 6.9 8.2s-2.9 8.9-7.3 8.9c-3.4 0-5.5-1.7-5.5-4.2 0-2.4 2-3.8 5.2-3.8 1.1 0 2.2.2 3.1.5"/><path d="M13.9 9.2c-3.4-.7-6 .7-6 3.3 0 1.9 1.6 3 3.4 3 2.7 0 4.3-1.9 4.3-5.2 0-3.8-2-6.1-5.9-6.1"/></svg></a>
-          <a href="https://www.youtube.com/channel/UCyB6tXCbdBczkZwD__VCdTA" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="M10.3 9.3v5.4l4.6-2.7-4.6-2.7Z" fill="currentColor" stroke="none"/></svg></a>
-          <a href="https://medium.com/@joelflowstack" target="_blank" rel="noopener" aria-label="Medium"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M4 5.5a1.7 1.7 0 0 0-.6-1.5L1.7 2.1V1.8h6l4.6 10.2 4.1-10.2h5.8v.3l-1.5 1.4a.5.5 0 0 0-.2.5v11.9a.5.5 0 0 0 .2.5l1.5 1.4v.3H15v-.3l1.5-1.5c.1-.1.2-.3.2-.5V6l-4.6 11.6h-.6L6.2 6v7.8a1.1 1.1 0 0 0 .3.9l2 2.4v.3H2.7v-.3l2-2.4a1 1 0 0 0 .3-.9V5.5Z"/></svg></a>
-          <a href="mailto:joelflowstack@gmail.com" aria-label="Email"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg></a>
-        </div>
-      </div>
-
-      <div class="glass form" data-reveal>
-        <!--
-          You didn't send me a Formspree form ID, so this uses FormSubmit.co
-          instead — no signup required, delivers straight to your Gmail.
-          First submission after you go live will land an activation email
-          from FormSubmit in joelflowstack@gmail.com — click the link in it
-          once, and every submission after that arrives normally.
-          (If you'd rather use Formspree, swap the action back to
-          https://formspree.io/f/YOUR_FORM_ID once you have an ID.)
-        -->
-        <form id="contact-form" action="https://formsubmit.co/joelflowstack@gmail.com" data-ajax-action="https://formsubmit.co/ajax/joelflowstack@gmail.com" method="POST">
-          <input type="hidden" name="_subject" value="New message from joelflowstack.com" />
-          <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" />
-          <div class="form-row">
-            <div class="field">
-              <label for="name">Name</label>
-              <input type="text" id="name" name="name" required />
-            </div>
-            <div class="field">
-              <label for="email">Email</label>
-              <input type="email" id="email" name="email" required />
-            </div>
-          </div>
-          <div class="field">
-            <label for="service">What do you need?</label>
-            <select id="service" name="service">
-              <option>3D Website</option>
-              <option>AI Bot / Automation</option>
-              <option>n8n Workflow</option>
-              <option>Something else</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="message">Project details</label>
-            <textarea id="message" name="message" required placeholder="What's slow, manual, or missing right now?"></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Send message</button>
-          <p id="form-status" style="margin-top:16px;font-size:13.5px;"></p>
-        </form>
-      </div>
+    <div data-reveal>
+      <span class="eyebrow">Direct</span>
+      <h3>Prefer email or chat?</h3>
+      <p><a href="mailto:joelflowstack@gmail.com">joelflowstack@gmail.com</a></p>
+      <p>Telegram: <a href="https://t.me/joelflowstack" target="_blank" rel="noopener">@joelflowstack</a></p>
+      <p>Or ask the Flow bot in the corner — it's a live capability demo, not just decoration.</p>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- ============ FAQ ============ -->
-  <section id="faq">
-    <div class="container">
-      <div class="section-header" data-reveal>
-        <span class="eyebrow">Before you send that</span>
-        <h2>Frequently asked</h2>
-        <p>Or skip reading and just ask Flow directly — the chat button in the corner is the same AI behind the Flow V3 project on the Work page.</p>
-      </div>
-      <div class="faq-list">
-        <details class="faq-item glass" data-reveal>
-          <summary>How fast do you turn projects around?</summary>
-          <p>A first working preview usually ships within days, not weeks — everything deploys live via GitHub + Vercel as it's built, so you're looking at the real thing early, not a mockup.</p>
-        </details>
-        <details class="faq-item glass" data-reveal>
-          <summary>What does a project cost?</summary>
-          <p>Depends entirely on scope — a single bot integration and a full 3D site with automation behind it are very different builds. Tell me what you need in the form above and I'll come back with a real number, not a range.</p>
-        </details>
-        <details class="faq-item glass" data-reveal>
-          <summary>Do you work outside web development?</summary>
-          <p>Yes — bot automation (Discord, Telegram, WhatsApp) and n8n workflow builds are just as central as the web work. Most projects end up touching at least two of the three.</p>
-        </details>
-        <details class="faq-item glass" data-reveal>
-          <summary>Can you take over an existing site or bot?</summary>
-          <p>Usually, yes. Send the repo or a link to what exists now and I'll tell you honestly whether it's worth extending or rebuilding.</p>
-        </details>
-        <details class="faq-item glass" data-reveal>
-          <summary>Is Flow (the chat widget) actually AI, or scripted replies?</summary>
-          <p>It's the real thing — the same multi-provider AI chain (Cerebras/Groq/OpenRouter) behind the Flow V3 project, answering live. Not a canned FAQ bot.</p>
-        </details>
-        <details class="faq-item glass" data-reveal>
-          <summary>Do you sign NDAs / handle confidential projects?</summary>
-          <p>Yes, no issue there — mention it when you reach out and I'll send one over before we get into specifics.</p>
-        </details>
-      </div>
-    </div>
-  </section>
-</main>
+<div id="site-footer"></div>
 
-<div data-include="partials/footer.html"></div>
-
-<script type="module" src="js/cube.js"></script>
-<script src="js/main.js"></script>
+<script type="module" src="../js/cube.js"></script>
+<script src="../js/shared.js"></script>
+<script src="../js/flowbot.js"></script>
 </body>
 </html>
