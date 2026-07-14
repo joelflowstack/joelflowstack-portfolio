@@ -43,27 +43,27 @@
   <h2>Or just pick a page.</h2>
   <p>The cube above is the front door — this is the fire escape. Same six destinations, no scrolling required.</p>
   <div class="grid-3" style="margin-top:40px;">
-    <a class="card" href="pages/home.html" data-reveal>
+    <a class="card" href="home.html" data-reveal>
       <h3>Home</h3>
       <p>The overview: what the studio does and who it's for.</p>
     </a>
-    <a class="card" href="pages/services.html" data-reveal>
+    <a class="card" href="services.html" data-reveal>
       <h3>Services</h3>
       <p>3D sites, AI agents, bots, and n8n automation, itemized.</p>
     </a>
-    <a class="card" href="pages/portfolio.html" data-reveal>
+    <a class="card" href="portfolio.html" data-reveal>
       <h3>Portfolio</h3>
       <p>Shipped work, including Flow V3, the bot running in the corner.</p>
     </a>
-    <a class="card" href="pages/about.html" data-reveal>
+    <a class="card" href="about.html" data-reveal>
       <h3>About</h3>
       <p>Who's building this, and how the studio operates.</p>
     </a>
-    <a class="card" href="pages/blog.html" data-reveal>
+    <a class="card" href="blog.html" data-reveal>
       <h3>Blog</h3>
       <p>Build notes, mostly about the cube you just scrolled through.</p>
     </a>
-    <a class="card" href="pages/contact.html" data-reveal>
+    <a class="card" href="contact.html" data-reveal>
       <h3>Contact</h3>
       <p>Start a project, or just say hello.</p>
     </a>
@@ -75,25 +75,5 @@
 <script type="module" src="js/cube.js"></script>
 <script src="js/shared.js"></script>
 <script src="js/flowbot.js"></script>
-<script>
-  // index.html doesn't use the pages/ nav partial paths (../), so
-  // override the two relative links shared.js assumes for inner pages.
-  document.addEventListener("DOMContentLoaded", () => {
-    const mount = document.getElementById("site-nav");
-    if (!mount) return;
-    const check = setInterval(() => {
-      const logo = mount.querySelector(".logo");
-      const links = mount.querySelectorAll("#nav-links a");
-      if (logo && links.length) {
-        logo.setAttribute("href", "index.html");
-        links.forEach(a => {
-          const href = a.getAttribute("href");
-          if (href && !href.startsWith("http")) a.setAttribute("href", "pages/" + href);
-        });
-        clearInterval(check);
-      }
-    }, 30);
-  });
-</script>
 </body>
 </html>
