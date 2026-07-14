@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/global.css" />
+<link rel="stylesheet" href="css/global.css" />
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
@@ -21,42 +21,93 @@
   <div class="container hero-copy">
     <span class="eyebrow">Services</span>
     <h1>Four things, done properly.</h1>
-    <p>No bloated package tiers — each engagement is scoped to what the project actually needs.</p>
+    <p class="lede">No bloated package tiers — each engagement is scoped to what the project actually needs, then quoted plainly.</p>
   </div>
 </header>
 
 <section class="container">
+  <div class="glow-field"></div>
   <div class="grid-2">
-    <div class="card" data-reveal>
+    <div class="card interactive" data-reveal>
       <h3>3D interactive websites</h3>
-      <p>Three.js-driven sites where the visual is load-bearing, not decorative — scroll-driven scenes, WebGL heroes, product visualizers.</p>
+      <p>Three.js-driven sites where the visual is load-bearing, not decorative — scroll-driven scenes, WebGL heroes, product visualizers. Typically 2–4 weeks depending on scene complexity.</p>
     </div>
-    <div class="card" data-reveal>
+    <div class="card interactive" data-reveal>
       <h3>AI chatbots &amp; agents</h3>
-      <p>Assistants wired to real LLM APIs (Groq, OpenAI-compatible endpoints) with actual context and fallback handling — not a scripted FAQ bot.</p>
+      <p>Assistants wired to real LLM APIs (Groq, OpenAI-compatible endpoints) with actual context and fallback handling — not a scripted FAQ bot. Usually 1–3 weeks including integration testing.</p>
     </div>
-    <div class="card" data-reveal>
+    <div class="card interactive" data-reveal>
       <h3>Discord / Telegram / WhatsApp bots</h3>
-      <p>Community bots, support bots, and inquiry routers built directly on each platform's API.</p>
+      <p>Community bots, support bots, and inquiry routers built directly on each platform's API — moderation, onboarding flows, and ticket routing included where relevant.</p>
     </div>
-    <div class="card" data-reveal>
+    <div class="card interactive" data-reveal>
       <h3>n8n workflow automation</h3>
-      <p>Connecting the tools you already use — forms, CRMs, spreadsheets, notifications — so the manual steps disappear.</p>
+      <p>Connecting the tools you already use — forms, CRMs, spreadsheets, notifications — so the manual steps between them disappear. Often the fastest win of the four.</p>
     </div>
   </div>
 </section>
 
-<section class="container" data-reveal>
+<section class="container tight">
+  <span class="eyebrow">In more detail</span>
+  <h2>What's actually included.</h2>
+  <div class="tabs" data-tabs data-reveal>
+    <button class="tab-btn active" data-tab="web">3D Web</button>
+    <button class="tab-btn" data-tab="ai">AI Agents</button>
+    <button class="tab-btn" data-tab="bots">Platform Bots</button>
+    <button class="tab-btn" data-tab="auto">Automation</button>
+  </div>
+  <div class="tab-panel active" data-panel="web" data-reveal>
+    <p>Custom Three.js scenes built for your content, not a template swapped for your logo. Scroll-driven camera work, WebGL product visualizers, and interactive navigation — like the cube on this site's landing page. Delivered as a static site deployable straight from GitHub to Vercel, no build pipeline for you to maintain.</p>
+  </div>
+  <div class="tab-panel" data-panel="ai" data-reveal>
+    <p>Chat agents wired to production LLM APIs with real conversation context, not a decision-tree FAQ bot wearing an AI label. Includes fallback model handling for reliability, rate-limit and timeout handling, and a widget that calls your API directly rather than hiding behind an iframe.</p>
+  </div>
+  <div class="tab-panel" data-panel="bots" data-reveal>
+    <p>Discord moderation and onboarding bots, Telegram support bots, WhatsApp inquiry routers — built on each platform's native API. Includes slash commands, role automation, and logging where relevant to your community.</p>
+  </div>
+  <div class="tab-panel" data-panel="auto" data-reveal>
+    <p>n8n workflows connecting forms, CRMs, spreadsheets, and notification tools. If you're copy-pasting data between two systems every day, that's usually a half-day automation, not a big project.</p>
+  </div>
+</section>
+
+<section class="container">
   <span class="eyebrow">Also available</span>
-  <h2>API integrations</h2>
-  <p>If two systems need to talk to each other and don't yet, that's usually a smaller job than it sounds — happy to scope it.</p>
-  <a class="btn btn-solid" href="contact.html">Describe your project</a>
+  <h2>API integrations &amp; ongoing support</h2>
+  <p>If two systems need to talk to each other and don't yet, that's usually a smaller job than it sounds — happy to scope it. And most engagements don't end at launch; sites and bots keep needing small updates as things change.</p>
+</section>
+
+<section class="container tight">
+  <span class="eyebrow">Common questions</span>
+  <h2>FAQ</h2>
+  <div style="margin-top:32px;" data-reveal>
+    <details class="accordion">
+      <summary>How long does a typical project take?</summary>
+      <div class="accordion-body"><p>Most single-service engagements (a chatbot, a bot, an automation) land in 1–3 weeks. 3D web builds with custom scenes run 2–4 weeks depending on complexity. Combined projects are scoped individually.</p></div>
+    </details>
+    <details class="accordion">
+      <summary>Do I need to know how to code or use git?</summary>
+      <div class="accordion-body"><p>No. Every deliverable is built to deploy through the GitHub web UI and Vercel — no CLI, no local dev environment required on your end.</p></div>
+    </details>
+    <details class="accordion">
+      <summary>What happens after launch?</summary>
+      <div class="accordion-body"><p>Ongoing support is normal, not an upsell. Copy changes, new integrations, and bug fixes are usually turned around within a day or two.</p></div>
+    </details>
+    <details class="accordion">
+      <summary>Can you work with an existing site or codebase?</summary>
+      <div class="accordion-body"><p>Yes — plenty of projects are additions to something that already exists, not full rebuilds. Send what you have and it'll get scoped honestly.</p></div>
+    </details>
+  </div>
+</section>
+
+<section class="container" data-reveal style="border-bottom:none; text-align:center;">
+  <h2>Describe your project</h2>
+  <a class="btn btn-solid" href="contact.html">Start the conversation</a>
 </section>
 
 <div id="site-footer"></div>
 
-<script type="module" src="../js/cube.js"></script>
-<script src="../js/shared.js"></script>
-<script src="../js/flowbot.js"></script>
+<script type="module" src="js/cube.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/flowbot.js"></script>
 </body>
 </html>
