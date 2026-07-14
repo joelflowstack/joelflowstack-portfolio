@@ -54,12 +54,12 @@ import * as THREE from "three";
   const PORTAL_MODE = !!heroEl;
 
   const NAV_ITEMS = [
-    { key: "home",      label: "Home",      href: "pages/home.html" },
-    { key: "about",     label: "About",     href: "pages/about.html" },
-    { key: "services",  label: "Services",  href: "pages/services.html" },
-    { key: "portfolio", label: "Portfolio", href: "pages/portfolio.html" },
-    { key: "blog",      label: "Blog",      href: "pages/blog.html" },
-    { key: "contact",   label: "Contact",   href: "pages/contact.html" },
+    { key: "home",      label: "Home",      href: "home.html" },
+    { key: "about",     label: "About",     href: "about.html" },
+    { key: "services",  label: "Services",  href: "services.html" },
+    { key: "portfolio", label: "Portfolio", href: "portfolio.html" },
+    { key: "blog",      label: "Blog",      href: "blog.html" },
+    { key: "contact",   label: "Contact",   href: "contact.html" },
     { key: "youtube",   label: "YouTube",   href: "https://youtube.com/@joelflowstack" },
     { key: "tiktok",    label: "TikTok",    href: "https://tiktok.com/@joelflowstack" },
   ];
@@ -84,7 +84,11 @@ import * as THREE from "three";
     metalness: 0.08,
     bootDuration: 1.5,      // seconds
     scatterDuration: 0.75,  // seconds
+    lockFitMargin: 1.22,    // headroom so the 3x3 grid never touches the viewport edge when locked
   };
+  const GRID_SPAN = 3 * (CONFIG.pieceSize + CONFIG.gap); // full width/height of the 3x3 front face
+
+  let lockedCameraZ = 6; // recomputed from viewport + FOV in onResize()/init(), not a magic number
 
   let renderer, scene, camera, cubeGroup, shadowCatcher;
   let pieces = []; // {mesh, grid:{x,y,z}, home:Vector3, scattered:Vector3, delay:number, isFrontOuter:bool, navIndex:number}
@@ -156,6 +160,8 @@ import * as THREE from "three";
 
     buildPieces();
     buildShadowCatcher();
+
+    lockedCameraZ = computeLockedCameraZ();
 
     if (PORTAL_MODE) {
       buildNavLabels();
@@ -248,6 +254,33 @@ import * as THREE from "three";
     });
   }
 
+  // "JF" monogram — used on the center front tile and on every face of the
+  // nested mini-cube, so the logo reads as one consistent mark at both scales.
+  function makeLogoTexture(scale) {
+    const size = 256;
+    const c = document.createElement("canvas");
+    c.width = c.height = size;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#0c0c0d";
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = "#f0f0ee";
+    ctx.font = `700 ${Math.round(size * 0.42 * scale)}px 'Space Grotesk', system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("JF", size / 2, size / 2 + size * 0.02);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  function makeLogoMaterial(scale = 1) {
+    return new THREE.MeshPhysicalMaterial({
+      map: makeLogoTexture(scale), color: 0xffffff,
+      roughness: CONFIG.roughness, metalness: CONFIG.metalness,
+      clearcoat: CONFIG.clearcoat, clearcoatRoughness: CONFIG.clearcoatRoughness,
+    });
+  }
+
   function buildPieces() {
     const s = CONFIG.pieceSize;
     const gap = CONFIG.gap;
@@ -270,7 +303,7 @@ import * as THREE from "three";
           let isCenterTile = false;
           if (z === 1 && x === 0 && y === 0) {
             isCenterTile = true;
-            frontMat = makePlasticMaterial(0); // plain checker, mini-cube sits on top
+            frontMat = makeLogoMaterial(1); // JF monogram tile; mini-cube nests on top of it
           } else if (gridKeyMatch >= 0) {
             frontMat = makeLabelMaterial(NAV_ITEMS[gridKeyMatch].label);
           } else if (z === 1) {
@@ -321,14 +354,13 @@ import * as THREE from "three";
     }
   }
 
-  // small nested decorative cube on the center front tile
+  // small nested decorative cube on the center front tile — same JF
+  // monogram as the tile beneath it, on all six faces, at a smaller scale
+  // so it stays legible on the tiny mini-cube geometry.
   function buildMiniCube(parentMesh) {
     const geo = new THREE.BoxGeometry(0.32, 0.32, 0.32);
-    const mat = new THREE.MeshPhysicalMaterial({
-      color: 0xe7e7e6, roughness: 0.2, metalness: 0.15,
-      clearcoat: 1, clearcoatRoughness: 0.1,
-    });
-    const mini = new THREE.Mesh(geo, mat);
+    const materials = Array.from({ length: 6 }, () => makeLogoMaterial(0.85));
+    const mini = new THREE.Mesh(geo, materials);
     mini.position.set(0, 0, CONFIG.pieceSize / 2 + 0.2);
     mini.name = "miniCube";
     parentMesh.add(mini);
@@ -389,6 +421,22 @@ import * as THREE from "three";
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    lockedCameraZ = computeLockedCameraZ();
+  }
+
+  // Distance at which the full 3x3 grid (all 9 front tiles) fits inside the
+  // viewport with margin, on both axes — not a guessed constant. Recomputed
+  // whenever the viewport or FOV changes so "locked" always means fully framed.
+  function computeLockedCameraZ() {
+    const vFov = THREE.MathUtils.degToRad(camera.fov);
+    const halfSpan = (GRID_SPAN / 2) * CONFIG.lockFitMargin;
+
+    const distForHeight = halfSpan / Math.tan(vFov / 2);
+
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+    const distForWidth = halfSpan / Math.tan(hFov / 2);
+
+    return Math.max(distForHeight, distForWidth);
   }
 
   function onScroll() {
@@ -545,9 +593,11 @@ import * as THREE from "three";
       Math.sin(elapsed * 0.2) * 0.015 * (1 - lockAmt)
     );
 
-    // camera zoom: 11 -> 3.4 across phase B
+    // camera zoom: starting distance -> lockedCameraZ (the exact distance
+    // that fully frames all 9 front tiles for the current viewport/FOV)
     const zoomAmt = smoothstep(0.45, 0.85, P);
-    camera.position.z = 11 - zoomAmt * (11 - 3.4);
+    const startZ = 11;
+    camera.position.z = startZ - zoomAmt * (startZ - lockedCameraZ);
     camera.position.y = 0.2 - zoomAmt * 0.2;
 
     // Phase C .85 -> 1: fully locked; hero copy fades, nav labels fade in
