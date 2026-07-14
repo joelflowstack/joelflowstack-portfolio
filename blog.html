@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/global.css" />
+<link rel="stylesheet" href="css/global.css" />
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
@@ -21,39 +21,56 @@
   <div class="container hero-copy">
     <span class="eyebrow">Blog</span>
     <h1>Build notes.</h1>
-    <p>Mostly about the cube. Occasionally about everything else.</p>
+    <p class="lede">Mostly about the cube. Occasionally about everything else — automation, AI infra, and the odd founder journal entry.</p>
   </div>
 </header>
 
 <section class="container">
+  <div class="glow-field"></div>
   <div class="grid-2">
-    <article class="card" data-reveal>
-      <span class="eyebrow">Build log</span>
+    <article class="card interactive" data-reveal>
+      <div class="tag-row"><span class="tag">Build log</span><span class="tag">Three.js</span></div>
       <h3>Why the cube kept freezing mid-animation</h3>
-      <p>A scroll-driven Three.js animation is easiest to get wrong with mutable state. The fix was rebuilding it stateless — every frame recomputed fresh from scroll position and elapsed time, nothing carried over.</p>
+      <p>A scroll-driven Three.js animation is easiest to get wrong with mutable state. The original version tracked "current angle" and "moves done" across frames — and desynced constantly. The fix was rebuilding it stateless: every frame recomputed fresh from scroll position and elapsed time, with nothing carried over from the previous frame. Once that architecture was in place, an entire category of bugs simply stopped being possible.</p>
     </article>
-    <article class="card" data-reveal>
-      <span class="eyebrow">Build log</span>
+    <article class="card interactive" data-reveal>
+      <div class="tag-row"><span class="tag">Build log</span><span class="tag">Materials</span></div>
       <h3>Getting the checkerboard black right</h3>
-      <p>Three material passes — glowing labels, then metallic teal-glass — before landing on the plain glossy obsidian checker that actually matched the reference.</p>
+      <p>Three material passes before landing on the final look: glowing purple/cyan labels first, then a metallic teal-glass "circuit panel" direction, and finally the plain glossy obsidian checker that actually matched the reference video. The lesson wasn't really about materials — it was about trusting a concrete visual reference over abstract "make it look techy" instructions.</p>
     </article>
-    <article class="card" data-reveal>
-      <span class="eyebrow">Founder journal</span>
+    <article class="card interactive" data-reveal>
+      <div class="tag-row"><span class="tag">Build log</span><span class="tag">Animation</span></div>
+      <h3>The boot-solve overshoot bug</h3>
+      <p>Pieces are supposed to fly in from scattered positions and settle into a solid cube on page load, with a satisfying spring overshoot. A clamp on the wrong value — the eased output instead of the time fraction feeding into it — flattened that spring and froze pieces mid-flight. Fixed by clamping only the time input, letting the easing function's natural overshoot render, and adding a hard snap-to-exact-position once each piece's timer completes.</p>
+    </article>
+    <article class="card interactive" data-reveal>
+      <div class="tag-row"><span class="tag">Founder journal</span><span class="tag">Infra</span></div>
       <h3>Moving Flow V3 off a free-tier cold start</h3>
-      <p>Migrating an AI chatbot to Groq's inference stack to kill multi-second cold starts, and what that changes about how the bot feels to use.</p>
+      <p>Free-tier hosting meant Flow sometimes took several seconds to wake up before answering — long enough to lose someone's attention entirely. Migrating to Groq's inference stack, with a smaller fallback model in reserve, cut that to near-instant and changed how the bot actually feels to use.</p>
     </article>
-    <article class="card" data-reveal>
-      <span class="eyebrow">Build log</span>
+    <article class="card interactive" data-reveal>
+      <div class="tag-row"><span class="tag">Build log</span><span class="tag">Deployment</span></div>
       <h3>Shipping a static site with no CLI</h3>
-      <p>What it actually takes to build and deploy through GitHub's web UI and Vercel alone, with no terminal in the loop.</p>
+      <p>What it actually takes to build and deploy a Three.js-heavy site through GitHub's web UI and Vercel alone, with no terminal in the loop — including the specific ways relative file paths break when files get uploaded into the wrong folder (a mistake made, and fixed, on this very site).</p>
+    </article>
+    <article class="card interactive" data-reveal>
+      <div class="tag-row"><span class="tag">Founder journal</span><span class="tag">Process</span></div>
+      <h3>Why every project has to demo itself</h3>
+      <p>A chatbot that can't answer questions about its own capabilities, or a 3D site that doesn't showcase what 3D web can actually do, isn't finished — it's a placeholder wearing a finished project's clothes. On treating every deliverable as its own portfolio piece.</p>
     </article>
   </div>
 </section>
 
+<section class="container tight" data-reveal style="border-bottom:none; text-align:center;">
+  <span class="eyebrow">More coming</span>
+  <h2>New notes go up as builds happen.</h2>
+  <a class="btn btn-solid" href="contact.html">Get in touch</a>
+</section>
+
 <div id="site-footer"></div>
 
-<script type="module" src="../js/cube.js"></script>
-<script src="../js/shared.js"></script>
-<script src="../js/flowbot.js"></script>
+<script type="module" src="js/cube.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/flowbot.js"></script>
 </body>
 </html>
