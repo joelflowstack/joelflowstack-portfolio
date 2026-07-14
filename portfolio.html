@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portfolio — Joel Flowstack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/global.css" />
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<header class="page-hero">
+  <canvas id="cube-canvas"></canvas>
+  <div class="container hero-copy">
+    <span class="eyebrow">Portfolio</span>
+    <h1>Shipped, not staged.</h1>
+    <p>A sample of live work — including the assistant running in the corner of this page.</p>
+  </div>
+</header>
+
+<section class="container">
+  <div class="grid-2" data-reveal>
+    <div>
+      <span class="eyebrow">Case study</span>
+      <h2>Flow V3</h2>
+      <p>An AI chat agent originally built on a free-tier host, migrated to Groq's LPU inference for near-zero cold-start latency, running <code>llama-3.3-70b-versatile</code> with an 8B fallback model for reliability under load.</p>
+      <p>Embedded here as a real API-calling widget — not an iframe — POSTing directly to its own backend.</p>
+    </div>
+    <div class="card">
+      <h3>Try it</h3>
+      <p>Click the "FLOW" button in the bottom-right corner of any page on this site.</p>
+      <a class="btn" href="https://github.com/Joel44118/flow-V3" target="_blank" rel="noopener">View source on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<section class="container" data-reveal>
+  <span class="eyebrow">Case study</span>
+  <h2>This site</h2>
+  <p>The cube on the landing page is a 26-piece Rubik's cube rendered in Three.js, functioning as the site's primary navigation. Scroll drives one continuous animation from tumble to lock; the front face becomes eight clickable destinations.</p>
+</section>
+
+<section class="container" data-reveal style="border-bottom:none; text-align:center;">
+  <h2>Want something like this?</h2>
+  <a class="btn btn-solid" href="contact.html">Start a conversation</a>
+</section>
+
+<div id="site-footer"></div>
+
+<script type="module" src="../js/cube.js"></script>
+<script src="../js/shared.js"></script>
+<script src="../js/flowbot.js"></script>
+</body>
+</html>
