@@ -4,141 +4,58 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>About — Joel Flowstack</title>
-<meta name="description" content="Joel Flowstack is a solo digital studio building 3D websites, AI bots and automation workflows." />
-<link rel="icon" href="assets/logo.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/global.css" />
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
 </head>
-<body data-cube="corner">
+<body>
 
-<div id="loader">
-  <div class="loader-inner">
-    <div class="loader-jf">JF</div>
-    <div class="loader-bar"><div class="loader-fill"></div></div>
-    <p class="loader-text">Initializing Experience</p>
+<div id="site-nav"></div>
+
+<header class="page-hero">
+  <canvas id="cube-canvas"></canvas>
+  <div class="container hero-copy">
+    <span class="eyebrow">About</span>
+    <h1>One builder, full stack of the weird stuff.</h1>
+    <p>Joel Flowstack is a solo digital studio — no agency layer, no account managers, just the person building your project.</p>
   </div>
-</div>
+</header>
 
-<canvas id="cube-canvas"></canvas>
-<div class="circuit-veil"></div>
-<div class="bg-veil"></div>
-<div class="grain"></div>
-
-<div data-include="partials/nav.html"></div>
-
-<main>
-  <section class="page-hero">
-    <div class="container">
-      <span class="crumb">Home / <b>About</b></span>
-      <span class="eyebrow" style="margin-top:18px;display:inline-flex;">Studio of one</span>
-      <h1>Build. Automate. Scale.<br />That's the whole philosophy.</h1>
-      <p class="lead">Joel Flowstack is a solo digital studio — web development, AI bot automation, and complex workflow creation, run end to end by one person, shipped like a full team.</p>
+<section class="container">
+  <div class="grid-2">
+    <div data-reveal>
+      <span class="eyebrow">The approach</span>
+      <h2>Direct, iterative, shipped in the open.</h2>
+      <p>Projects move through GitHub and Vercel — every change is a commit, every commit is deployed. You see progress as it happens, not at the end of a sprint.</p>
+      <p>The studio's own site is the proof: the Rubik's cube you scrolled through on the way in was built the same way every client project is — piece by piece, tested in production, corrected in public.</p>
     </div>
-  </section>
-
-  <section>
-    <div class="container about-grid">
-      <div data-reveal>
-        <div class="about-portrait">
-          <img src="assets/joel-portrait.png" alt="Joel, founder of Joel Flowstack" width="1122" height="1402" loading="lazy" decoding="async" />
-        </div>
-        <div class="about-stats">
-          <div class="about-stat glass"><b data-count="40" data-suffix="+">0</b><span>Builds</span></div>
-          <div class="about-stat glass"><b data-count="12" data-suffix="+">0</b><span>Platforms</span></div>
-          <div class="about-stat glass"><b data-count="3" data-suffix="+">0</b><span>Years</span></div>
-        </div>
-      </div>
-
-      <div>
-        <div data-reveal>
-          <span class="eyebrow">The approach</span>
-          <h2 style="margin-top:16px;font-size:clamp(26px,3vw,36px);">Every project is a product and a portfolio signal</h2>
-          <p style="margin-top:18px;font-size:16px;">
-            Joel treats websites, bots, and content as one interconnected system rather than separate deliverables.
-            A chatbot built for a client also becomes a demo reel. A workflow built to save one business time gets
-            reused as a template for the next. That habit of building things that can demo themselves runs through
-            everything Joel Flowstack ships.
-          </p>
-        </div>
-
-        <div class="timeline" data-reveal>
-          <div class="timeline-item">
-            <b>NOW</b>
-            <div>
-              <h4>Joel Flowstack — Founder</h4>
-              <p>3D interactive websites, AI chatbots across Discord/Telegram/WhatsApp, and n8n workflow automation for clients — deployed via GitHub + Vercel.</p>
-            </div>
-          </div>
-          <div class="timeline-item">
-            <b>ALSO</b>
-            <div>
-              <h4>Product Motion Lab — Content Brand</h4>
-              <p>A separate content brand producing luxury AI-generated product motion videos for TikTok, Instagram and beyond.</p>
-            </div>
-          </div>
-          <div class="timeline-item">
-            <b>BUILT</b>
-            <div>
-              <h4>Flow V3 — AI Assistant</h4>
-              <p>A Groq-backed chat assistant with a Chrome extension for gesture-driven screen control, used both as a client-facing tool and a live capability demo.</p>
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-top:38px;" data-reveal>
-          <a href="contact.html" class="btn btn-primary">Work with me <span class="btn-arrow">→</span></a>
-        </div>
-      </div>
+    <div data-reveal>
+      <span class="eyebrow">The range</span>
+      <h2>Where 3D web meets AI infrastructure.</h2>
+      <p>Most studios pick a lane: either visual (3D, motion, design) or technical (bots, APIs, automation). This one sits across both, because the most interesting projects usually need them together — an interface that looks alive, backed by something that actually thinks.</p>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section>
-    <div class="container">
-      <div class="section-header" data-reveal>
-        <span class="eyebrow">How I work</span>
-        <h2>Entrepreneurial, iterative, hands-on</h2>
-        <p>Concise communication, fast course-correction, comfortable experimenting across tools and platforms until something works.</p>
-      </div>
-      <div class="grid-3">
-        <div class="card glass" data-reveal>
-          <div class="card-icon">①</div>
-          <h3>Scope it fast</h3>
-          <p>A short conversation to find the one system that matters most right now — not a 40-page proposal.</p>
-        </div>
-        <div class="card glass" data-reveal>
-          <div class="card-icon">②</div>
-          <h3>Build in public iterations</h3>
-          <p>You see working versions early and often, not a single reveal at the end.</p>
-        </div>
-        <div class="card glass" data-reveal>
-          <div class="card-icon">③</div>
-          <h3>Ship, then automate the next thing</h3>
-          <p>Once it's live, we look for the next manual process worth removing.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+<section class="container" data-reveal>
+  <span class="eyebrow">Also building</span>
+  <h2>Product Motion Lab</h2>
+  <p>A separate content brand producing luxury AI-generated product motion videos, active on TikTok, X, Instagram, Threads, Medium, and YouTube. Different audience, same underlying obsession: what AI tooling can do when it's pushed past the default output.</p>
+</section>
 
-  <section>
-    <div class="container">
-      <div class="cta-band glass" data-reveal>
-        <span class="eyebrow">Say hello</span>
-        <h2 style="margin-top:14px;">Let's talk about your project</h2>
-        <p>Tell me what you're building — I'll tell you how I'd build it.</p>
-        <a href="contact.html" class="btn btn-primary">Get in touch <span class="btn-arrow">→</span></a>
-      </div>
-    </div>
-  </section>
-</main>
+<section class="container" data-reveal style="border-bottom:none; text-align:center;">
+  <h2>Have a project in mind?</h2>
+  <a class="btn btn-solid" href="contact.html">Get in touch</a>
+</section>
 
-<div data-include="partials/footer.html"></div>
+<div id="site-footer"></div>
 
-<script type="module" src="js/cube.js"></script>
-<script src="js/main.js"></script>
+<script type="module" src="../js/cube.js"></script>
+<script src="../js/shared.js"></script>
+<script src="../js/flowbot.js"></script>
 </body>
 </html>
