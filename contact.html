@@ -7,18 +7,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/global.css" />
+<link rel="stylesheet" href="css/global.css" />
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
 <style>
   form { display: flex; flex-direction: column; gap: 18px; max-width: 480px; }
   form label { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--grey-dim); }
-  form input, form textarea {
-    background: var(--obsidian); border: 1px solid var(--line); color: var(--white);
-    font-family: var(--font-body); font-size: .95rem; padding: 12px 14px; margin-top: 6px;
+  form input, form textarea, form select {
+    background: var(--glass-bg); backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--line-soft); border-radius: var(--radius-sm); color: var(--white);
+    font-family: var(--font-body); font-size: .95rem; padding: 12px 14px; margin-top: 6px; width: 100%;
   }
-  form input:focus, form textarea:focus { outline: none; border-color: var(--white); }
+  form input:focus, form textarea:focus, form select:focus { outline: none; border-color: rgba(255,255,255,.35); }
   form textarea { min-height: 120px; resize: vertical; }
 </style>
 </head>
@@ -26,15 +27,17 @@
 
 <div id="site-nav"></div>
 
-<header class="page-hero" style="min-height:42vh;">
+<header class="page-hero" style="min-height:46vh;">
   <canvas id="cube-canvas"></canvas>
   <div class="container hero-copy">
     <span class="eyebrow">Contact</span>
     <h1>Tell me what you're building.</h1>
+    <p class="lede">Most first replies land same day.</p>
   </div>
 </header>
 
 <section class="container">
+  <div class="glow-field"></div>
   <div class="grid-2">
     <div data-reveal>
       <!--
@@ -53,6 +56,16 @@
           <input id="email" name="email" type="email" required />
         </div>
         <div>
+          <label for="project-type">Project type</label>
+          <select id="project-type" name="project-type">
+            <option>3D website</option>
+            <option>AI chatbot / agent</option>
+            <option>Discord / Telegram / WhatsApp bot</option>
+            <option>n8n automation</option>
+            <option>Something else</option>
+          </select>
+        </div>
+        <div>
           <label for="message">Project details</label>
           <textarea id="message" name="message" required></textarea>
         </div>
@@ -65,14 +78,37 @@
       <p><a href="mailto:joelflowstack@gmail.com">joelflowstack@gmail.com</a></p>
       <p>Telegram: <a href="https://t.me/joelflowstack" target="_blank" rel="noopener">@joelflowstack</a></p>
       <p>Or ask the Flow bot in the corner — it's a live capability demo, not just decoration.</p>
+      <div class="stat" style="margin-top:24px; text-align:left; padding:22px 24px;">
+        <span class="label" style="margin-top:0;">Typical response time</span>
+        <span class="num" style="font-size:1.4rem;">Same day</span>
+      </div>
     </div>
+  </div>
+</section>
+
+<section class="container tight">
+  <span class="eyebrow">Before you write</span>
+  <h2>Quick answers</h2>
+  <div style="margin-top:28px;" data-reveal>
+    <details class="accordion">
+      <summary>What should I include in my first message?</summary>
+      <div class="accordion-body"><p>Roughly what you're trying to build, any deadline you're working against, and whether you already have a GitHub/Vercel setup or need one from scratch. Everything else can be figured out in the reply.</p></div>
+    </details>
+    <details class="accordion">
+      <summary>Do you take on small, single-feature jobs?</summary>
+      <div class="accordion-body"><p>Yes — plenty of work is a single bot, a single automation, or one new section of an existing site. It doesn't need to be a full rebuild to be worth reaching out about.</p></div>
+    </details>
+    <details class="accordion">
+      <summary>What's the fastest way to reach you?</summary>
+      <div class="accordion-body"><p>Email or Telegram, both above. The contact form works too, once the Formspree endpoint is connected.</p></div>
+    </details>
   </div>
 </section>
 
 <div id="site-footer"></div>
 
-<script type="module" src="../js/cube.js"></script>
-<script src="../js/shared.js"></script>
-<script src="../js/flowbot.js"></script>
+<script type="module" src="js/cube.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/flowbot.js"></script>
 </body>
 </html>
