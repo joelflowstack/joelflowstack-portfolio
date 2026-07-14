@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Blog — Joel Flowstack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/global.css" />
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<header class="page-hero">
+  <canvas id="cube-canvas"></canvas>
+  <div class="container hero-copy">
+    <span class="eyebrow">Blog</span>
+    <h1>Build notes.</h1>
+    <p>Mostly about the cube. Occasionally about everything else.</p>
+  </div>
+</header>
+
+<section class="container">
+  <div class="grid-2">
+    <article class="card" data-reveal>
+      <span class="eyebrow">Build log</span>
+      <h3>Why the cube kept freezing mid-animation</h3>
+      <p>A scroll-driven Three.js animation is easiest to get wrong with mutable state. The fix was rebuilding it stateless — every frame recomputed fresh from scroll position and elapsed time, nothing carried over.</p>
+    </article>
+    <article class="card" data-reveal>
+      <span class="eyebrow">Build log</span>
+      <h3>Getting the checkerboard black right</h3>
+      <p>Three material passes — glowing labels, then metallic teal-glass — before landing on the plain glossy obsidian checker that actually matched the reference.</p>
+    </article>
+    <article class="card" data-reveal>
+      <span class="eyebrow">Founder journal</span>
+      <h3>Moving Flow V3 off a free-tier cold start</h3>
+      <p>Migrating an AI chatbot to Groq's inference stack to kill multi-second cold starts, and what that changes about how the bot feels to use.</p>
+    </article>
+    <article class="card" data-reveal>
+      <span class="eyebrow">Build log</span>
+      <h3>Shipping a static site with no CLI</h3>
+      <p>What it actually takes to build and deploy through GitHub's web UI and Vercel alone, with no terminal in the loop.</p>
+    </article>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script type="module" src="../js/cube.js"></script>
+<script src="../js/shared.js"></script>
+<script src="../js/flowbot.js"></script>
+</body>
+</html>
