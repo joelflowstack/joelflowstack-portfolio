@@ -21,6 +21,10 @@
   "use strict";
 
   const API_URL = "https://flow-v3-mu.vercel.app/api/chat";
+  // Same endpoint as chat, routed by req.body.action — Vercel's Hobby plan
+  // caps a project at 12 serverless functions, and flow-V3 was already at
+  // that limit, so this is folded into api/chat.js rather than its own file.
+  const ADMIN_URL = "https://flow-v3-mu.vercel.app/api/chat";
 
   const SYSTEM_PROMPT =
     "You are Flow, the AI agent Joel Flowstack built, embedded as a live " +
@@ -43,6 +47,23 @@
     bounced: true,
   };
 
+  function sendEvent(event) {
+    try {
+      const payload = JSON.stringify({ action: "track_event", event });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(ADMIN_URL, new Blob([payload], { type: "application/json" }));
+      } else {
+        fetch(ADMIN_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload, keepalive: true });
+      }
+    } catch (err) {
+      console.warn("[flowbot] analytics event failed:", err);
+    }
+  }
+
+  // A real pageview, sent on load rather than on unload, so it isn't
+  // lost if the tab gets killed before beforeunload fires.
+  sendEvent({ type: "pageview", page: window.location.pathname || "/" });
+
   function trackScroll() {
     const pct = window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     analytics.maxScroll = Math.max(analytics.maxScroll, pct);
@@ -50,21 +71,16 @@
   window.addEventListener("scroll", trackScroll, { passive: true });
   document.addEventListener("click", () => { analytics.clicks++; analytics.bounced = false; });
   window.addEventListener("beforeunload", () => {
-    const payload = {
+    if (analytics.bounced && analytics.maxScroll < 0.15) {
+      sendEvent({ type: "bounce", page: window.location.pathname || "/" });
+    }
+    console.info("[flowbot analytics]", {
       timeOnPageMs: Date.now() - analytics.start,
       maxScrollPct: Math.round(analytics.maxScroll * 100),
       clicks: analytics.clicks,
       bounced: analytics.bounced,
       page: window.location.pathname,
-    };
-    console.info("[flowbot analytics]", payload);
-    // Not yet wired to a real backend. To send this for real, swap the
-    // console.info above for one of:
-    //
-    // navigator.sendBeacon("/api/analytics", JSON.stringify(payload));
-    //
-    // or, for GA4:
-    // gtag("event", "page_engagement", payload);
+    });
   });
 
   const LOGO_SVG = `
