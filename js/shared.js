@@ -41,7 +41,7 @@
 
     mount.innerHTML = `
       <nav class="site-nav">
-        <a class="logo" href="index.html"><b>JOEL</b> FLOWSTACK</a>
+        <a class="logo" href="index.html"><img src="assets/logo.png" alt="" width="26" height="26" style="border-radius:6px;vertical-align:middle;margin-right:8px;" /><b>JOEL</b> FLOWSTACK</a>
         <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
         <ul id="nav-links">${links}</ul>
       </nav>`;
@@ -64,7 +64,7 @@
         <div class="container">
           <div class="foot-grid">
             <div>
-              <div class="logo" style="margin-bottom:10px;">JOEL FLOWSTACK</div>
+              <div class="logo" style="margin-bottom:10px;"><img src="assets/logo.png" alt="" width="22" height="22" style="border-radius:5px;vertical-align:middle;margin-right:8px;" />JOEL FLOWSTACK</div>
               <a href="mailto:joelflowstack@gmail.com">joelflowstack@gmail.com</a>
             </div>
             <div class="socials">${socials}</div>
