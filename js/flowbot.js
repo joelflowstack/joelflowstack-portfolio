@@ -2,13 +2,39 @@
  * JOEL FLOWSTACK — flowbot.js
  * Floating chat widget, bottom-right, on every page. Calls the live
  * Flow V3 API directly (POST /api/chat) — this is NOT an iframe.
- * Note: you'll see a 403 CORS error until this site's live domain is
- * whitelisted in the Flow V3 backend — that's expected, not a bug here.
+ * CORS is already open on the backend (Access-Control-Allow-Origin: *,
+ * confirmed in api/chat.js), so no domain whitelisting is needed.
+ *
+ * API CONTRACT (confirmed against Joel44118/flow-V3's api/chat.js):
+ *   Request:  POST { messages: [{ role, content }, ...] }
+ *             — NOT { message: "..." }. The endpoint expects the full
+ *             OpenAI-style chat history, including an optional leading
+ *             { role: "system", content: "..." } message.
+ *   Response: { reply, model, intent, clientAction?, clientArgs? }
+ *             clientAction shows up when Flow's model chose to call a
+ *             tool that only makes sense inside the full Flow app
+ *             (camera, image-gen, Bluesky posting, etc.) — this simple
+ *             website widget can't execute those, so it just falls back
+ *             to a plain-language explanation when that happens.
  */
 (function () {
   "use strict";
 
   const API_URL = "https://flow-v3-mu.vercel.app/api/chat";
+
+  const SYSTEM_PROMPT =
+    "You are Flow, the AI agent Joel Flowstack built, embedded as a live " +
+    "capability demo on his studio's public portfolio site. You're talking " +
+    "to a website visitor, not Joel himself — don't call them 'Boss'. Be " +
+    "helpful, friendly, and concise. You can discuss Joel's studio " +
+    "(3D websites, AI chatbots/agents, Discord/Telegram/WhatsApp bots, n8n " +
+    "automation) and your own capabilities in general terms. If asked to do " +
+    "something that needs a camera, image generation, or posting to social " +
+    "accounts, explain that those features are part of the full Flow app, " +
+    "not this website demo, and suggest contacting Joel directly instead.";
+
+  // In-memory only — resets on page reload, which is fine for a demo widget.
+  let conversation = [{ role: "system", content: SYSTEM_PROMPT }];
 
   const analytics = {
     start: Date.now(),
@@ -79,28 +105,37 @@
       div.textContent = text;
       log.appendChild(div);
       log.scrollTop = log.scrollHeight;
+      return div;
     }
 
     async function send() {
       const text = input.value.trim();
       if (!text) return;
       addMsg(text, "user");
+      conversation.push({ role: "user", content: text });
       input.value = "";
-      addMsg("...", "bot");
-      const thinking = log.lastElementChild;
+      const thinking = addMsg("...", "bot");
 
       try {
         const res = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text }),
+          body: JSON.stringify({ messages: conversation }),
         });
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
-        thinking.textContent = data.reply || data.message || "Hmm, I didn't get a clean reply — try again?";
+
+        let replyText = (data.reply || "").trim();
+        if (!replyText && data.clientAction) {
+          replyText = "That's something I can only do inside the full Flow app, not this website demo — ask me anything else, or reach out to Joel directly for that.";
+        }
+        if (!replyText) replyText = "Hmm, I didn't get a clean reply — try asking again?";
+
+        thinking.textContent = replyText;
+        conversation.push({ role: "assistant", content: replyText });
       } catch (err) {
-        console.warn("[flowbot] request failed (expected if domain isn't whitelisted yet):", err);
-        thinking.textContent = "Can't reach Flow's API from this domain yet — Joel needs to whitelist it on the backend. Email joelflowstack@gmail.com in the meantime.";
+        console.warn("[flowbot] request failed:", err);
+        thinking.textContent = "Couldn't reach Flow right now — try again in a moment, or email joelflowstack@gmail.com.";
       }
     }
 
