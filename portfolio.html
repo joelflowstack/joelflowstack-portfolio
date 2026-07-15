@@ -32,8 +32,8 @@
     <div>
       <span class="eyebrow">Case study 01</span>
       <h2>Flow V3</h2>
-      <div class="tag-row"><span class="tag">AI Agent</span><span class="tag">Groq</span><span class="tag">Vercel</span></div>
-      <p>An AI chat agent originally built on a free-tier host, migrated to Groq's LPU inference for near-zero cold-start latency, running <code>llama-3.3-70b-versatile</code> with an 8B fallback model for reliability under load.</p>
+      <div class="tag-row"><span class="tag">AI Agent</span><span class="tag">LPU Inference</span><span class="tag">Multi-Provider Failover</span></div>
+      <p>An AI chat agent engineered for near-instant response times, running on low-latency LPU inference infrastructure with automatic multi-provider failover, so a single provider hiccup never means downtime.</p>
       <p>Embedded here as a real API-calling widget — not an iframe — POSTing directly to its own backend, with rate-limit handling and a 25-second timeout so it fails gracefully instead of hanging.</p>
     </div>
     <div class="card">
@@ -53,7 +53,7 @@
   <div class="grid-2" data-reveal>
     <div class="card">
       <h3>The migration</h3>
-      <p>Free-tier cold starts meant multi-second delays before Flow could respond — enough to lose someone's attention entirely. Moving to Groq's inference stack cut that to near-instant, with a smaller fallback model kept in reserve for when the primary is under load.</p>
+      <p>Early response times ran into multi-second delays — enough to lose someone's attention entirely. Rebuilding around low-latency LPU inference, with automatic provider failover for reliability under load, cut that to near-instant.</p>
     </div>
     <div>
       <span class="eyebrow">Case study 02</span>
@@ -73,6 +73,15 @@
   </div>
 </section>
 
+<section class="container tight">
+  <span class="eyebrow">Latest client work</span>
+  <h2>Straight from the source.</h2>
+  <p>This section updates itself — Joel's own Flow agent can add a finished project here directly, no manual editing required. New work shows up here first.</p>
+  <div id="latest-work" class="grid-3" style="margin-top:32px;">
+    <p style="color:var(--grey-dim);">Loading…</p>
+  </div>
+</section>
+
 <section class="container">
   <blockquote class="quote" data-reveal>
     "The cube isn't a gimmick bolted onto a normal site — it's the actual navigation, and it had to work as well as any menu bar."
@@ -86,7 +95,7 @@
   <div class="grid-3" style="margin-top:32px;">
     <div class="card interactive" data-reveal>
       <h3>Browser AI assistant</h3>
-      <p>A Chrome extension prototype for gesture and screen control, using MediaPipe Hands for tracking and a Groq-backed Llama 3.3 70B model for reasoning.</p>
+      <p>A Chrome extension prototype for gesture and screen control, using MediaPipe Hands for tracking and a 70B-parameter model for reasoning.</p>
     </div>
     <div class="card interactive" data-reveal>
       <h3>n8n automation stacks</h3>
@@ -109,5 +118,34 @@
 <script type="module" src="js/cube.js"></script>
 <script src="js/shared.js"></script>
 <script src="js/flowbot.js"></script>
+<script>
+  // Renders content/projects.json live — this is the file Flow's
+  // update_portfolio tool commits to, so this section reflects new
+  // work automatically without touching this HTML file again.
+  (async function loadLatestWork() {
+    const mount = document.getElementById("latest-work");
+    try {
+      const res = await fetch("content/projects.json", { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      const projects = data.projects || [];
+      if (!projects.length) {
+        mount.innerHTML = '<p style="color:var(--grey-dim);">New work lands here as projects wrap — check back soon.</p>';
+        return;
+      }
+      mount.innerHTML = projects.map(p => `
+        <div class="card interactive" data-reveal>
+          ${p.tags?.length ? `<div class="tag-row">${p.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>` : ""}
+          <h3>${p.title}</h3>
+          <p>${p.description}</p>
+        </div>
+      `).join("");
+      mount.querySelectorAll("[data-reveal]").forEach(el => el.classList.add("revealed"));
+    } catch (err) {
+      console.warn("[latest-work] couldn't load content/projects.json:", err);
+      mount.innerHTML = '<p style="color:var(--grey-dim);">New work lands here as projects wrap — check back soon.</p>';
+    }
+  })();
+</script>
 </body>
 </html>
