@@ -74,6 +74,25 @@
       </footer>`;
   }
 
+  function animateCount(el) {
+    const raw = el.textContent.trim();
+    const match = raw.match(/^(-?\d+)(.*)$/); // leading integer + suffix (%, +, etc.)
+    if (!match) { el.classList.add("counted"); return; } // non-numeric stat, e.g. "GitHub → Vercel"
+    const target = parseInt(match[1], 10);
+    const suffix = match[2] || "";
+    if (Math.abs(target) > 999 || Number.isNaN(target)) { el.classList.add("counted"); return; }
+    const duration = 900;
+    const start = performance.now();
+    function frame(now) {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(target * eased) + suffix;
+      if (p < 1) requestAnimationFrame(frame);
+      else el.classList.add("counted");
+    }
+    requestAnimationFrame(frame);
+  }
+
   function initReveal() {
     const els = document.querySelectorAll("[data-reveal]");
     if (!els.length) return;
@@ -81,6 +100,7 @@
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add("revealed");
+          entry.target.querySelectorAll(".stat .num").forEach(animateCount);
           io.unobserve(entry.target);
         }
       });
@@ -102,10 +122,76 @@
     });
   }
 
+  function initScrollProgress() {
+    const bar = document.createElement("div");
+    bar.id = "scroll-progress";
+    document.body.appendChild(bar);
+    const update = () => {
+      const h = document.documentElement;
+      const pct = h.scrollHeight > h.clientHeight
+        ? (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100
+        : 0;
+      bar.style.width = pct + "%";
+    };
+    window.addEventListener("scroll", update, { passive: true });
+    update();
+  }
+
+  function initCursorGlow() {
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    const glow = document.createElement("div");
+    glow.id = "cursor-glow";
+    document.body.appendChild(glow);
+    let shown = false;
+    window.addEventListener("mousemove", (e) => {
+      glow.style.left = e.clientX + "px";
+      glow.style.top = e.clientY + "px";
+      if (!shown) { glow.classList.add("active"); shown = true; }
+    }, { passive: true });
+    window.addEventListener("mouseleave", () => glow.classList.remove("active"));
+  }
+
+  function initNavScrollState() {
+    const update = () => {
+      const nav = document.querySelector(".site-nav");
+      if (nav) nav.classList.toggle("scrolled", window.scrollY > 40);
+    };
+    window.addEventListener("scroll", update, { passive: true });
+    update();
+  }
+
+  // Soft fade-to-black transition on internal navigation, instead of an
+  // abrupt jump cut between pages.
+  function initPageTransitions() {
+    const veil = document.createElement("div");
+    veil.id = "page-veil";
+    document.body.appendChild(veil);
+    document.body.classList.add("page-loaded");
+
+    document.addEventListener("click", (e) => {
+      const link = e.target.closest("a[href]");
+      if (!link) return;
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
+      if (link.target === "_blank" || link.hasAttribute("download")) return;
+      let url;
+      try { url = new URL(href, window.location.href); } catch { return; }
+      if (url.origin !== window.location.origin) return; // external link, no veil
+
+      e.preventDefault();
+      veil.classList.add("visible");
+      setTimeout(() => { window.location.href = url.href; }, 380);
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     injectNav();
     injectFooter();
     initReveal();
     initTabs();
+    initScrollProgress();
+    initCursorGlow();
+    initNavScrollState();
+    initPageTransitions();
   });
 })();
