@@ -21,6 +21,13 @@
   --glass-bg-strong: rgba(255,255,255,.075);
   --glass-blur: blur(22px) saturate(140%);
 
+  /* Blue accent, lifted from the Flow V3 demo video's navy/cyan look */
+  --blue-deep: #060d1a;
+  --blue-mid: #0e1f38;
+  --blue-glow: #3fa9e8;
+  --blue-glow-soft: rgba(63,169,232,.16);
+  --blue-line: rgba(63,169,232,.28);
+
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
@@ -36,7 +43,7 @@ html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  background: var(--black);
+  background: radial-gradient(ellipse 120% 60% at 50% 0%, var(--blue-mid) 0%, var(--blue-deep) 38%, var(--black) 72%) fixed;
   color: var(--white);
   font-family: var(--font-body);
   font-size: 16px;
@@ -53,7 +60,7 @@ body {
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; display: block; }
 
-::selection { background: var(--white); color: var(--black); }
+::selection { background: var(--blue-glow); color: var(--black); }
 
 :focus-visible {
   outline: 1px solid var(--white);
@@ -68,11 +75,11 @@ img { max-width: 100%; display: block; }
 .glow-field::before, .glow-field::after {
   content: ''; position: absolute; border-radius: 50%;
   filter: blur(90px);
-  background: radial-gradient(circle, rgba(255,255,255,.10), transparent 70%);
+  background: radial-gradient(circle, var(--blue-glow-soft), transparent 70%);
 }
 .glow-field::before { width: 46vw; height: 46vw; top: -14vw; left: -10vw; }
 .glow-field::after { width: 38vw; height: 38vw; bottom: -12vw; right: -8vw;
-  background: radial-gradient(circle, rgba(255,255,255,.07), transparent 70%); }
+  background: radial-gradient(circle, rgba(63,169,232,.10), transparent 70%); }
 
 /* ---------- Typography ---------- */
 h1, h2, h3, h4 {
@@ -140,7 +147,7 @@ section.tight { padding: 80px 0; }
 }
 .site-nav a::after {
   content: ''; position: absolute; left: 0; right: 100%; bottom: -6px; height: 1px;
-  background: var(--white); transition: right .3s var(--ease-out);
+  background: var(--blue-glow); transition: right .3s var(--ease-out);
 }
 .site-nav a:hover::after, .site-nav a.active::after { right: 0; }
 .site-nav a:hover, .site-nav a.active { color: var(--white); }
@@ -178,13 +185,13 @@ section.tight { padding: 80px 0; }
   transition: border-color .25s var(--ease-out), background .25s var(--ease-out), transform .25s var(--ease-out), box-shadow .25s var(--ease-out);
 }
 .btn:hover {
-  border-color: rgba(255,255,255,.3);
+  border-color: var(--blue-line);
   background: var(--glass-bg-strong);
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0,0,0,.4), 0 0 24px rgba(255,255,255,.06);
+  box-shadow: 0 10px 30px rgba(0,0,0,.4), 0 0 24px var(--blue-glow-soft);
 }
 .btn-solid { background: var(--white); color: var(--black); border-color: var(--white); }
-.btn-solid:hover { background: var(--white-dim); box-shadow: 0 10px 30px rgba(0,0,0,.4), 0 0 30px rgba(255,255,255,.18); }
+.btn-solid:hover { background: var(--white-dim); box-shadow: 0 10px 30px rgba(0,0,0,.4), 0 0 34px var(--blue-glow-soft); }
 
 /* ---------- Decorative hero cube (inner pages) ---------- */
 .page-hero {
@@ -281,9 +288,9 @@ section.tight { padding: 80px 0; }
 }
 a.card:hover, .card.interactive:hover {
   transform: translateY(-4px);
-  border-color: rgba(255,255,255,.22);
+  border-color: var(--blue-line);
   background: var(--glass-bg-strong);
-  box-shadow: 0 20px 50px rgba(0,0,0,.5), 0 0 30px rgba(255,255,255,.05);
+  box-shadow: 0 20px 50px rgba(0,0,0,.5), 0 0 34px var(--blue-glow-soft);
 }
 
 /* ---------- Stats strip ---------- */
@@ -297,6 +304,7 @@ a.card:hover, .card.interactive:hover {
 .stat .num {
   font-family: var(--font-display); font-size: clamp(1.8rem, 3vw, 2.6rem);
   font-weight: 700; color: var(--white); display: block;
+  text-shadow: 0 0 24px var(--blue-glow-soft);
 }
 .stat .label {
   font-family: var(--font-mono); font-size: .7rem; letter-spacing: .1em;
@@ -314,8 +322,8 @@ a.card:hover, .card.interactive:hover {
 .timeline-item::before {
   content: ''; position: absolute; left: -32px; top: 4px;
   width: 11px; height: 11px; border-radius: 50%;
-  background: var(--black); border: 1px solid var(--white-dim);
-  box-shadow: 0 0 14px rgba(255,255,255,.25);
+  background: var(--black); border: 1px solid var(--blue-glow);
+  box-shadow: 0 0 14px var(--blue-glow-soft);
 }
 .timeline-item h3 { margin-bottom: 6px; }
 
@@ -410,7 +418,7 @@ a.card:hover, .card.interactive:hover {
   box-shadow: 0 12px 30px rgba(0,0,0,.5);
   transition: border-color .25s var(--ease-out), transform .25s var(--ease-out), box-shadow .25s var(--ease-out);
 }
-#flowbot-launcher:hover { border-color: rgba(255,255,255,.3); transform: translateY(-3px) scale(1.03); box-shadow: 0 16px 40px rgba(0,0,0,.55), 0 0 30px rgba(255,255,255,.1); }
+#flowbot-launcher:hover { border-color: var(--blue-line); transform: translateY(-3px) scale(1.03); box-shadow: 0 16px 40px rgba(0,0,0,.55), 0 0 34px var(--blue-glow-soft); }
 #flowbot-launcher svg { width: 26px; height: 26px; display: block; }
 #flowbot-panel {
   position: fixed; bottom: 96px; right: 24px; z-index: 600;
@@ -418,7 +426,7 @@ a.card:hover, .card.interactive:hover {
   max-height: 62vh;
   border-radius: var(--radius);
   border: 1px solid var(--line-soft);
-  background: rgba(5,5,6,.7);
+  background: rgba(6,13,26,.78);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   display: none;
@@ -441,7 +449,7 @@ a.card:hover, .card.interactive:hover {
   font-size: .88rem;
 }
 #flowbot-panel .fb-msg { max-width: 88%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--line-soft); }
-#flowbot-panel .fb-msg.user { align-self: flex-end; background: var(--white); color: var(--black); border-color: var(--white); }
+#flowbot-panel .fb-msg.user { align-self: flex-end; background: var(--blue-glow); color: #04101c; border-color: var(--blue-glow); }
 #flowbot-panel .fb-msg.bot { align-self: flex-start; color: var(--white-dim); background: rgba(255,255,255,.03); }
 #flowbot-panel .fb-input {
   display: flex; border-top: 1px solid var(--line-soft);
