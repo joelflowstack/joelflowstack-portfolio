@@ -465,3 +465,73 @@ a.card:hover, .card.interactive:hover {
   cursor: pointer; transition: color .2s var(--ease-out);
 }
 #flowbot-panel .fb-input button:hover { color: var(--grey); }
+
+/* ---------- New interactive elements & transitions ---------- */
+
+/* Scroll progress bar */
+#scroll-progress {
+  position: fixed; top: 0; left: 0; height: 2px; width: 0%;
+  background: linear-gradient(90deg, var(--blue-glow), rgba(63,169,232,.3));
+  z-index: 1000; transition: width .1s linear;
+  box-shadow: 0 0 12px var(--blue-glow);
+}
+
+/* Custom cursor glow (desktop only — mouse-capable devices) */
+@media (hover: hover) and (pointer: fine) {
+  #cursor-glow {
+    position: fixed; top: 0; left: 0; width: 340px; height: 340px;
+    border-radius: 50%; pointer-events: none; z-index: 2;
+    background: radial-gradient(circle, var(--blue-glow-soft), transparent 70%);
+    transform: translate(-50%, -50%);
+    opacity: 0; transition: opacity .4s var(--ease-out);
+    mix-blend-mode: screen;
+  }
+  #cursor-glow.active { opacity: 1; }
+}
+
+/* Magnetic buttons */
+.btn { will-change: transform; }
+
+/* Page-load / page-leave transition veil */
+#page-veil {
+  position: fixed; inset: 0; z-index: 2000;
+  background: var(--black);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .45s var(--ease-out);
+}
+#page-veil.visible { opacity: 1; pointer-events: all; }
+body.page-loaded #page-veil { opacity: 0; }
+body { opacity: 0; animation: pageIn .6s var(--ease-out) forwards; animation-delay: .05s; }
+@keyframes pageIn { to { opacity: 1; } }
+
+/* Count-up stat numbers get a brief glow pulse when they land */
+.stat .num.counted { animation: statPulse 1s var(--ease-out); }
+@keyframes statPulse {
+  0% { text-shadow: 0 0 2px var(--blue-glow); }
+  40% { text-shadow: 0 0 34px var(--blue-glow); }
+  100% { text-shadow: 0 0 24px var(--blue-glow-soft); }
+}
+
+/* Animated gradient sweep on card borders when revealed */
+[data-reveal].revealed.card, a.card[data-reveal].revealed {
+  animation: cardSettle .8s var(--ease-out);
+}
+@keyframes cardSettle {
+  from { box-shadow: 0 0 0 1px var(--blue-glow-soft); }
+  to   { box-shadow: none; }
+}
+
+/* Section divider — subtle animated line instead of a flat border */
+.divider {
+  height: 1px; margin: 0 auto; max-width: 1180px;
+  background: linear-gradient(90deg, transparent, var(--blue-line), transparent);
+  opacity: .6;
+}
+
+/* Nav shrinks slightly and gains more blur once scrolled */
+.site-nav.scrolled {
+  height: 64px;
+  background: rgba(4,8,16,.75);
+}
+.site-nav { transition: height .3s var(--ease-out), background .3s var(--ease-out); }
