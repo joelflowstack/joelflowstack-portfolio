@@ -93,7 +93,18 @@
       </div>`;
     document.body.appendChild(panel);
 
-    launcher.addEventListener("click", () => panel.classList.toggle("open"));
+    launcher.addEventListener("click", (e) => {
+      e.stopPropagation();
+      panel.classList.toggle("open");
+    });
+    document.addEventListener("click", (e) => {
+      if (!panel.classList.contains("open")) return;
+      if (panel.contains(e.target) || launcher.contains(e.target)) return;
+      panel.classList.remove("open");
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") panel.classList.remove("open");
+    });
 
     const log = panel.querySelector("#fb-log");
     const input = panel.querySelector("#fb-text");
