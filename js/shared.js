@@ -184,6 +184,25 @@
     });
   }
 
+  // On the landing page only (where #scroll-hero exists), the nav stays
+  // hidden while the cube is still the whole show, and fades in once the
+  // person has scrolled all the way past it into regular page content —
+  // i.e. once they've come out the "back door" below the cube.
+  function initHeroNavVisibility() {
+    const hero = document.getElementById("scroll-hero");
+    const nav = document.querySelector(".site-nav");
+    if (!hero || !nav) return; // not the landing page — nav stays visible as normal
+    nav.classList.add("hero-hidden");
+    const update = () => {
+      const total = hero.offsetHeight - window.innerHeight;
+      const scrolled = -hero.getBoundingClientRect().top;
+      const pastHero = total > 0 ? scrolled >= total - 4 : true;
+      nav.classList.toggle("hero-hidden", !pastHero);
+    };
+    window.addEventListener("scroll", update, { passive: true });
+    update();
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     injectNav();
     injectFooter();
@@ -193,5 +212,6 @@
     initCursorGlow();
     initNavScrollState();
     initPageTransitions();
+    initHeroNavVisibility();
   });
 })();
