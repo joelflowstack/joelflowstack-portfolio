@@ -539,4 +539,48 @@ body { opacity: 0; animation: pageIn .6s var(--ease-out) forwards; animation-del
   height: 64px;
   background: rgba(4,8,16,.75);
 }
-.site-nav { transition: height .3s var(--ease-out), background .3s var(--ease-out); }
+.site-nav { transition: height .3s var(--ease-out), background .3s var(--ease-out), opacity .5s var(--ease-out), transform .5s var(--ease-out); }
+.site-nav.hero-hidden { opacity: 0; transform: translateY(-14px); pointer-events: none; }
+
+/* ---------- Landing-page hero: rotating blue edge light ---------- */
+/* A conic-gradient sweeping around the full-screen cube stage's border —
+   almost entirely transparent except for one bright "head" (the leading
+   dot) trailing a soft blue glow, matching Flow's own cyan-blue look.
+   Registered as an angle so it interpolates smoothly frame to frame
+   instead of snapping. */
+@property --edge-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+#scroll-hero .pin-stage {
+  --edge-angle: 0deg;
+}
+#scroll-hero .pin-stage::before {
+  content: '';
+  position: absolute; inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  padding: 3px;
+  background: conic-gradient(from var(--edge-angle),
+    transparent 0deg,
+    transparent 328deg,
+    rgba(63,169,232,.10) 340deg,
+    rgba(111,208,255,.55) 351deg,
+    var(--blue-glow) 357deg,
+    #e4f6ff 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: edgeSpin 9s linear infinite;
+  filter: drop-shadow(0 0 10px var(--blue-glow)) drop-shadow(0 0 22px rgba(63,169,232,.55));
+}
+@keyframes edgeSpin {
+  to { --edge-angle: 360deg; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #scroll-hero .pin-stage::before { animation: none; }
+}
