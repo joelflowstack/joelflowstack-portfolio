@@ -84,13 +84,21 @@ import * as THREE from "three";
     metalness: 0.08,
     bootDuration: 1.5,      // seconds
     scatterDuration: 0.75,  // seconds
+    clickPulseDuration: 170, // ms — brief "confirmed" flash before scatter begins
     lockFitMargin: 1.22,    // headroom so the 3x3 grid never touches the viewport edge when locked
   };
   const GRID_SPAN = 3 * (CONFIG.pieceSize + CONFIG.gap); // full width/height of the 3x3 front face
+  const LOCK_START = 0.32; // tumble ends, easing into lock begins
+  const LOCK_POINT = 0.55; // fully locked + interactive from here to P=1 — a long, deliberate dwell
 
   let lockedCameraZ = 6; // recomputed from viewport + FOV in onResize()/init(), not a magic number
 
   let renderer, scene, camera, cubeGroup, shadowCatcher;
+  let edgeLight = null;
+  let hoveredNavIndex = -1;
+  let pointerPixel = { x: -9999, y: -9999 };
+  let clickPulsePiece = null;
+  let clickPulseStart = 0;
   let pieces = []; // {mesh, grid:{x,y,z}, home:Vector3, scattered:Vector3, delay:number, isFrontOuter:bool, navIndex:number}
   let clock = new THREE.Clock();
   let raycaster = new THREE.Raycaster();
@@ -165,9 +173,11 @@ import * as THREE from "three";
 
     if (PORTAL_MODE) {
       buildNavLabels();
+      buildEdgeLights();
       window.addEventListener("scroll", onScroll, { passive: true });
       onScroll();
       canvas.addEventListener("pointerdown", onPortalClick);
+      canvas.addEventListener("pointermove", onPortalPointerMove);
       canvas.style.cursor = "default";
     }
 
@@ -251,6 +261,7 @@ import * as THREE from "three";
       map: tex, color: 0xffffff,
       roughness: CONFIG.roughness, metalness: CONFIG.metalness,
       clearcoat: CONFIG.clearcoat, clearcoatRoughness: CONFIG.clearcoatRoughness,
+      emissive: 0x3fa9e8, emissiveIntensity: 0, // hover/click glow, modulated per-frame in updateTileHover
     });
   }
 
@@ -345,6 +356,7 @@ import * as THREE from "three";
             isNavTile: gridKeyMatch >= 0,
             isCenterTile,
             navIndex: gridKeyMatch,
+            glow: 0, // eased emissive intensity for hover/click feedback
           };
           pieces.push(piece);
 
@@ -378,6 +390,144 @@ import * as THREE from "three";
   // ---------------------------------------------------------------
   // NAV LABELS (2D DOM overlay, positioned each frame from 3D)
   // ---------------------------------------------------------------
+  function buildEdgeLights() {
+    const stage = document.querySelector("#scroll-hero .pin-stage");
+    if (!stage) return;
+    const svgNS = "http://www.w3.org/2000/svg";
+
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.id = "edge-light-svg";
+
+    const defs = document.createElementNS(svgNS, "defs");
+    const filter = document.createElementNS(svgNS, "filter");
+    filter.id = "edgeGlow";
+    filter.setAttribute("x", "-60%"); filter.setAttribute("y", "-60%");
+    filter.setAttribute("width", "220%"); filter.setAttribute("height", "220%");
+    const blur = document.createElementNS(svgNS, "feGaussianBlur");
+    blur.setAttribute("stdDeviation", "5");
+    filter.appendChild(blur);
+    defs.appendChild(filter);
+    svg.appendChild(defs);
+
+    // Faint full track so the frame reads as a deliberate element even
+    // where the bright sweep isn't currently passing.
+    const track = document.createElementNS(svgNS, "path");
+    track.setAttribute("fill", "none");
+    track.setAttribute("stroke", "rgba(63,169,232,.14)");
+    track.setAttribute("stroke-width", "2");
+    svg.appendChild(track);
+
+    // The bold traveling light itself — a thick, blurred, bright dash.
+    const sweep = document.createElementNS(svgNS, "path");
+    sweep.setAttribute("fill", "none");
+    sweep.setAttribute("stroke", "#3fa9e8"); // matches --blue-glow directly (var() support in SVG presentation attrs is inconsistent)
+    sweep.setAttribute("stroke-width", "5");
+    sweep.setAttribute("stroke-linecap", "round");
+    sweep.setAttribute("filter", "url(#edgeGlow)");
+    svg.appendChild(sweep);
+
+    // The leading dot — bright core, sits exactly on the path via
+    // getPointAtLength(), so it's always precisely at the sweep's front.
+    const dot = document.createElementNS(svgNS, "circle");
+    dot.setAttribute("r", "6");
+    dot.setAttribute("fill", "#eef8ff");
+    dot.setAttribute("filter", "url(#edgeGlow)");
+    svg.appendChild(dot);
+
+    stage.appendChild(svg);
+    edgeLight = { svg, track, sweep, dot, perimeter: 0 };
+    layoutEdgeLights();
+    window.addEventListener("resize", layoutEdgeLights);
+  }
+
+  function layoutEdgeLights() {
+    if (!edgeLight) return;
+    const stage = document.querySelector("#scroll-hero .pin-stage");
+    if (!stage) return;
+    const w = stage.clientWidth, h = stage.clientHeight;
+    const inset = 3;
+    edgeLight.svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    // Starts at top-center, goes clockwise: right along top, down the
+    // right edge, left along the bottom, up the left edge, back to start.
+    // Starting the path itself at top-center (not a corner) is what
+    // makes the sweep "accurately start at the top" rather than
+    // approximating it through an angular offset.
+    const d = `M ${w / 2},${inset} L ${w - inset},${inset} L ${w - inset},${h - inset} L ${inset},${h - inset} L ${inset},${inset} Z`;
+    edgeLight.track.setAttribute("d", d);
+    edgeLight.sweep.setAttribute("d", d);
+    edgeLight.perimeter = edgeLight.sweep.getTotalLength();
+    const dash = edgeLight.perimeter * 0.14;
+    edgeLight.sweep.setAttribute("stroke-dasharray", `${dash} ${edgeLight.perimeter - dash}`);
+    edgeLight.dashLength = dash;
+  }
+
+  // Constant-speed loop around the true perimeter, computed fresh from
+  // elapsed time each frame (stateless, same philosophy as the rest of
+  // the portal animation) — one full lap every LOOP_SECONDS regardless
+  // of screen size, so it never feels rushed on a big monitor or
+  // frantic on a small one.
+  function updateEdgeLights(elapsed, visibility) {
+    if (!edgeLight || !edgeLight.perimeter) return;
+    const LOOP_SECONDS = 10;
+    const dist = (elapsed % LOOP_SECONDS) / LOOP_SECONDS * edgeLight.perimeter;
+    edgeLight.sweep.setAttribute("stroke-dashoffset", -dist);
+
+    const leadDist = (dist + edgeLight.dashLength) % edgeLight.perimeter;
+    const pt = edgeLight.sweep.getPointAtLength(leadDist);
+    edgeLight.dot.setAttribute("cx", pt.x);
+    edgeLight.dot.setAttribute("cy", pt.y);
+
+    // Fades in alongside the rest of the locked-hero UI rather than
+    // being visible (and distracting) during the tumble.
+    edgeLight.svg.style.opacity = String(Math.max(0.35, visibility));
+  }
+
+  // Raycasts from the actual pointer position (not just on click) to find
+  // which nav tile, if any, is currently under the cursor, then eases
+  // every nav tile's emissive glow + scale toward its target each frame —
+  // smooth in and out, not a hard on/off flip.
+  function updateTileHover(visibility) {
+    if (!PORTAL_MODE) return;
+    const interactive = visibility > 0.9 && !scatterActive;
+
+    if (interactive) {
+      pointer.x = (pointerPixel.x / window.innerWidth) * 2 - 1;
+      pointer.y = -(pointerPixel.y / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const navMeshes = pieces.filter(p => p.isNavTile).map(p => p.mesh);
+      const hits = raycaster.intersectObjects(navMeshes, false);
+      const hitPiece = hits.length ? pieces.find(p => p.mesh === hits[0].object) : null;
+      hoveredNavIndex = hitPiece ? hitPiece.navIndex : -1;
+      canvas.style.cursor = hoveredNavIndex >= 0 ? "pointer" : "default";
+    } else {
+      hoveredNavIndex = -1;
+      canvas.style.cursor = "default";
+    }
+
+    const now = performance.now();
+    const pulseActive = clickPulsePiece && (now - clickPulseStart) < CONFIG.clickPulseDuration;
+
+    pieces.forEach((p) => {
+      if (!p.isNavTile) return;
+      let target = (p.navIndex === hoveredNavIndex) ? 0.55 : 0;
+      let scaleTarget = (p.navIndex === hoveredNavIndex) ? 1.05 : 1;
+
+      if (pulseActive && p === clickPulsePiece) {
+        const t = (now - clickPulseStart) / CONFIG.clickPulseDuration;
+        target = 1.4 * Math.sin(t * Math.PI); // quick bright flash, peaks mid-pulse
+        scaleTarget = 1 + 0.14 * Math.sin(t * Math.PI);
+      }
+
+      p.glow += (target - p.glow) * 0.25;
+      const frontMat = Array.isArray(p.mesh.material) ? p.mesh.material[4] : p.mesh.material;
+      if (frontMat && frontMat.emissiveIntensity !== undefined) frontMat.emissiveIntensity = Math.max(0, p.glow);
+      const curScale = p.mesh.scale.x + (scaleTarget - p.mesh.scale.x) * 0.25;
+      p.mesh.scale.setScalar(curScale);
+    });
+
+    if (clickPulsePiece && !pulseActive) clickPulsePiece = null;
+  }
+
   function buildNavLabels() {
     const wrap = document.getElementById("nav-tile-labels");
     if (!wrap) return;
@@ -386,6 +536,13 @@ import * as THREE from "three";
       el.className = "tile-label";
       el.textContent = item.label;
       el.href = item.href;
+      el.dataset.cubeNav = "true"; // tells shared.js's page-transition veil to leave this alone — cube.js handles its own scatter transition
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        const piece = pieces.find(p => p.navIndex === i);
+        if (piece) confirmTileClick(piece);
+        else window.location.href = item.href; // fallback, shouldn't normally happen
+      });
       wrap.appendChild(el);
       labelEls.set(i, el);
     });
@@ -406,6 +563,7 @@ import * as THREE from "three";
       el.style.top = y + "px";
       el.style.opacity = String(lockAmount);
       el.style.pointerEvents = lockAmount > 0.9 ? "auto" : "none";
+      el.classList.toggle("tile-hovered", p.navIndex === hoveredNavIndex);
     });
   }
 
@@ -447,9 +605,14 @@ import * as THREE from "three";
     scrollP = total > 0 ? Math.min(1, Math.max(0, scrolled / total)) : 0;
   }
 
+  function onPortalPointerMove(e) {
+    pointerPixel.x = e.clientX;
+    pointerPixel.y = e.clientY;
+  }
+
   function onPortalClick(e) {
     if (scatterActive || bootStart === null || !bootDone) return;
-    if (scrollP < 0.85) return; // interactive as soon as the cube is visually locked — not later
+    if (scrollP < LOCK_POINT) return; // interactive as soon as the cube is visually locked — not later
 
     pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
     pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -461,7 +624,18 @@ import * as THREE from "three";
     const piece = pieces.find(p => p.mesh === hitMesh);
     if (!piece) return;
 
-    startScatter(NAV_ITEMS[piece.navIndex].href);
+    confirmTileClick(piece);
+  }
+
+  // Shared by both the raycast-on-canvas click and the DOM label click —
+  // a short, obvious "this one" pulse (scale + emissive flash) before the
+  // whole cube scatters, so the click reads as acknowledged rather than
+  // the cube just abruptly flying apart.
+  function confirmTileClick(piece) {
+    if (scatterActive) return;
+    clickPulsePiece = piece;
+    clickPulseStart = performance.now();
+    setTimeout(() => startScatter(NAV_ITEMS[piece.navIndex].href), CONFIG.clickPulseDuration);
   }
 
   function startScatter(href) {
@@ -570,6 +744,7 @@ import * as THREE from "three";
       p.mesh.position.lerpVectors(p.home, flungTarget, e);
       p.mesh.rotation.x += 0.15;
       p.mesh.rotation.y += 0.2;
+      p.mesh.scale.setScalar(p.mesh.scale.x + (1 - p.mesh.scale.x) * 0.2);
     });
     const wrap = document.getElementById("nav-tile-labels");
     if (wrap) wrap.style.opacity = String(1 - e);
@@ -585,8 +760,11 @@ import * as THREE from "three";
   function updatePortalFrame(elapsed) {
     const P = scrollP;
 
-    // Phase A 0 -> .45: dramatic tumble (multiple full rotations + idle wobble)
-    const tumbleAmt = smootherstep(0, 0.45, P);
+    // Phase A 0 -> .32: dramatic tumble. Phase B .32 -> .55: eases to lock.
+    // Phase C .55 -> 1: fully locked and interactive — a full 45% of the
+    // scroll-hero's height is now just "sit here, take your time, click
+    // a tile" rather than rushing on to the next section.
+    const tumbleAmt = smootherstep(0, LOCK_START, P);
     const tumbleX = tumbleAmt * Math.PI * 2.4
       + Math.sin(elapsed * 0.3) * 0.05
       + Math.sin(elapsed * 0.72 + 1.3) * 0.02; // faster, quieter secondary layer — organic, not metronomic
@@ -594,8 +772,8 @@ import * as THREE from "three";
       + Math.cos(elapsed * 0.25) * 0.05
       + Math.cos(elapsed * 0.61 + 0.8) * 0.02;
 
-    // Phase B .45 -> .85: rotation eases toward locked-forward (0,0,0)
-    const lockAmt = smootherstep(0.45, 0.85, P);
+    // Phase B: rotation eases toward locked-forward (0,0,0)
+    const lockAmt = smootherstep(LOCK_START, LOCK_POINT, P);
     const rotX = tumbleX * (1 - lockAmt);
     const rotY = tumbleY * (1 - lockAmt);
 
@@ -607,19 +785,21 @@ import * as THREE from "three";
 
     // camera zoom: starting distance -> lockedCameraZ (the exact distance
     // that fully frames all 9 front tiles for the current viewport/FOV)
-    const zoomAmt = smootherstep(0.45, 0.85, P);
+    const zoomAmt = smootherstep(LOCK_START, LOCK_POINT, P);
     const startZ = 11;
     camera.position.z = startZ - zoomAmt * (startZ - lockedCameraZ);
     camera.position.y = 0.2 - zoomAmt * 0.2;
 
-    // Phase C .85 -> 1: fully locked; hero copy fades, nav labels fade in
+    // Phase C: fully locked; hero copy fades, nav labels fade in
     const heroCopy = document.querySelector("#scroll-hero .hero-copy");
-    if (heroCopy) heroCopy.style.opacity = String(1 - smoothstep(0.7, 0.95, P));
+    if (heroCopy) heroCopy.style.opacity = String(1 - smoothstep(LOCK_START + 0.05, LOCK_POINT + 0.05, P));
     const scrollCue = document.querySelector("#scroll-hero .scroll-cue");
     if (scrollCue) scrollCue.style.opacity = String(1 - smoothstep(0, 0.08, P));
 
-    const labelAmt = smoothstep(0.65, 0.85, P);
+    const labelAmt = smootherstep(LOCK_START, LOCK_POINT, P);
     updateNavLabels(labelAmt);
+    updateTileHover(labelAmt);
+    updateEdgeLights(elapsed, labelAmt);
 
     // gentle idle spin on the mini-cube regardless of phase
     pieces.forEach((p) => {
