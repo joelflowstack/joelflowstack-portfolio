@@ -250,6 +250,11 @@ section.tight { padding: 80px 0; }
   opacity: 0; transform: translate(-50%, -50%);
   pointer-events: none;
   text-shadow: 0 1px 6px rgba(0,0,0,.8);
+  /* Padding + matching negative margin: expands the actual clickable
+     hitbox well past the bare text (which alone is far too small to
+     reliably tap/click) without shifting where it visually sits. */
+  padding: 18px 26px;
+  margin: -18px -26px;
 }
 
 /* ---------- Boot-solve loader ---------- */
