@@ -449,7 +449,7 @@ import * as THREE from "three";
 
   function onPortalClick(e) {
     if (scatterActive || bootStart === null || !bootDone) return;
-    if (scrollP < 0.92) return; // only interactive once locked forward
+    if (scrollP < 0.85) return; // interactive as soon as the cube is visually locked — not later
 
     pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
     pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -606,7 +606,7 @@ import * as THREE from "three";
     const scrollCue = document.querySelector("#scroll-hero .scroll-cue");
     if (scrollCue) scrollCue.style.opacity = String(1 - smoothstep(0, 0.08, P));
 
-    const labelAmt = smoothstep(0.82, 0.98, P);
+    const labelAmt = smoothstep(0.65, 0.85, P);
     updateNavLabels(labelAmt);
 
     // gentle idle spin on the mini-cube regardless of phase
