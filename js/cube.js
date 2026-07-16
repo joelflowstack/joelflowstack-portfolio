@@ -477,6 +477,14 @@ import * as THREE from "three";
     const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
     return t * t * (3 - 2 * t);
   }
+  // Perlin's quintic "smootherstep" — zero first AND second derivative at
+  // both ends, so the rotation eases in/out with none of smoothstep's
+  // faint velocity kink. Used for the cube's own motion; smoothstep is
+  // still used for simpler UI fades (opacity, labels) where it's plenty.
+  function smootherstep(edge0, edge1, x) {
+    const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+    return t * t * t * (t * (t * 6 - 15) + 10);
+  }
   function easeOutBack(x) {
     const c1 = 1.70158, c3 = c1 + 1;
     return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
@@ -578,12 +586,16 @@ import * as THREE from "three";
     const P = scrollP;
 
     // Phase A 0 -> .45: dramatic tumble (multiple full rotations + idle wobble)
-    const tumbleAmt = smoothstep(0, 0.45, P);
-    const tumbleX = tumbleAmt * Math.PI * 2.4 + Math.sin(elapsed * 0.3) * 0.05;
-    const tumbleY = tumbleAmt * Math.PI * 3.1 + Math.cos(elapsed * 0.25) * 0.05;
+    const tumbleAmt = smootherstep(0, 0.45, P);
+    const tumbleX = tumbleAmt * Math.PI * 2.4
+      + Math.sin(elapsed * 0.3) * 0.05
+      + Math.sin(elapsed * 0.72 + 1.3) * 0.02; // faster, quieter secondary layer — organic, not metronomic
+    const tumbleY = tumbleAmt * Math.PI * 3.1
+      + Math.cos(elapsed * 0.25) * 0.05
+      + Math.cos(elapsed * 0.61 + 0.8) * 0.02;
 
-    // Phase B .45 -> .85: rotation lerps toward locked-forward (0,0,0)
-    const lockAmt = smoothstep(0.45, 0.85, P);
+    // Phase B .45 -> .85: rotation eases toward locked-forward (0,0,0)
+    const lockAmt = smootherstep(0.45, 0.85, P);
     const rotX = tumbleX * (1 - lockAmt);
     const rotY = tumbleY * (1 - lockAmt);
 
@@ -595,7 +607,7 @@ import * as THREE from "three";
 
     // camera zoom: starting distance -> lockedCameraZ (the exact distance
     // that fully frames all 9 front tiles for the current viewport/FOV)
-    const zoomAmt = smoothstep(0.45, 0.85, P);
+    const zoomAmt = smootherstep(0.45, 0.85, P);
     const startZ = 11;
     camera.position.z = startZ - zoomAmt * (startZ - lockedCameraZ);
     camera.position.y = 0.2 - zoomAmt * 0.2;
