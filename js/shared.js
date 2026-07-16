@@ -171,6 +171,7 @@
     document.addEventListener("click", (e) => {
       const link = e.target.closest("a[href]");
       if (!link) return;
+      if (link.dataset.cubeNav) return; // handled by cube.js's own scatter-then-navigate transition
       const href = link.getAttribute("href");
       if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
       if (link.target === "_blank" || link.hasAttribute("download")) return;
