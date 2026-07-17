@@ -135,7 +135,7 @@ import * as THREE from "three";
   // INIT
   // ---------------------------------------------------------------
   function init() {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     // Mobile GPUs push a lot fewer pixels/sec than desktop — capping the
     // ratio lower on small viewports keeps this smooth on mid-range phones
     // without a visible sharpness hit at that screen size anyway.
@@ -147,7 +147,7 @@ import * as THREE from "three";
     renderer.toneMappingExposure = 1.05;
 
     scene = new THREE.Scene();
-    scene.background = null; // page background (pure black) shows through
+    scene.background = new THREE.Color(0x030304); // opaque — was transparent, which bled the page's blue gradient through as a visible seam once that gradient was introduced
 
     camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 0.2, PORTAL_MODE ? 11 : 6.2);
@@ -804,8 +804,11 @@ import * as THREE from "three";
     camera.position.y = 0.2 - zoomAmt * 0.2;
 
     // Phase C: fully locked; hero copy fades, nav labels fade in
+    // Hero copy must be fully gone BEFORE labels start appearing (0.49) —
+    // it was previously still fading out as late as P=0.60, overlapping
+    // visibly with the labels underneath it.
     const heroCopy = document.querySelector("#scroll-hero .hero-copy");
-    if (heroCopy) heroCopy.style.opacity = String(1 - smoothstep(LOCK_START + 0.05, LOCK_POINT + 0.05, P));
+    if (heroCopy) heroCopy.style.opacity = String(1 - smoothstep(LOCK_START, LOCK_START + 0.12, P));
     const scrollCue = document.querySelector("#scroll-hero .scroll-cue");
     if (scrollCue) scrollCue.style.opacity = String(1 - smoothstep(0, 0.08, P));
 
