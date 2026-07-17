@@ -235,7 +235,7 @@ section.tight { padding: 80px 0; }
 /* ---------- Scroll-pinned portal hero (index.html) ---------- */
 #scroll-hero {
   position: relative;
-  height: 380vh;
+  height: 460vh;
 }
 #scroll-hero .pin-stage {
   position: sticky; top: 0;
@@ -282,7 +282,8 @@ section.tight { padding: 80px 0; }
 }
 #nav-tile-labels .tile-label:hover,
 #nav-tile-labels .tile-label.tile-hovered {
-  text-shadow: 0 0 10px var(--blue-glow), 0 0 22px var(--blue-glow-soft), 0 1px 6px rgba(0,0,0,.8);
+  text-shadow: 0 0 10px rgba(255,255,255,.55), 0 0 22px rgba(255,255,255,.25), 0 1px 6px rgba(0,0,0,.8);
+  opacity: 0.85 !important;
 }
 
 /* ---------- Boot-solve loader ---------- */
@@ -634,4 +635,33 @@ body { opacity: 0; animation: pageIn .6s var(--ease-out) forwards; animation-del
 @media (max-height: 480px) and (orientation: landscape) {
   #scroll-hero .hero-copy { padding-bottom: 6vh; }
   #scroll-hero .hero-copy p.lede, #scroll-hero .hero-copy p { display: none; }
+}
+
+/* ---------- Backdoor section — overlaps the tail of the sticky cube ---------- */
+/* Pulled up with a negative margin so it visually sits ON TOP of the last
+   stretch of the still-pinned cube (which is still mid-scroll through
+   #scroll-hero at this point), with a semi-transparent, blurred backdrop
+   so the cube reads faintly through it — a hand-off rather than a hard cut. */
+#backdoor {
+  position: relative;
+  z-index: 2;
+  margin-top: -78vh;
+  background: rgba(3,4,6,.82);
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  border-top: 1px solid var(--line-soft);
+  padding-top: 160px;
+}
+@media (max-width: 760px) {
+  #backdoor { margin-top: -46vh; padding-top: 110px; }
+}
+
+/* Cards echo the cube's own tiles: square, not a landscape rectangle. */
+.tile-match-grid { align-items: stretch; }
+.card.tile-match {
+  aspect-ratio: 1 / 1;
+  display: flex; flex-direction: column; justify-content: center;
+}
+@media (max-width: 800px) {
+  .card.tile-match { aspect-ratio: auto; } /* single column at this width — a forced square reads odd stacked with lots of text */
 }
