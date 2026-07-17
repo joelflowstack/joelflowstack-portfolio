@@ -809,7 +809,11 @@ import * as THREE from "three";
     const scrollCue = document.querySelector("#scroll-hero .scroll-cue");
     if (scrollCue) scrollCue.style.opacity = String(1 - smoothstep(0, 0.08, P));
 
-    const labelAmt = smootherstep(LOCK_START, LOCK_POINT, P);
+    // Labels only start appearing in the last stretch of the lock phase,
+    // once rotation has mostly settled — they were previously fading in
+    // across the SAME window as the rotation itself, so partially-visible
+    // text was swinging along with the still-spinning cube.
+    const labelAmt = smootherstep(LOCK_POINT - 0.06, LOCK_POINT, P);
     updateNavLabels(labelAmt);
     updateTileHover(labelAmt);
     updateEdgeLights(elapsed, labelAmt);
