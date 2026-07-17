@@ -48,10 +48,26 @@
 
     const toggle = mount.querySelector(".nav-toggle");
     const list = mount.querySelector("#nav-links");
-    toggle.addEventListener("click", () => {
-      const open = list.classList.toggle("open");
+    const setOpen = (open) => {
+      list.classList.toggle("open", open);
       toggle.setAttribute("aria-expanded", String(open));
+      toggle.innerHTML = open ? "&#10005;" : "&#9776;"; // ✕ vs ☰ — a real close affordance, not the same icon doing double duty
+    };
+    toggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setOpen(!list.classList.contains("open"));
     });
+    document.addEventListener("click", (e) => {
+      if (!list.classList.contains("open")) return;
+      if (list.contains(e.target) || toggle.contains(e.target)) return;
+      setOpen(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setOpen(false);
+    });
+    // A tapped link should close the menu, not leave it open under the
+    // page-transition veil while the new page loads.
+    list.querySelectorAll("a").forEach(a => a.addEventListener("click", () => setOpen(false)));
   }
 
   function injectFooter() {
