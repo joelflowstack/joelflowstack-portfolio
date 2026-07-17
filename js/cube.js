@@ -136,7 +136,11 @@ import * as THREE from "three";
   // ---------------------------------------------------------------
   function init() {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    // Mobile GPUs push a lot fewer pixels/sec than desktop — capping the
+    // ratio lower on small viewports keeps this smooth on mid-range phones
+    // without a visible sharpness hit at that screen size anyway.
+    const pixelRatioCap = window.innerWidth < 760 ? 1.5 : 1.75;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioCap));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -459,6 +463,13 @@ import * as THREE from "three";
     const dash = edgeLight.perimeter * 0.14;
     edgeLight.sweep.setAttribute("stroke-dasharray", `${dash} ${edgeLight.perimeter - dash}`);
     edgeLight.dashLength = dash;
+
+    // Scale the stroke/dot relative to the smaller viewport dimension —
+    // a 5px stroke that looks bold on a 1920px desktop reads as oversized
+    // on a 375px phone screen.
+    const scale = Math.max(0.6, Math.min(1, Math.min(w, h) / 700));
+    edgeLight.sweep.setAttribute("stroke-width", (5 * scale).toFixed(1));
+    edgeLight.dot.setAttribute("r", (6 * scale).toFixed(1));
   }
 
   // Constant-speed loop around the true perimeter, computed fresh from
@@ -577,6 +588,8 @@ import * as THREE from "three";
 
   function onResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
+    const pixelRatioCap = window.innerWidth < 760 ? 1.5 : 1.75;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioCap));
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     lockedCameraZ = computeLockedCameraZ();
