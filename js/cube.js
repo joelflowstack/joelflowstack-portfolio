@@ -85,7 +85,7 @@ import * as THREE from "three";
     bootDuration: 1.5,      // seconds
     scatterDuration: 0.75,  // seconds
     clickPulseDuration: 170, // ms — brief "confirmed" flash before scatter begins
-    lockFitMargin: 1.22,    // headroom so the 3x3 grid never touches the viewport edge when locked
+    lockFitMargin: 1.42,    // headroom so the 3x3 grid never touches the viewport edge when locked — was clipping top/bottom at 1.22
   };
   const GRID_SPAN = 3 * (CONFIG.pieceSize + CONFIG.gap); // full width/height of the 3x3 front face
   const LOCK_START = 0.32; // tumble ends, easing into lock begins
@@ -189,6 +189,23 @@ import * as THREE from "three";
     window.addEventListener("resize", onResize);
 
     bootStart = performance.now();
+
+    // Back/forward navigation can restore this exact page from the
+    // browser's bfcache — including whatever JS state it was in the
+    // moment you clicked away, mid-scatter. Snap everything back together
+    // instantly rather than leaving it looking broken.
+    window.addEventListener("pageshow", (e) => {
+      if (!e.persisted) return;
+      scatterActive = false;
+      scatterTargetHref = null;
+      pieces.forEach((p) => {
+        p.mesh.position.copy(p.home);
+        p.mesh.rotation.set(0, 0, 0);
+        p.mesh.scale.setScalar(1);
+      });
+      const wrap = document.getElementById("nav-tile-labels");
+      if (wrap) wrap.style.opacity = "1";
+    });
   }
 
   // ---------------------------------------------------------------
@@ -265,7 +282,8 @@ import * as THREE from "three";
       map: tex, color: 0xffffff,
       roughness: CONFIG.roughness, metalness: CONFIG.metalness,
       clearcoat: CONFIG.clearcoat, clearcoatRoughness: CONFIG.clearcoatRoughness,
-      emissive: 0x3fa9e8, emissiveIntensity: 0, // hover/click glow, modulated per-frame in updateTileHover
+      emissive: 0xf2f2f0, emissiveIntensity: 0, // hover/click glow, modulated per-frame in updateTileHover — neutral white, not blue
+      transparent: true, opacity: 1, // enables the hover "ghosting" transparency dip
     });
   }
 
@@ -520,18 +538,21 @@ import * as THREE from "three";
 
     pieces.forEach((p) => {
       if (!p.isNavTile) return;
-      let target = (p.navIndex === hoveredNavIndex) ? 0.55 : 0;
+      let target = (p.navIndex === hoveredNavIndex) ? 0.3 : 0; // softer, colorless glow (was a bold blue)
       let scaleTarget = (p.navIndex === hoveredNavIndex) ? 1.05 : 1;
+      let opacityTarget = (p.navIndex === hoveredNavIndex) ? 0.72 : 1; // a light "ghosting" transparency dip on hover
 
       if (pulseActive && p === clickPulsePiece) {
         const t = (now - clickPulseStart) / CONFIG.clickPulseDuration;
-        target = 1.4 * Math.sin(t * Math.PI); // quick bright flash, peaks mid-pulse
+        target = 0.9 * Math.sin(t * Math.PI); // quick flash, peaks mid-pulse — still colorless, just brighter
         scaleTarget = 1 + 0.14 * Math.sin(t * Math.PI);
+        opacityTarget = 1;
       }
 
       p.glow += (target - p.glow) * 0.25;
       const frontMat = Array.isArray(p.mesh.material) ? p.mesh.material[4] : p.mesh.material;
       if (frontMat && frontMat.emissiveIntensity !== undefined) frontMat.emissiveIntensity = Math.max(0, p.glow);
+      if (frontMat && frontMat.opacity !== undefined) frontMat.opacity += (opacityTarget - frontMat.opacity) * 0.25;
       const curScale = p.mesh.scale.x + (scaleTarget - p.mesh.scale.x) * 0.25;
       p.mesh.scale.setScalar(curScale);
     });
@@ -802,6 +823,16 @@ import * as THREE from "three";
     const startZ = 11;
     camera.position.z = startZ - zoomAmt * (startZ - lockedCameraZ);
     camera.position.y = 0.2 - zoomAmt * 0.2;
+
+    // Final approach: once locked, keep gently pushing in as the "backdoor"
+    // card section starts overlapping the sticky cube underneath it —
+    // tiles grow further so their scale reads as continuous with the
+    // (square, cube-face-sized) cards revealed on top of them.
+    const BACKDOOR_START = 0.83;
+    if (P > BACKDOOR_START) {
+      const finalZoomAmt = smootherstep(BACKDOOR_START, 1.0, P);
+      camera.position.z -= finalZoomAmt * (lockedCameraZ * 0.18);
+    }
 
     // Phase C: fully locked; hero copy fades, nav labels fade in
     // Hero copy must be fully gone BEFORE labels start appearing (0.49) —
