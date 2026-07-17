@@ -580,7 +580,7 @@ body { opacity: 0; animation: pageIn .6s var(--ease-out) forwards; animation-del
   background: rgba(4,8,16,.75);
 }
 .site-nav { transition: height .3s var(--ease-out), background .3s var(--ease-out), opacity .5s var(--ease-out), transform .5s var(--ease-out); }
-.site-nav.hero-hidden { opacity: 0; transform: translateY(-14px); pointer-events: none; }
+.site-nav.hero-hidden { display: none; }
 
 /* ---------- Landing-page hero: rotating blue edge light ---------- */
 /* Built as SVG in cube.js (buildEdgeLights/updateEdgeLights), not CSS —
