@@ -236,13 +236,25 @@ section.tight { padding: 80px 0; }
 #scroll-hero {
   position: relative;
   height: 460vh;
+  background: var(--black); /* solid, not the body's blue gradient — guarantees nothing blue can ever show through here, regardless of canvas sizing */
 }
 #scroll-hero .pin-stage {
-  position: sticky; top: 0;
-  height: 100vh; width: 100%;
-  height: 100dvh; /* accounts for mobile browser chrome collapsing/expanding — 100vh alone is measured against the tallest possible viewport, which isn't always what's actually visible */
+  /* FIXED, not sticky — sticky positioning depends on the browser computing
+     containing blocks and scroll-anchor engagement, and something in that
+     chain kept producing a gap no CSS patch fixed. Fixed positioning has
+     none of that: it is unconditionally pinned to the viewport with zero
+     engagement logic. cube.js's onScroll() toggles a class to hide it
+     once you've scrolled past, standing in for what sticky's own
+     "unstick past the container" behavior used to do. */
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  height: 100dvh;
   overflow: hidden;
+  background: var(--black);
+  z-index: 1;
 }
+#scroll-hero .pin-stage.hero-passed { display: none; }
 #scroll-hero .hero-copy {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
