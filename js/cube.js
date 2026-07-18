@@ -637,6 +637,12 @@ import * as THREE from "three";
     const total = heroEl.offsetHeight - window.innerHeight;
     const scrolled = -rect.top;
     scrollP = total > 0 ? Math.min(1, Math.max(0, scrolled / total)) : 0;
+
+    // With position:fixed (not sticky), the pin-stage is ALWAYS pinned to
+    // the viewport regardless of scroll — this explicitly hides it once
+    // fully scrolled past, which sticky used to do on its own.
+    const pinStage = document.querySelector("#scroll-hero .pin-stage");
+    if (pinStage) pinStage.classList.toggle("hero-passed", scrollP >= 1);
   }
 
   function onPortalPointerMove(e) {
