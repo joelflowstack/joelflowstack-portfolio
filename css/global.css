@@ -255,6 +255,27 @@ section.tight { padding: 80px 0; }
   z-index: 1;
 }
 #scroll-hero .pin-stage.hero-passed { display: none; }
+#scroll-hero .hero-brand {
+  position: absolute; left: 40px; top: 50%; transform: translateY(-50%);
+  z-index: 3; pointer-events: none;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.hero-brand-name {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(1.05rem, 1.7vw, 1.5rem);
+  letter-spacing: -0.01em; color: var(--white);
+  text-shadow: 0 2px 12px rgba(0,0,0,.6);
+}
+.hero-brand-slogan {
+  font-family: var(--font-mono); font-size: .76rem; letter-spacing: .04em;
+  color: var(--grey);
+  text-shadow: 0 2px 10px rgba(0,0,0,.6);
+}
+@media (max-width: 760px) {
+  /* Vertically-centered-left would collide with the cube tiles on a
+     narrow screen — top-left instead, out of the way. */
+  #scroll-hero .hero-brand { left: 20px; top: 20px; transform: none; }
+}
 #scroll-hero .hero-copy {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
