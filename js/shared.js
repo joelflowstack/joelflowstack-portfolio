@@ -178,10 +178,15 @@
       x: Math.random() * w,
       y: Math.random() * h,
       size: 8 + Math.random() * 15,
-      vx: (Math.random() - 0.5) * 0.10,
-      vy: (Math.random() - 0.5) * 0.10,
+      vx: (Math.random() - 0.5) * 0.34,
+      vy: (Math.random() - 0.5) * 0.34,
       rot: Math.random() * Math.PI * 2,
-      vrot: (Math.random() - 0.5) * 0.0025,
+      vrot: (Math.random() - 0.5) * 0.009,
+      // About 4 in 10 particles also tumble end-over-end (a simulated
+      // Y-axis flip via scaleY), the rest just spin flat — mixing both
+      // reads as varied "perspectives" rather than one uniform motion.
+      flip: Math.random() * Math.PI * 2,
+      flipSpeed: Math.random() < 0.4 ? 0.012 + Math.random() * 0.02 : 0,
       depth: 0.4 + Math.random() * 0.6, // parallax depth — affects glow strength, opacity, and how strongly the cursor pushes it
     }));
 
@@ -195,6 +200,7 @@
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(p.rot);
+      if (p.flipSpeed) ctx.scale(1, Math.cos(p.flip)); // the actual "flip" — collapses to an edge-on sliver mid-tumble, like a real facet catching the light
       const s = p.size;
       // Slightly kite-shaped rather than a perfect rhombus — reads less
       // like a generic icon, more like a cut gem facet.
@@ -206,17 +212,17 @@
       ctx.closePath();
 
       const grad = ctx.createLinearGradient(0, -s, 0, s);
-      grad.addColorStop(0, `rgba(232,220,255,${0.22 * p.depth})`);
-      grad.addColorStop(0.5, `rgba(160,110,235,${0.13 * p.depth})`);
-      grad.addColorStop(1, `rgba(124,58,237,${0.06 * p.depth})`);
+      grad.addColorStop(0, `rgba(238,228,255,${0.4 * p.depth})`);
+      grad.addColorStop(0.5, `rgba(178,130,245,${0.26 * p.depth})`);
+      grad.addColorStop(1, `rgba(139,92,246,${0.14 * p.depth})`);
       ctx.fillStyle = grad;
-      ctx.shadowColor = "rgba(139,92,246,.6)";
-      ctx.shadowBlur = 20 * p.depth;
+      ctx.shadowColor = "rgba(160,110,245,.85)";
+      ctx.shadowBlur = 26 * p.depth;
       ctx.fill();
 
       ctx.shadowBlur = 0;
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = `rgba(238,228,255,${0.4 * p.depth})`;
+      ctx.lineWidth = 1.1;
+      ctx.strokeStyle = `rgba(245,238,255,${0.65 * p.depth})`;
       ctx.stroke();
       ctx.restore();
     }
@@ -224,7 +230,7 @@
     function tick() {
       ctx.clearRect(0, 0, w, h);
       particles.forEach((p) => {
-        p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
+        p.x += p.vx; p.y += p.vy; p.rot += p.vrot; p.flip += p.flipSpeed;
         if (p.x < -60) p.x = w + 60; else if (p.x > w + 60) p.x = -60;
         if (p.y < -60) p.y = h + 60; else if (p.y > h + 60) p.y = -60;
 
