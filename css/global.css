@@ -533,17 +533,15 @@ a.card:hover, .card.interactive:hover {
   box-shadow: 0 0 12px var(--blue-glow);
 }
 
-/* Custom cursor glow (desktop only — mouse-capable devices) */
-@media (hover: hover) and (pointer: fine) {
-  #cursor-glow {
-    position: fixed; top: 0; left: 0; width: 340px; height: 340px;
-    border-radius: 50%; pointer-events: none; z-index: 2;
-    background: radial-gradient(circle, var(--blue-glow-soft), transparent 70%);
-    transform: translate(-50%, -50%);
-    opacity: 0; transition: opacity .4s var(--ease-out);
-    mix-blend-mode: screen;
-  }
-  #cursor-glow.active { opacity: 1; }
+/* Floating glass diamonds — canvas-driven in shared.js. High z-index so
+   they read as floating IN FRONT of everything (cube included), the way
+   dust motes or light particles would in an Apple-style keynote render —
+   pointer-events:none so they never block clicks or taps underneath. */
+#floating-glass {
+  position: fixed; inset: 0;
+  width: 100vw; height: 100vh;
+  z-index: 50;
+  pointer-events: none;
 }
 
 /* Magnetic buttons */
