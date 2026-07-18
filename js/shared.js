@@ -153,18 +153,95 @@
     update();
   }
 
-  function initCursorGlow() {
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-    const glow = document.createElement("div");
-    glow.id = "cursor-glow";
-    document.body.appendChild(glow);
-    let shown = false;
-    window.addEventListener("mousemove", (e) => {
-      glow.style.left = e.clientX + "px";
-      glow.style.top = e.clientY + "px";
-      if (!shown) { glow.classList.add("active"); shown = true; }
-    }, { passive: true });
-    window.addEventListener("mouseleave", () => glow.classList.remove("active"));
+  // Floating glass diamonds — the site's signature ambient effect.
+  // Translucent blue quadrilaterals drifting slowly everywhere, gently
+  // pushed aside as the cursor nears them. Plain 2D canvas (not Three.js)
+  // so this stays cheap and works identically on every page, cube or not.
+  function initFloatingGlass() {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.id = "floating-glass";
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext("2d");
+
+    let w, h;
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    const count = window.innerWidth < 760 ? 9 : 17;
+    const particles = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      size: 16 + Math.random() * 30,
+      vx: (Math.random() - 0.5) * 0.10,
+      vy: (Math.random() - 0.5) * 0.10,
+      rot: Math.random() * Math.PI * 2,
+      vrot: (Math.random() - 0.5) * 0.0025,
+      depth: 0.4 + Math.random() * 0.6, // parallax depth — affects glow strength, opacity, and how strongly the cursor pushes it
+    }));
+
+    // Touch devices have no persistent cursor position — default it to
+    // off-screen so the push effect simply never triggers there, rather
+    // than pinning to a stale (0,0) corner.
+    let mouseX = -9999, mouseY = -9999;
+    window.addEventListener("mousemove", (e) => { mouseX = e.clientX; mouseY = e.clientY; }, { passive: true });
+
+    function drawDiamond(p) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      const s = p.size;
+      // Slightly kite-shaped rather than a perfect rhombus — reads less
+      // like a generic icon, more like a cut gem facet.
+      ctx.beginPath();
+      ctx.moveTo(0, -s);
+      ctx.lineTo(s * 0.6, -s * 0.05);
+      ctx.lineTo(0, s);
+      ctx.lineTo(-s * 0.6, -s * 0.05);
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(0, -s, 0, s);
+      grad.addColorStop(0, `rgba(214,238,255,${0.22 * p.depth})`);
+      grad.addColorStop(0.5, `rgba(94,172,230,${0.12 * p.depth})`);
+      grad.addColorStop(1, `rgba(63,169,232,${0.05 * p.depth})`);
+      ctx.fillStyle = grad;
+      ctx.shadowColor = "rgba(63,169,232,.6)";
+      ctx.shadowBlur = 20 * p.depth;
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(232,247,255,${0.4 * p.depth})`;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function tick() {
+      ctx.clearRect(0, 0, w, h);
+      particles.forEach((p) => {
+        p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
+        if (p.x < -60) p.x = w + 60; else if (p.x > w + 60) p.x = -60;
+        if (p.y < -60) p.y = h + 60; else if (p.y > h + 60) p.y = -60;
+
+        const dx = p.x - mouseX, dy = p.y - mouseY;
+        const dist = Math.hypot(dx, dy);
+        const radius = 170;
+        if (dist < radius) {
+          const force = (1 - dist / radius) * 0.7 * p.depth;
+          const inv = 1 / (dist || 1);
+          p.x += dx * inv * force;
+          p.y += dy * inv * force;
+        }
+        drawDiamond(p);
+      });
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
   }
 
   function initNavScrollState() {
@@ -234,7 +311,7 @@
     initReveal();
     initTabs();
     initScrollProgress();
-    initCursorGlow();
+    initFloatingGlass();
     initNavScrollState();
     initPageTransitions();
     initHeroNavVisibility();
