@@ -338,7 +338,12 @@ import * as THREE from "three";
             isCenterTile = true;
             frontMat = makeLogoMaterial(1); // JF monogram tile; mini-cube nests on top of it
           } else if (gridKeyMatch >= 0) {
-            frontMat = makeLabelMaterial(NAV_ITEMS[gridKeyMatch].label);
+            // Plain tile — NOT makeLabelMaterial(). The DOM label overlay
+            // (buildNavLabels) is the only text rendered for nav tiles now;
+            // this used to ALSO bake the label into the 3D texture, which
+            // showed as visibly doubled, slightly-misaligned text on every
+            // tile (a bold DOM copy over a fainter baked-texture copy).
+            frontMat = makePlasticMaterial(x + y);
           } else if (z === 1) {
             frontMat = makePlasticMaterial(x + y);
           }
