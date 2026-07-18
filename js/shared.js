@@ -153,127 +153,6 @@
     update();
   }
 
-  // Floating glass diamonds — the site's signature ambient effect.
-  // Translucent blue quadrilaterals drifting slowly everywhere, gently
-  // pushed aside as the cursor nears them. Plain 2D canvas (not Three.js)
-  // so this stays cheap and works identically on every page, cube or not.
-  function initFloatingGlass() {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const canvas = document.createElement("canvas");
-    canvas.id = "floating-glass";
-    document.body.appendChild(canvas);
-    const ctx = canvas.getContext("2d");
-
-    let w, h;
-    function resize() {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener("resize", resize);
-
-    const count = window.innerWidth < 760 ? 26 : 55;
-    const particles = Array.from({ length: count }, () => spawnParticle(true));
-
-    // New particles start anywhere in their rise (spawnAnywhere=true, used
-    // only for the initial fill so the effect doesn't look empty on load);
-    // every respawn after that starts fresh at the bottom.
-    function spawnParticle(spawnAnywhere) {
-      const startY = spawnAnywhere
-        ? h * 0.35 + Math.random() * h * 0.9   // initial fill: mostly lower 2/3, some already partway up
-        : h + 40 + Math.random() * 80;          // respawn: concentrated right at/below the bottom edge
-      return {
-        x: Math.random() * w,
-        y: startY,
-        size: 8 + Math.random() * 15,
-        vy: -(0.28 + Math.random() * 0.4),      // always rising — this is the "concentrate at the bottom, move up" behavior
-        swayAmp: 0.3 + Math.random() * 0.5,     // gentle side-to-side drift as they rise, not a straight line up
-        swaySpeed: 0.006 + Math.random() * 0.01,
-        swayPhase: Math.random() * Math.PI * 2,
-        rot: Math.random() * Math.PI * 2,
-        vrot: (Math.random() - 0.5) * 0.009,
-        // About 4 in 10 particles also tumble end-over-end (a simulated
-        // Y-axis flip via scaleY), the rest just spin flat — mixing both
-        // reads as varied "perspectives" rather than one uniform motion.
-        flip: Math.random() * Math.PI * 2,
-        flipSpeed: Math.random() < 0.4 ? 0.012 + Math.random() * 0.02 : 0,
-        depth: 0.5 + Math.random() * 0.5, // parallax depth — affects glow strength, opacity, and how strongly the cursor pushes it
-      };
-    }
-
-    // Touch devices have no persistent cursor position — default it to
-    // off-screen so the push effect simply never triggers there, rather
-    // than pinning to a stale (0,0) corner.
-    let mouseX = -9999, mouseY = -9999;
-    window.addEventListener("mousemove", (e) => { mouseX = e.clientX; mouseY = e.clientY; }, { passive: true });
-
-    function drawDiamond(p) {
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
-      if (p.flipSpeed) ctx.scale(1, Math.cos(p.flip)); // the actual "flip" — collapses to an edge-on sliver mid-tumble, like a real facet catching the light
-      const s = p.size;
-      // Slightly kite-shaped rather than a perfect rhombus — reads less
-      // like a generic icon, more like a cut gem facet.
-      ctx.beginPath();
-      ctx.moveTo(0, -s);
-      ctx.lineTo(s * 0.6, -s * 0.05);
-      ctx.lineTo(0, s);
-      ctx.lineTo(-s * 0.6, -s * 0.05);
-      ctx.closePath();
-
-      // Meaningfully brighter — this is meant to illuminate an otherwise
-      // dark theme, not sit quietly in the corner of it.
-      const grad = ctx.createLinearGradient(0, -s, 0, s);
-      grad.addColorStop(0, `rgba(245,240,255,${0.75 * p.depth})`);
-      grad.addColorStop(0.5, `rgba(196,150,255,${0.5 * p.depth})`);
-      grad.addColorStop(1, `rgba(150,100,250,${0.28 * p.depth})`);
-      ctx.fillStyle = grad;
-      ctx.shadowColor = "rgba(175,125,255,.95)";
-      ctx.shadowBlur = 34 * p.depth;
-      ctx.fill();
-      ctx.fill(); // second pass over the same path — cheap way to punch up perceived brightness without a third gradient stop
-
-      ctx.shadowBlur = 0;
-      ctx.lineWidth = 1.2;
-      ctx.strokeStyle = `rgba(250,245,255,${0.85 * p.depth})`;
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    function tick() {
-      ctx.clearRect(0, 0, w, h);
-      particles.forEach((p, i) => {
-        p.y += p.vy;
-        p.x += Math.sin(p.swayPhase) * p.swayAmp;
-        p.swayPhase += p.swaySpeed;
-        p.rot += p.vrot;
-        p.flip += p.flipSpeed;
-
-        if (p.x < -60) p.x = w + 60; else if (p.x > w + 60) p.x = -60;
-        // Once a particle rises off the top, it respawns at the bottom
-        // rather than wrapping randomly — that's what keeps the effect
-        // "concentrated at the bottom, moving up" as an ongoing cycle
-        // instead of settling into an even, static-looking spread.
-        if (p.y < -60) particles[i] = spawnParticle(false);
-
-        const dx = p.x - mouseX, dy = p.y - mouseY;
-        const dist = Math.hypot(dx, dy);
-        const radius = 170;
-        if (dist < radius) {
-          const force = (1 - dist / radius) * 0.7 * p.depth;
-          const inv = 1 / (dist || 1);
-          p.x += dx * inv * force;
-          p.y += dy * inv * force;
-        }
-        drawDiamond(p);
-      });
-      requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  }
-
   function initNavScrollState() {
     const update = () => {
       const nav = document.querySelector(".site-nav");
@@ -341,7 +220,9 @@
     initReveal();
     initTabs();
     initScrollProgress();
-    initFloatingGlass();
+    // Floating-glass particles now live inside cube.js's own Three.js
+    // scene (genuinely behind the cube, properly occluded by it) rather
+    // than as a separate flat 2D overlay — see buildFloatingGlass() there.
     initNavScrollState();
     initPageTransitions();
     initHeroNavVisibility();
