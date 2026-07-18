@@ -173,11 +173,11 @@
     resize();
     window.addEventListener("resize", resize);
 
-    const count = window.innerWidth < 760 ? 9 : 17;
+    const count = window.innerWidth < 760 ? 15 : 30;
     const particles = Array.from({ length: count }, () => ({
       x: Math.random() * w,
       y: Math.random() * h,
-      size: 16 + Math.random() * 30,
+      size: 8 + Math.random() * 15,
       vx: (Math.random() - 0.5) * 0.10,
       vy: (Math.random() - 0.5) * 0.10,
       rot: Math.random() * Math.PI * 2,
@@ -206,17 +206,17 @@
       ctx.closePath();
 
       const grad = ctx.createLinearGradient(0, -s, 0, s);
-      grad.addColorStop(0, `rgba(214,238,255,${0.22 * p.depth})`);
-      grad.addColorStop(0.5, `rgba(94,172,230,${0.12 * p.depth})`);
-      grad.addColorStop(1, `rgba(63,169,232,${0.05 * p.depth})`);
+      grad.addColorStop(0, `rgba(232,220,255,${0.22 * p.depth})`);
+      grad.addColorStop(0.5, `rgba(160,110,235,${0.13 * p.depth})`);
+      grad.addColorStop(1, `rgba(124,58,237,${0.06 * p.depth})`);
       ctx.fillStyle = grad;
-      ctx.shadowColor = "rgba(63,169,232,.6)";
+      ctx.shadowColor = "rgba(139,92,246,.6)";
       ctx.shadowBlur = 20 * p.depth;
       ctx.fill();
 
       ctx.shadowBlur = 0;
       ctx.lineWidth = 1;
-      ctx.strokeStyle = `rgba(232,247,255,${0.4 * p.depth})`;
+      ctx.strokeStyle = `rgba(238,228,255,${0.4 * p.depth})`;
       ctx.stroke();
       ctx.restore();
     }
