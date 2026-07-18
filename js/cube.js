@@ -99,6 +99,7 @@ import * as THREE from "three";
   let pointerPixel = { x: -9999, y: -9999 };
   let clickPulsePiece = null;
   let clickPulseStart = 0;
+  let floatingGlass = null;
   let pieces = []; // {mesh, grid:{x,y,z}, home:Vector3, scattered:Vector3, delay:number, isFrontOuter:bool, navIndex:number}
   let clock = new THREE.Clock();
   let raycaster = new THREE.Raycaster();
@@ -172,6 +173,8 @@ import * as THREE from "three";
 
     buildPieces();
     buildShadowCatcher();
+    buildNebulaBackdrop();
+    buildFloatingGlass();
 
     lockedCameraZ = computeLockedCameraZ();
 
@@ -412,6 +415,95 @@ import * as THREE from "three";
     shadowCatcher.position.y = -3;
     shadowCatcher.rotation.x = -Math.PI / 2;
     shadowCatcher.visible = false; // reference video has no visible ground plane in this crop
+  }
+
+  // Procedural nebula backdrop — soft purple/blue glow far behind
+  // everything else, generated on a canvas rather than sourced from an
+  // external image. No hotlinking fragility, no licensing question, and
+  // it's built from the exact same palette as the glass shards and site
+  // theme rather than an approximate stock photo.
+  function buildNebulaBackdrop() {
+    const size = 1024;
+    const c = document.createElement("canvas");
+    c.width = c.height = size;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, size, size);
+
+    function blob(x, y, r, color) {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, color);
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, size, size);
+    }
+    blob(size * 0.32, size * 0.4, size * 0.55, "rgba(139,92,246,0.55)");
+    blob(size * 0.72, size * 0.62, size * 0.5, "rgba(63,169,232,0.42)");
+    blob(size * 0.5, size * 0.28, size * 0.4, "rgba(200,160,255,0.3)");
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.85, depthWrite: false });
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(34, 34), mat);
+    plane.position.z = -16;
+    scene.add(plane);
+  }
+
+  // Purple glass shards, genuinely placed behind the cube in 3D — not a
+  // flat 2D overlay. Because they live in the same scene, the cube's own
+  // geometry naturally occludes them when it's in front, and they catch
+  // the same lights the cube does, so they read as actually being THERE
+  // rather than pasted on top.
+  function buildFloatingGlass() {
+    const shardGeo = new THREE.OctahedronGeometry(1, 0);
+    const count = window.innerWidth < 760 ? 11 : 24; // kept modest — real geometry in a shared render loop is pricier than a flat canvas pass
+    floatingGlass = [];
+
+    for (let i = 0; i < count; i++) {
+      const size = 0.1 + Math.random() * 0.2;
+      const mat = new THREE.MeshPhysicalMaterial({
+        color: 0xe4d6ff,
+        transparent: true,
+        opacity: 0.5 + Math.random() * 0.25,
+        roughness: 0.12,
+        metalness: 0,
+        transmission: 0.55,   // genuine glass-like light transmission
+        thickness: 0.4,
+        clearcoat: 1,
+        clearcoatRoughness: 0.08,
+        emissive: 0x8b5cf6,   // this is what makes them read as light sources, not just lit objects
+        emissiveIntensity: 0.7,
+      });
+      const mesh = new THREE.Mesh(shardGeo, mat);
+      mesh.scale.setScalar(size);
+      mesh.position.set(
+        (Math.random() - 0.5) * 8.5,
+        (Math.random() - 0.5) * 5.5,
+        -2.2 - Math.random() * 5.5 // behind the cube, which sits around z=0
+      );
+      mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      mesh.userData.vrx = (Math.random() - 0.5) * 0.006;
+      mesh.userData.vry = (Math.random() - 0.5) * 0.008;
+      mesh.userData.floatSpeed = 0.15 + Math.random() * 0.25;
+      mesh.userData.floatPhase = Math.random() * Math.PI * 2;
+      mesh.userData.baseY = mesh.position.y;
+      mesh.userData.baseX = mesh.position.x;
+      scene.add(mesh);
+      floatingGlass.push(mesh);
+    }
+  }
+
+  function updateFloatingGlass(elapsed) {
+    if (!floatingGlass) return;
+    floatingGlass.forEach((mesh) => {
+      const u = mesh.userData;
+      mesh.rotation.x += u.vrx;
+      mesh.rotation.y += u.vry;
+      // gentle bob + drift, plus a small parallax nudge toward the cursor
+      // so the whole field feels reactive without any per-particle physics
+      mesh.position.y = u.baseY + Math.sin(elapsed * u.floatSpeed + u.floatPhase) * 0.35;
+      mesh.position.x = u.baseX + mouseCurX * 0.4;
+    });
   }
 
   // ---------------------------------------------------------------
@@ -723,6 +815,7 @@ import * as THREE from "three";
     mouseCurY += (mouseTargetY - mouseCurY) * 0.06;
 
     updateBoot();
+    updateFloatingGlass(elapsed);
     if (scatterActive) {
       updateScatter();
     } else if (PORTAL_MODE) {
