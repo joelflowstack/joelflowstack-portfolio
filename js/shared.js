@@ -202,19 +202,27 @@
   }
 
   // On the landing page only (where #scroll-hero exists), the nav stays
-  // hidden while the cube is still the whole show, and fades in once the
-  // person has scrolled all the way past it into regular page content —
-  // i.e. once they've come out the "back door" below the cube.
+  // On the landing page only (where #scroll-hero exists), the nav is
+  // genuinely removed from the DOM — not hidden via CSS — while the cube
+  // hero is on screen. It only gets created once the person has scrolled
+  // past it into regular page content, i.e. once they've come out the
+  // "back door" below the cube. Real erasure, not a display/opacity trick.
   function initHeroNavVisibility() {
     const hero = document.getElementById("scroll-hero");
-    const nav = document.querySelector(".site-nav");
-    if (!hero || !nav) return; // not the landing page — nav stays visible as normal
-    nav.classList.add("hero-hidden");
+    const mount = document.getElementById("site-nav");
+    if (!hero || !mount) return; // not the landing page — nav stays as normal
+
+    let navExists = true;
+    const eraseNav = () => { if (navExists) { mount.innerHTML = ""; navExists = false; } };
+    const restoreNav = () => { if (!navExists) { injectNav(); navExists = true; } };
+
+    eraseNav(); // starts fully removed, before any scroll
+
     const update = () => {
       const total = hero.offsetHeight - window.innerHeight;
       const scrolled = -hero.getBoundingClientRect().top;
       const pastHero = total > 0 ? scrolled >= total - 4 : true;
-      nav.classList.toggle("hero-hidden", !pastHero);
+      if (pastHero) restoreNav(); else eraseNav();
     };
     window.addEventListener("scroll", update, { passive: true });
     update();
