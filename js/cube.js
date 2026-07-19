@@ -101,6 +101,7 @@ import * as THREE from "three";
   let clickPulseStart = 0;
   let floatingGlass = null;
   let nebulaMesh = null;
+  let nebulaPaint = null;
   let pieces = []; // {mesh, grid:{x,y,z}, home:Vector3, scattered:Vector3, delay:number, isFrontOuter:bool, navIndex:number}
   let clock = new THREE.Clock();
   let raycaster = new THREE.Raycaster();
@@ -423,24 +424,41 @@ import * as THREE from "three";
   // it's built from the exact same palette as the glass shards and site
   // theme rather than an approximate stock photo.
   function buildNebulaBackdrop() {
-    const loader = new THREE.TextureLoader();
-    const tex = loader.load("assets/nebula-bg.jpg");
-    tex.colorSpace = THREE.SRGBColorSpace;
+    // The backdrop is now a live canvas, not a static image texture — the
+    // base nebula photo is drawn once, then repainted every frame: a tiny
+    // fraction of the original image is redrawn on top (which is what
+    // makes old paint slowly "heal" back to the source photo instead of
+    // drifting toward black), and a glowing color bloom is stamped at the
+    // current cursor position with additive blending — the "brush
+    // surrounded by paint" effect. That composited canvas becomes the
+    // plane's texture, refreshed each frame via needsUpdate.
+    const cw = window.innerWidth < 760 ? 512 : 900;
+    const ch = Math.round(cw * (444 / 794)); // matches the source image's real aspect ratio
 
-    // Sized to the image's real aspect ratio (794x444) so it doesn't
-    // stretch/distort.
-    const mat = new THREE.MeshBasicMaterial({ map: tex, color: 0x8a8a8a, transparent: true, opacity: 0.55, depthWrite: false });
+    const baseImg = new Image();
+    baseImg.src = "assets/nebula-bg.jpg";
+    const paintCanvas = document.createElement("canvas");
+    paintCanvas.width = cw;
+    paintCanvas.height = ch;
+    const pctx = paintCanvas.getContext("2d");
+    let baseReady = false;
+    baseImg.onload = () => { pctx.drawImage(baseImg, 0, 0, cw, ch); baseReady = true; };
+
+    const paintTex = new THREE.CanvasTexture(paintCanvas);
+    paintTex.colorSpace = THREE.SRGBColorSpace;
+
+    // Brightness restored (opacity/tint had gone too dull last round) —
+    // full-strength image, no grey multiply.
+    const mat = new THREE.MeshBasicMaterial({ map: paintTex, transparent: true, opacity: 0.85, depthWrite: false });
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(42, 23.5), mat);
     plane.position.z = -16;
     scene.add(plane);
     nebulaMesh = plane;
+    nebulaPaint = { ctx: pctx, canvas: paintCanvas, tex: paintTex, baseImg, get ready() { return baseReady; } };
 
-    // The actual "reflect in the cube" request — a real environment map
-    // built from the same image, so the cube's glossy clearcoat surfaces
-    // pick up genuine soft color reflections of the nebula, not just a
-    // color-matched light. A separate texture load (not the flat plane's
-    // own) since equirectangular mapping needs different UV handling than
-    // a simple flat background image.
+    // Real environment map for cube reflections, same as before — from a
+    // separate static load of the source image, not the live-painted one
+    // (keeps this cheap; the reflection doesn't need to react live too).
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
     new THREE.TextureLoader().load("assets/nebula-bg.jpg", (envTex) => {
@@ -453,14 +471,39 @@ import * as THREE from "three";
   }
 
   function updateNebulaBackdrop(elapsed) {
-    if (!nebulaMesh) return;
-    // Slow sway rather than a continuous scroll — a photo doesn't tile
-    // seamlessly, so looping the UV offset around would eventually show
-    // a visible seam; oscillating back and forth never reaches one.
-    nebulaMesh.material.map.offset.x = Math.sin(elapsed * 0.018) * 0.035;
-    nebulaMesh.material.map.offset.y = Math.cos(elapsed * 0.013) * 0.02;
+    if (!nebulaMesh || !nebulaPaint || !nebulaPaint.ready) return;
+    const { ctx, canvas, tex, baseImg } = nebulaPaint;
+    const cw = canvas.width, ch = canvas.height;
+
+    // Heal a small amount of the original image back in each frame — this
+    // is what makes old paint fade rather than accumulate into mud.
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 0.05;
+    ctx.drawImage(baseImg, 0, 0, cw, ch);
+    ctx.globalAlpha = 1;
+
+    // Bloom of color right where the cursor is, using the already-smoothed
+    // mouseCurX/mouseCurY (-1..1) the rest of the cube already tracks —
+    // additive blending gives the wet, glowing "surrounded by paint" look.
+    const px = (mouseCurX * 0.5 + 0.5) * cw;
+    const py = (1 - (mouseCurY * 0.5 + 0.5)) * ch;
+    const r = cw * 0.11;
+    const grad = ctx.createRadialGradient(px, py, 0, px, py, r);
+    grad.addColorStop(0, "rgba(210,150,255,.5)");
+    grad.addColorStop(0.5, "rgba(110,175,235,.26)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(px, py, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+
+    tex.needsUpdate = true;
+
+    // Same gentle ambient motion as before, on top of the paint effect.
     nebulaMesh.rotation.z = Math.sin(elapsed * 0.01) * 0.015;
-    nebulaMesh.scale.setScalar(1 + Math.sin(elapsed * 0.02) * 0.015); // gentle breathing
+    nebulaMesh.scale.setScalar(1 + Math.sin(elapsed * 0.02) * 0.015);
   }
 
   // Purple glass shards, genuinely placed behind the cube in 3D — not a
@@ -914,12 +957,11 @@ import * as THREE from "three";
       camera.position.z -= finalZoomAmt * (lockedCameraZ * 0.18);
     }
 
-    // Phase C: fully locked; hero copy fades, nav labels fade in
-    // Hero copy must be fully gone BEFORE labels start appearing (0.49) —
-    // it was previously still fading out as late as P=0.60, overlapping
-    // visibly with the labels underneath it.
-    const heroCopy = document.querySelector("#scroll-hero .hero-copy");
-    if (heroCopy) heroCopy.style.opacity = String(1 - smoothstep(LOCK_START, LOCK_START + 0.12, P));
+    // Company name/tagline fades out almost immediately once scrolling
+    // starts — it's meant to be seen at rest, then get out of the way the
+    // instant the person engages with the cube.
+    const heroBrand = document.querySelector("#scroll-hero .hero-brand");
+    if (heroBrand) heroBrand.style.opacity = String(1 - smoothstep(0, 0.06, P));
     const scrollCue = document.querySelector("#scroll-hero .scroll-cue");
     if (scrollCue) scrollCue.style.opacity = String(1 - smoothstep(0, 0.08, P));
 
