@@ -153,18 +153,24 @@ import * as THREE from "three";
     camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 0.2, PORTAL_MODE ? 11 : 6.2);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    scene.add(new THREE.AmbientLight(0xcabaf0, 0.5)); // soft lavender tint instead of flat white — picks up the nebula's palette
 
-    // single sharp specular key light, matching the reference video
-    const key = new THREE.DirectionalLight(0xffffff, 3.2);
+    // single sharp specular key light, matching the reference video —
+    // kept close to neutral white since this is the "obsidian, one hard
+    // highlight" identity the cube was originally built around; too much
+    // color here and it stops reading as obsidian at all.
+    const key = new THREE.DirectionalLight(0xf3edff, 3.2);
     key.position.set(4, 6, 6.5);
     scene.add(key);
 
-    const fill = new THREE.DirectionalLight(0xaeb0b5, 0.5);
+    // Fill leans purple, rim leans blue — together they echo the two
+    // dominant tones actually present in the nebula backdrop, rather than
+    // lighting the cube as if that backdrop weren't there.
+    const fill = new THREE.DirectionalLight(0x9b6bd1, 0.55);
     fill.position.set(-5, -2, 3);
     scene.add(fill);
 
-    const rim = new THREE.DirectionalLight(0xffffff, 0.8);
+    const rim = new THREE.DirectionalLight(0x5aa8e6, 0.85);
     rim.position.set(-2, 3, -6);
     scene.add(rim);
 
@@ -428,6 +434,22 @@ import * as THREE from "three";
     plane.position.z = -16;
     scene.add(plane);
     nebulaMesh = plane;
+
+    // The actual "reflect in the cube" request — a real environment map
+    // built from the same image, so the cube's glossy clearcoat surfaces
+    // pick up genuine soft color reflections of the nebula, not just a
+    // color-matched light. A separate texture load (not the flat plane's
+    // own) since equirectangular mapping needs different UV handling than
+    // a simple flat background image.
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGenerator.compileEquirectangularShader();
+    new THREE.TextureLoader().load("assets/nebula-bg.jpg", (envTex) => {
+      envTex.mapping = THREE.EquirectangularReflectionMapping;
+      envTex.colorSpace = THREE.SRGBColorSpace;
+      scene.environment = pmremGenerator.fromEquirectangular(envTex).texture;
+      envTex.dispose();
+      pmremGenerator.dispose();
+    });
   }
 
   function updateNebulaBackdrop(elapsed) {
