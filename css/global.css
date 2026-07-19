@@ -268,12 +268,12 @@ section.tight { padding: 80px 0; }
 }
 .hero-brand-name {
   font-family: var(--font-display); font-weight: 700;
-  font-size: clamp(1.05rem, 1.7vw, 1.5rem);
-  letter-spacing: -0.01em; color: var(--white);
+  font-size: clamp(2rem, 4.2vw, 3.6rem);
+  letter-spacing: -0.015em; color: var(--white);
   text-shadow: 0 2px 4px rgba(0,0,0,.9), 0 4px 20px rgba(0,0,0,.8);
 }
 .hero-brand-slogan {
-  font-family: var(--font-mono); font-size: .78rem; letter-spacing: .04em;
+  font-family: var(--font-mono); font-size: clamp(1rem, 1.4vw, 1.25rem); letter-spacing: .02em;
   color: var(--white-dim);
   text-shadow: 0 2px 4px rgba(0,0,0,.9), 0 4px 16px rgba(0,0,0,.75);
 }
@@ -281,6 +281,10 @@ section.tight { padding: 80px 0; }
   /* Vertically-centered-left would collide with the cube tiles on a
      narrow screen — top-left instead, out of the way. */
   #scroll-hero .hero-brand { left: 20px; top: 20px; transform: none; }
+  /* The desktop clamp() floor (2rem+) is too large combined with "JOEL
+     FLOWSTACK" at this width — would risk horizontal overflow. */
+  .hero-brand-name { font-size: 1.5rem; }
+  .hero-brand-slogan { font-size: .85rem; }
 }
 #scroll-hero .hero-copy {
   position: absolute; inset: 0;
