@@ -153,6 +153,74 @@
     update();
   }
 
+  // Typewriter effect for the landing hero's left-side brand block — types
+  // the company name once, then cycles through a rotating set of taglines
+  // (type out, pause, delete, next) indefinitely. No-op on any page
+  // without these elements, and skips straight to final text for anyone
+  // with reduced-motion set.
+  function initHeroTypewriter() {
+    const nameEl = document.querySelector(".hero-brand-name");
+    const sloganEl = document.querySelector(".hero-brand-slogan");
+    if (!nameEl || !sloganEl) return;
+
+    const companyName = "JOEL FLOWSTACK";
+    const taglines = [
+      "Building workflows that scale.",
+      "Interfaces that think back.",
+      "Where code meets creativity.",
+      "Automation with an edge.",
+      "3D web. Real intelligence.",
+      "Turning ideas into interfaces.",
+    ];
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      nameEl.textContent = companyName;
+      sloganEl.textContent = taglines[0];
+      return;
+    }
+
+    nameEl.textContent = "";
+    sloganEl.textContent = "";
+
+    let ci = 0;
+    function typeName() {
+      if (ci <= companyName.length) {
+        nameEl.textContent = companyName.slice(0, ci) + (ci < companyName.length ? "▍" : "");
+        ci++;
+        setTimeout(typeName, 55);
+      } else {
+        nameEl.textContent = companyName;
+        setTimeout(() => typeTagline(0), 300);
+      }
+    }
+
+    function typeTagline(ti) {
+      const text = taglines[ti];
+      let i = 0;
+      function type() {
+        if (i <= text.length) {
+          sloganEl.textContent = text.slice(0, i) + (i < text.length ? "▍" : "");
+          i++;
+          setTimeout(type, 42);
+        } else {
+          setTimeout(erase, 1900);
+        }
+      }
+      function erase() {
+        if (i >= 0) {
+          sloganEl.textContent = text.slice(0, i) + "▍";
+          i--;
+          setTimeout(erase, 22);
+        } else {
+          setTimeout(() => typeTagline((ti + 1) % taglines.length), 350);
+        }
+      }
+      type();
+    }
+
+    typeName();
+  }
+
   function initNavScrollState() {
     const update = () => {
       const nav = document.querySelector(".site-nav");
@@ -224,6 +292,7 @@
     // scene (genuinely behind the cube, properly occluded by it) rather
     // than as a separate flat 2D overlay — see buildFloatingGlass() there.
     initNavScrollState();
+    initHeroTypewriter();
     initPageTransitions();
     initHeroNavVisibility();
   });
