@@ -259,17 +259,23 @@ section.tight { padding: 80px 0; }
   position: absolute; left: 40px; top: 50%; transform: translateY(-50%);
   z-index: 3; pointer-events: none;
   display: flex; flex-direction: column; gap: 8px;
+  padding: 18px 22px;
+  background: rgba(3,4,8,.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,.06);
 }
 .hero-brand-name {
   font-family: var(--font-display); font-weight: 700;
   font-size: clamp(1.05rem, 1.7vw, 1.5rem);
   letter-spacing: -0.01em; color: var(--white);
-  text-shadow: 0 2px 12px rgba(0,0,0,.6);
+  text-shadow: 0 2px 4px rgba(0,0,0,.9), 0 4px 20px rgba(0,0,0,.8);
 }
 .hero-brand-slogan {
-  font-family: var(--font-mono); font-size: .76rem; letter-spacing: .04em;
-  color: var(--grey);
-  text-shadow: 0 2px 10px rgba(0,0,0,.6);
+  font-family: var(--font-mono); font-size: .78rem; letter-spacing: .04em;
+  color: var(--white-dim);
+  text-shadow: 0 2px 4px rgba(0,0,0,.9), 0 4px 16px rgba(0,0,0,.75);
 }
 @media (max-width: 760px) {
   /* Vertically-centered-left would collide with the cube tiles on a
@@ -285,8 +291,12 @@ section.tight { padding: 80px 0; }
   pointer-events: none;
   z-index: 3;
 }
-#scroll-hero .hero-copy h1 { font-size: clamp(2rem, 5vw, 3.4rem); }
-#scroll-hero .hero-copy p { margin: 0 auto; }
+#scroll-hero .hero-copy h1 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  text-shadow: 0 2px 6px rgba(0,0,0,.9), 0 8px 32px rgba(0,0,0,.75);
+}
+#scroll-hero .hero-copy p { margin: 0 auto; text-shadow: 0 2px 8px rgba(0,0,0,.85); }
+#scroll-hero .hero-copy .eyebrow { text-shadow: 0 2px 6px rgba(0,0,0,.85); }
 #scroll-hero .scroll-cue {
   position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
   font-family: var(--font-mono); font-size: .7rem; letter-spacing: .18em;
