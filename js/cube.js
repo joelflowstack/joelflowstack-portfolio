@@ -100,6 +100,7 @@ import * as THREE from "three";
   let clickPulsePiece = null;
   let clickPulseStart = 0;
   let floatingGlass = null;
+  let nebulaMesh = null;
   let pieces = []; // {mesh, grid:{x,y,z}, home:Vector3, scattered:Vector3, delay:number, isFrontOuter:bool, navIndex:number}
   let clock = new THREE.Clock();
   let raycaster = new THREE.Raycaster();
@@ -111,7 +112,6 @@ import * as THREE from "three";
   let scatterStart = 0;
   let scatterTargetHref = null;
   let scrollP = 0; // 0..1, updated on scroll (portal mode only)
-  let labelEls = new Map(); // navIndex -> DOM label element
 
   try {
     init();
@@ -179,7 +179,6 @@ import * as THREE from "three";
     lockedCameraZ = computeLockedCameraZ();
 
     if (PORTAL_MODE) {
-      buildNavLabels();
       buildEdgeLights();
       window.addEventListener("scroll", onScroll, { passive: true });
       onScroll();
@@ -341,12 +340,7 @@ import * as THREE from "three";
             isCenterTile = true;
             frontMat = makeLogoMaterial(1); // JF monogram tile; mini-cube nests on top of it
           } else if (gridKeyMatch >= 0) {
-            // Plain tile — NOT makeLabelMaterial(). The DOM label overlay
-            // (buildNavLabels) is the only text rendered for nav tiles now;
-            // this used to ALSO bake the label into the 3D texture, which
-            // showed as visibly doubled, slightly-misaligned text on every
-            // tile (a bold DOM copy over a fainter baked-texture copy).
-            frontMat = makePlasticMaterial(x + y);
+            frontMat = makeLabelMaterial(NAV_ITEMS[gridKeyMatch].label);
           } else if (z === 1) {
             frontMat = makePlasticMaterial(x + y);
           }
@@ -423,30 +417,28 @@ import * as THREE from "three";
   // it's built from the exact same palette as the glass shards and site
   // theme rather than an approximate stock photo.
   function buildNebulaBackdrop() {
-    const size = 1024;
-    const c = document.createElement("canvas");
-    c.width = c.height = size;
-    const ctx = c.getContext("2d");
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, size, size);
-
-    function blob(x, y, r, color) {
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, color);
-      g.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, size, size);
-    }
-    blob(size * 0.32, size * 0.4, size * 0.55, "rgba(139,92,246,0.55)");
-    blob(size * 0.72, size * 0.62, size * 0.5, "rgba(63,169,232,0.42)");
-    blob(size * 0.5, size * 0.28, size * 0.4, "rgba(200,160,255,0.3)");
-
-    const tex = new THREE.CanvasTexture(c);
+    const loader = new THREE.TextureLoader();
+    const tex = loader.load("assets/nebula-bg.jpg");
     tex.colorSpace = THREE.SRGBColorSpace;
-    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.85, depthWrite: false });
-    const plane = new THREE.Mesh(new THREE.PlaneGeometry(34, 34), mat);
+
+    // Sized to the image's real aspect ratio (794x444) so it doesn't
+    // stretch/distort.
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.92, depthWrite: false });
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(42, 23.5), mat);
     plane.position.z = -16;
     scene.add(plane);
+    nebulaMesh = plane;
+  }
+
+  function updateNebulaBackdrop(elapsed) {
+    if (!nebulaMesh) return;
+    // Slow sway rather than a continuous scroll — a photo doesn't tile
+    // seamlessly, so looping the UV offset around would eventually show
+    // a visible seam; oscillating back and forth never reaches one.
+    nebulaMesh.material.map.offset.x = Math.sin(elapsed * 0.018) * 0.035;
+    nebulaMesh.material.map.offset.y = Math.cos(elapsed * 0.013) * 0.02;
+    nebulaMesh.rotation.z = Math.sin(elapsed * 0.01) * 0.015;
+    nebulaMesh.scale.setScalar(1 + Math.sin(elapsed * 0.02) * 0.015); // gentle breathing
   }
 
   // Purple glass shards, genuinely placed behind the cube in 3D — not a
@@ -657,45 +649,6 @@ import * as THREE from "three";
     if (clickPulsePiece && !pulseActive) clickPulsePiece = null;
   }
 
-  function buildNavLabels() {
-    const wrap = document.getElementById("nav-tile-labels");
-    if (!wrap) return;
-    NAV_ITEMS.forEach((item, i) => {
-      const el = document.createElement("a");
-      el.className = "tile-label";
-      el.textContent = item.label;
-      el.href = item.href;
-      el.dataset.cubeNav = "true"; // tells shared.js's page-transition veil to leave this alone — cube.js handles its own scatter transition
-      el.addEventListener("click", (e) => {
-        e.preventDefault();
-        const piece = pieces.find(p => p.navIndex === i);
-        if (piece) confirmTileClick(piece);
-        else window.location.href = item.href; // fallback, shouldn't normally happen
-      });
-      wrap.appendChild(el);
-      labelEls.set(i, el);
-    });
-  }
-
-  function updateNavLabels(lockAmount) {
-    if (!PORTAL_MODE) return;
-    const vector = new THREE.Vector3();
-    pieces.forEach((p) => {
-      if (!p.isNavTile) return;
-      const el = labelEls.get(p.navIndex);
-      if (!el) return;
-      vector.setFromMatrixPosition(p.mesh.matrixWorld);
-      vector.project(camera);
-      const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-      const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
-      el.style.left = x + "px";
-      el.style.top = y + "px";
-      el.style.opacity = String(lockAmount);
-      el.style.pointerEvents = lockAmount > 0.9 ? "auto" : "none";
-      el.classList.toggle("tile-hovered", p.navIndex === hoveredNavIndex);
-    });
-  }
-
   // ---------------------------------------------------------------
   // EVENTS
   // ---------------------------------------------------------------
@@ -816,6 +769,7 @@ import * as THREE from "three";
 
     updateBoot();
     updateFloatingGlass(elapsed);
+    updateNebulaBackdrop(elapsed);
     if (scatterActive) {
       updateScatter();
     } else if (PORTAL_MODE) {
@@ -952,7 +906,6 @@ import * as THREE from "three";
     // across the SAME window as the rotation itself, so partially-visible
     // text was swinging along with the still-spinning cube.
     const labelAmt = smootherstep(LOCK_POINT - 0.06, LOCK_POINT, P);
-    updateNavLabels(labelAmt);
     updateTileHover(labelAmt);
     updateEdgeLights(elapsed, labelAmt);
 
