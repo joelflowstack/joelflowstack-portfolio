@@ -429,7 +429,7 @@ import * as THREE from "three";
 
     // Sized to the image's real aspect ratio (794x444) so it doesn't
     // stretch/distort.
-    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.92, depthWrite: false });
+    const mat = new THREE.MeshBasicMaterial({ map: tex, color: 0x8a8a8a, transparent: true, opacity: 0.55, depthWrite: false });
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(42, 23.5), mat);
     plane.position.z = -16;
     scene.add(plane);
