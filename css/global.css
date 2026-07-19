@@ -258,8 +258,9 @@ section.tight { padding: 80px 0; }
 #scroll-hero .hero-brand {
   position: absolute; left: 40px; top: 50%; transform: translateY(-50%);
   z-index: 3; pointer-events: none;
-  display: flex; flex-direction: column; gap: 8px;
-  padding: 18px 22px;
+  display: flex; flex-direction: column; gap: 6px;
+  max-width: 240px;
+  padding: 16px 20px;
   background: rgba(3,4,8,.42);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -268,8 +269,9 @@ section.tight { padding: 80px 0; }
 }
 .hero-brand-name {
   font-family: var(--font-display); font-weight: 700;
-  font-size: clamp(2rem, 4.2vw, 3.6rem);
-  letter-spacing: -0.015em; color: var(--white);
+  font-size: clamp(1.3rem, 2vw, 1.85rem);
+  letter-spacing: -0.01em; color: var(--white);
+  line-height: 1.15;
   text-shadow: 0 2px 4px rgba(0,0,0,.9), 0 4px 20px rgba(0,0,0,.8);
 }
 .hero-brand-slogan {
