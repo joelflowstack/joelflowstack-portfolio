@@ -101,7 +101,8 @@ import * as THREE from "three";
   let clickPulseStart = 0;
   let floatingGlass = null;
   let nebulaMesh = null;
-  let nebulaPaint = null;
+  let nebulaBaseX = 0;
+  let nebulaBaseY = 0;
   let pieces = []; // {mesh, grid:{x,y,z}, home:Vector3, scattered:Vector3, delay:number, isFrontOuter:bool, navIndex:number}
   let clock = new THREE.Clock();
   let raycaster = new THREE.Raycaster();
@@ -424,41 +425,25 @@ import * as THREE from "three";
   // it's built from the exact same palette as the glass shards and site
   // theme rather than an approximate stock photo.
   function buildNebulaBackdrop() {
-    // The backdrop is now a live canvas, not a static image texture — the
-    // base nebula photo is drawn once, then repainted every frame: a tiny
-    // fraction of the original image is redrawn on top (which is what
-    // makes old paint slowly "heal" back to the source photo instead of
-    // drifting toward black), and a glowing color bloom is stamped at the
-    // current cursor position with additive blending — the "brush
-    // surrounded by paint" effect. That composited canvas becomes the
-    // plane's texture, refreshed each frame via needsUpdate.
-    const cw = window.innerWidth < 760 ? 512 : 900;
-    const ch = Math.round(cw * (444 / 794)); // matches the source image's real aspect ratio
+    const loader = new THREE.TextureLoader();
+    const tex = loader.load("assets/nebula-bg.jpg");
+    tex.colorSpace = THREE.SRGBColorSpace;
 
-    const baseImg = new Image();
-    baseImg.src = "assets/nebula-bg.jpg";
-    const paintCanvas = document.createElement("canvas");
-    paintCanvas.width = cw;
-    paintCanvas.height = ch;
-    const pctx = paintCanvas.getContext("2d");
-    let baseReady = false;
-    baseImg.onload = () => { pctx.drawImage(baseImg, 0, 0, cw, ch); baseReady = true; };
-
-    const paintTex = new THREE.CanvasTexture(paintCanvas);
-    paintTex.colorSpace = THREE.SRGBColorSpace;
-
-    // Brightness restored (opacity/tint had gone too dull last round) —
-    // full-strength image, no grey multiply.
-    const mat = new THREE.MeshBasicMaterial({ map: paintTex, transparent: true, opacity: 0.85, depthWrite: false });
-    const plane = new THREE.Mesh(new THREE.PlaneGeometry(42, 23.5), mat);
+    // Sized to the image's real aspect ratio (794x444) so it doesn't
+    // stretch/distort. A little oversized relative to the frame — that
+    // headroom is what lets it shift with the parallax effect below
+    // without ever revealing an edge.
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.85, depthWrite: false });
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(48, 27), mat);
     plane.position.z = -16;
     scene.add(plane);
     nebulaMesh = plane;
-    nebulaPaint = { ctx: pctx, canvas: paintCanvas, tex: paintTex, baseImg, get ready() { return baseReady; } };
+    nebulaBaseX = plane.position.x;
+    nebulaBaseY = plane.position.y;
 
-    // Real environment map for cube reflections, same as before — from a
-    // separate static load of the source image, not the live-painted one
-    // (keeps this cheap; the reflection doesn't need to react live too).
+    // Real environment map for cube reflections — from a separate load of
+    // the same image so the flat plane and the reflection can be tuned
+    // independently.
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
     new THREE.TextureLoader().load("assets/nebula-bg.jpg", (envTex) => {
@@ -471,37 +456,13 @@ import * as THREE from "three";
   }
 
   function updateNebulaBackdrop(elapsed) {
-    if (!nebulaMesh || !nebulaPaint || !nebulaPaint.ready) return;
-    const { ctx, canvas, tex, baseImg } = nebulaPaint;
-    const cw = canvas.width, ch = canvas.height;
-
-    // Heal a small amount of the original image back in each frame — this
-    // is what makes old paint fade rather than accumulate into mud.
-    ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 0.05;
-    ctx.drawImage(baseImg, 0, 0, cw, ch);
-    ctx.globalAlpha = 1;
-
-    // Bloom of color right where the cursor is, using the already-smoothed
-    // mouseCurX/mouseCurY (-1..1) the rest of the cube already tracks —
-    // additive blending gives the wet, glowing "surrounded by paint" look.
-    const px = (mouseCurX * 0.5 + 0.5) * cw;
-    const py = (1 - (mouseCurY * 0.5 + 0.5)) * ch;
-    const r = cw * 0.11;
-    const grad = ctx.createRadialGradient(px, py, 0, px, py, r);
-    grad.addColorStop(0, "rgba(210,150,255,.5)");
-    grad.addColorStop(0.5, "rgba(110,175,235,.26)");
-    grad.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.globalCompositeOperation = "lighter";
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(px, py, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalCompositeOperation = "source-over";
-
-    tex.needsUpdate = true;
-
-    // Same gentle ambient motion as before, on top of the paint effect.
+    if (!nebulaMesh) return;
+    // The interactive replacement for the paint effect: the whole backdrop
+    // drifts opposite the cursor (parallax), on top of a slow ambient sway
+    // and a gentle breathing scale — genuinely responds to the cursor,
+    // without the live-repainted-canvas complexity that didn't land well.
+    nebulaMesh.position.x = nebulaBaseX - mouseCurX * 1.4 + Math.sin(elapsed * 0.018) * 0.6;
+    nebulaMesh.position.y = nebulaBaseY - mouseCurY * 0.9 + Math.cos(elapsed * 0.013) * 0.4;
     nebulaMesh.rotation.z = Math.sin(elapsed * 0.01) * 0.015;
     nebulaMesh.scale.setScalar(1 + Math.sin(elapsed * 0.02) * 0.015);
   }
@@ -943,7 +904,7 @@ import * as THREE from "three";
     // camera zoom: starting distance -> lockedCameraZ (the exact distance
     // that fully frames all 9 front tiles for the current viewport/FOV)
     const zoomAmt = smootherstep(LOCK_START, LOCK_POINT, P);
-    const startZ = 11;
+    const startZ = 17;
     camera.position.z = startZ - zoomAmt * (startZ - lockedCameraZ);
     camera.position.y = 0.2 - zoomAmt * 0.2;
 
