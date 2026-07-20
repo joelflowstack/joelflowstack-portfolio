@@ -230,14 +230,43 @@
     update();
   }
 
-  // Soft fade-to-black transition on internal navigation, instead of an
-  // abrupt jump cut between pages.
+  // Cube-face page transitions — like switching virtual desktops on a
+  // Compiz-style desktop cube: the outgoing page rotates away as if it's
+  // one face of a box, the incoming page (a separate page load) rotates
+  // in from the opposite face. Since these are genuinely different page
+  // loads (not client-side routing), the two halves coordinate through
+  // one sessionStorage flag: the outgoing click decides a direction and
+  // stashes it; the incoming page reads it on load and animates in.
+  const PAGE_ORDER = ["home.html", "about.html", "services.html", "portfolio.html", "blog.html", "contact.html"];
+  function pageOrderIndex(pathname) {
+    const file = pathname.split("/").pop() || "index.html";
+    const i = PAGE_ORDER.indexOf(file);
+    return i === -1 ? 0 : i;
+  }
+
   function initPageTransitions() {
-    const veil = document.createElement("div");
-    veil.id = "page-veil";
-    document.body.appendChild(veil);
     document.body.classList.add("page-loaded");
 
+    // Entrance half: if we arrived here via a cube-nav click, the
+    // direction is waiting in sessionStorage — animate in from that side.
+    const enterDir = sessionStorage.getItem("cubeEnterDir");
+    if (enterDir) {
+      sessionStorage.removeItem("cubeEnterDir");
+      document.body.classList.add("cube-enter-" + enterDir);
+      // Force a reflow so the browser registers the starting transform
+      // before the "-active" class flips it — otherwise both classes
+      // would land in the same frame and there'd be nothing to animate.
+      void document.body.offsetHeight;
+      requestAnimationFrame(() => {
+        document.body.classList.add("cube-enter-active");
+      });
+      setTimeout(() => {
+        document.body.classList.remove("cube-enter-" + enterDir, "cube-enter-active");
+      }, 620);
+    }
+
+    // Exit half: intercept internal link clicks, rotate this page away,
+    // tell the next page which direction to enter from, then navigate.
     document.addEventListener("click", (e) => {
       const link = e.target.closest("a[href]");
       if (!link) return;
@@ -247,11 +276,16 @@
       if (link.target === "_blank" || link.hasAttribute("download")) return;
       let url;
       try { url = new URL(href, window.location.href); } catch { return; }
-      if (url.origin !== window.location.origin) return; // external link, no veil
+      if (url.origin !== window.location.origin) return; // external link, no cube transition
 
       e.preventDefault();
-      veil.classList.add("visible");
-      setTimeout(() => { window.location.href = url.href; }, 380);
+      const goingForward = pageOrderIndex(url.pathname) >= pageOrderIndex(window.location.pathname);
+      const exitDir = goingForward ? "left" : "right";   // this face rotates away toward that side
+      const enterFrom = goingForward ? "right" : "left"; // the next page swings in from the opposite side
+
+      sessionStorage.setItem("cubeEnterDir", enterFrom);
+      document.body.classList.add("cube-exit-" + exitDir);
+      setTimeout(() => { window.location.href = url.href; }, 520);
     });
   }
 
