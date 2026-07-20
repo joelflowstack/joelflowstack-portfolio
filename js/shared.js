@@ -252,6 +252,7 @@
     const enterDir = sessionStorage.getItem("cubeEnterDir");
     if (enterDir) {
       sessionStorage.removeItem("cubeEnterDir");
+      document.documentElement.classList.add("cube-transitioning");
       document.body.classList.add("cube-enter-" + enterDir);
       // Force a reflow so the browser registers the starting transform
       // before the "-active" class flips it — otherwise both classes
@@ -262,6 +263,7 @@
       });
       setTimeout(() => {
         document.body.classList.remove("cube-enter-" + enterDir, "cube-enter-active");
+        document.documentElement.classList.remove("cube-transitioning");
       }, 620);
     }
 
@@ -284,6 +286,7 @@
       const enterFrom = goingForward ? "right" : "left"; // the next page swings in from the opposite side
 
       sessionStorage.setItem("cubeEnterDir", enterFrom);
+      document.documentElement.classList.add("cube-transitioning");
       document.body.classList.add("cube-exit-" + exitDir);
       setTimeout(() => { window.location.href = url.href; }, 520);
     });
