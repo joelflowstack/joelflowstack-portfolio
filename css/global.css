@@ -587,7 +587,12 @@ a.card:hover, .card.interactive:hover {
    own fixed-position children — meaning the nav pill (and, on the
    landing page, the fixed cube stage) rotates along WITH the page
    automatically, with no extra rules needed to keep them in sync. */
-html { perspective: 1600px; }
+/* Scoped to ONLY the transition window (toggled in shared.js), not a
+   permanent global rule — perspective (like transform) makes its element
+   the containing block for position:fixed descendants, and applying it
+   to html unconditionally broke the cube's fixed positioning for the
+   entire time you were on the page, not just during a transition. */
+html.cube-transitioning { perspective: 1600px; }
 body { opacity: 0; animation: pageIn .6s var(--ease-out) forwards; animation-delay: .05s; }
 @keyframes pageIn { to { opacity: 1; } }
 
