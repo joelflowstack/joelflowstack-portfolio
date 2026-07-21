@@ -238,6 +238,27 @@
   // one sessionStorage flag: the outgoing click decides a direction and
   // stashes it; the incoming page reads it on load and animates in.
   const PAGE_ORDER = ["home.html", "about.html", "services.html", "portfolio.html", "blog.html", "contact.html"];
+
+  // Prefetches every page in the background shortly after load, so by the
+  // time someone actually clicks a nav link, the browser already has it
+  // cached and the navigation is close to instant — the cube transition
+  // reads as continuous instead of getting cut off by a visible load gap.
+  // This does NOT eliminate the underlying page reload (that would need a
+  // full client-side-routing rewrite, since every page's own scripts —
+  // cube.js, flowbot.js — currently assume a fresh page load to run at
+  // all), but it should make the reload itself far less noticeable.
+  function prefetchPages() {
+    const here = window.location.pathname.split("/").pop() || "index.html";
+    const targets = ["index.html", ...PAGE_ORDER].filter(p => p !== here);
+    setTimeout(() => {
+      targets.forEach((p) => {
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.href = p;
+        document.head.appendChild(link);
+      });
+    }, 1200); // waits until shortly after this page's own load finishes, so it doesn't compete with it for bandwidth
+  }
   function pageOrderIndex(pathname) {
     const file = pathname.split("/").pop() || "index.html";
     const i = PAGE_ORDER.indexOf(file);
@@ -332,5 +353,6 @@
     initHeroTypewriter();
     initPageTransitions();
     initHeroNavVisibility();
+    prefetchPages();
   });
 })();
