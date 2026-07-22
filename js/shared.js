@@ -237,16 +237,16 @@
   // loads (not client-side routing), the two halves coordinate through
   // one sessionStorage flag: the outgoing click decides a direction and
   // stashes it; the incoming page reads it on load and animates in.
+  // Page-to-page transitions are now handled natively by the browser's
+  // View Transitions API (see the @view-transition rule in global.css) —
+  // no click interception or manual routing needed here anymore. This
+  // list is kept only for prefetching order/targets below.
   const PAGE_ORDER = ["home.html", "about.html", "services.html", "portfolio.html", "blog.html", "contact.html"];
 
   // Prefetches every page in the background shortly after load, so by the
   // time someone actually clicks a nav link, the browser already has it
-  // cached and the navigation is close to instant — the cube transition
-  // reads as continuous instead of getting cut off by a visible load gap.
-  // This does NOT eliminate the underlying page reload (that would need a
-  // full client-side-routing rewrite, since every page's own scripts —
-  // cube.js, flowbot.js — currently assume a fresh page load to run at
-  // all), but it should make the reload itself far less noticeable.
+  // cached and the real navigation underneath the view transition is
+  // close to instant.
   function prefetchPages() {
     const here = window.location.pathname.split("/").pop() || "index.html";
     const targets = ["index.html", ...PAGE_ORDER].filter(p => p !== here);
@@ -259,61 +259,7 @@
       });
     }, 1200); // waits until shortly after this page's own load finishes, so it doesn't compete with it for bandwidth
   }
-  function pageOrderIndex(pathname) {
-    const file = pathname.split("/").pop() || "index.html";
-    const i = PAGE_ORDER.indexOf(file);
-    return i === -1 ? 0 : i;
-  }
 
-  function initPageTransitions() {
-    document.body.classList.add("page-loaded");
-
-    // Entrance half: if we arrived here via a cube-nav click, the
-    // direction is waiting in sessionStorage — animate in from that side.
-    const enterDir = sessionStorage.getItem("cubeEnterDir");
-    if (enterDir) {
-      sessionStorage.removeItem("cubeEnterDir");
-      document.documentElement.classList.add("cube-transitioning");
-      document.body.classList.add("cube-enter-" + enterDir);
-      // Force a reflow so the browser registers the starting transform
-      // before the "-active" class flips it — otherwise both classes
-      // would land in the same frame and there'd be nothing to animate.
-      void document.body.offsetHeight;
-      requestAnimationFrame(() => {
-        document.body.classList.add("cube-enter-active");
-      });
-      setTimeout(() => {
-        document.body.classList.remove("cube-enter-" + enterDir, "cube-enter-active");
-        document.documentElement.classList.remove("cube-transitioning");
-      }, 620);
-    }
-
-    // Exit half: intercept internal link clicks, rotate this page away,
-    // tell the next page which direction to enter from, then navigate.
-    document.addEventListener("click", (e) => {
-      const link = e.target.closest("a[href]");
-      if (!link) return;
-      if (link.dataset.cubeNav) return; // handled by cube.js's own scatter-then-navigate transition
-      const href = link.getAttribute("href");
-      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
-      if (link.target === "_blank" || link.hasAttribute("download")) return;
-      let url;
-      try { url = new URL(href, window.location.href); } catch { return; }
-      if (url.origin !== window.location.origin) return; // external link, no cube transition
-
-      e.preventDefault();
-      const goingForward = pageOrderIndex(url.pathname) >= pageOrderIndex(window.location.pathname);
-      const exitDir = goingForward ? "left" : "right";   // this face rotates away toward that side
-      const enterFrom = goingForward ? "right" : "left"; // the next page swings in from the opposite side
-
-      sessionStorage.setItem("cubeEnterDir", enterFrom);
-      document.documentElement.classList.add("cube-transitioning");
-      document.body.classList.add("cube-exit-" + exitDir);
-      setTimeout(() => { window.location.href = url.href; }, 520);
-    });
-  }
-
-  // On the landing page only (where #scroll-hero exists), the nav stays
   // On the landing page only (where #scroll-hero exists), the nav is
   // genuinely removed from the DOM — not hidden via CSS — while the cube
   // hero is on screen. It only gets created once the person has scrolled
@@ -351,7 +297,6 @@
     // than as a separate flat 2D overlay — see buildFloatingGlass() there.
     initNavScrollState();
     initHeroTypewriter();
-    initPageTransitions();
     initHeroNavVisibility();
     prefetchPages();
   });
