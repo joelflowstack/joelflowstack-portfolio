@@ -582,58 +582,45 @@ a.card:hover, .card.interactive:hover {
 /* Magnetic buttons */
 .btn { will-change: transform; }
 
-/* Cube-face page transitions (see initPageTransitions in shared.js for
-   the direction logic). Hinged at the edge, like a real cube face
-   swinging on its vertical axis, rather than rotating around its own
-   center. A transform on <body> makes it the containing block for its
-   own fixed-position children — meaning the nav pill (and, on the
-   landing page, the fixed cube stage) rotates along WITH the page
-   automatically, with no extra rules needed to keep them in sync. */
-/* Scoped to ONLY the transition window (toggled in shared.js), not a
-   permanent global rule — perspective (like transform) makes its element
-   the containing block for position:fixed descendants, and applying it
-   to html unconditionally broke the cube's fixed positioning for the
-   entire time you were on the page, not just during a transition. */
-html.cube-transitioning { perspective: 1600px; }
 body { opacity: 0; animation: pageIn .6s var(--ease-out) forwards; animation-delay: .05s; }
 @keyframes pageIn { to { opacity: 1; } }
 
-body.cube-exit-left, body.cube-exit-right,
-body.cube-enter-left, body.cube-enter-right, body.cube-enter-active {
-  animation: none; /* the plain pageIn fade above doesn't apply once a cube transition is in play */
+/* Cube-face page transitions — powered by the browser's native
+   cross-document View Transitions API, not custom JS. Every page opts in
+   via the @view-transition rule below; when you click a same-origin
+   link, the browser itself snapshots the outgoing page, loads the real
+   next page underneath, and plays this animation between the two
+   snapshots. The actual navigation still happens exactly as normal —
+   the browser is just bridging it visually instead of showing a blank
+   flash. This replaces an earlier hand-rolled version that manually
+   rotated <body> via JS classes; that approach needed a real page
+   reload to complete before it could even start, which is exactly the
+   gap this API is built to close, and it doesn't require touching
+   cube.js's lifecycle at all. Supported in Chromium browsers and
+   Safari 18.2+ as of this writing; unsupported browsers (older Firefox)
+   just get a normal, undecorated navigation — nothing breaks there. */
+@view-transition {
+  navigation: auto;
 }
-body.cube-exit-left {
-  transform-origin: left center;
-  transform: rotateY(-80deg);
-  opacity: 0;
-  transition: transform .5s cubic-bezier(.7,0,.3,1), opacity .4s ease;
+::view-transition {
+  perspective: 1400px;
 }
-body.cube-exit-right {
-  transform-origin: right center;
-  transform: rotateY(80deg);
-  opacity: 0;
-  transition: transform .5s cubic-bezier(.7,0,.3,1), opacity .4s ease;
+::view-transition-old(root) {
+  animation: cubeFaceOut .5s cubic-bezier(.7,0,.3,1) both;
 }
-body.cube-enter-left {
-  transform-origin: left center;
-  transform: rotateY(-80deg);
-  opacity: 0;
+::view-transition-new(root) {
+  animation: cubeFaceIn .5s cubic-bezier(.7,0,.3,1) both;
 }
-body.cube-enter-right {
-  transform-origin: right center;
-  transform: rotateY(80deg);
-  opacity: 0;
+@keyframes cubeFaceOut {
+  to { transform: rotateY(-75deg); opacity: 0; }
 }
-body.cube-enter-active {
-  transform: rotateY(0deg);
-  opacity: 1;
-  transition: transform .55s cubic-bezier(.7,0,.3,1), opacity .5s ease;
+@keyframes cubeFaceIn {
+  from { transform: rotateY(75deg); opacity: 0; }
+  to { transform: rotateY(0deg); opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  body.cube-exit-left, body.cube-exit-right,
-  body.cube-enter-left, body.cube-enter-right, body.cube-enter-active {
-    transform: none !important;
-    transition: opacity .3s ease !important;
+  ::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
   }
 }
 
