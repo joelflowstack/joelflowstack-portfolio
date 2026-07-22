@@ -54,12 +54,12 @@ import * as THREE from "three";
   const PORTAL_MODE = !!heroEl;
 
   const NAV_ITEMS = [
-    { key: "home",      label: "Home",      href: "home.html" },
-    { key: "about",     label: "About",     href: "about.html" },
-    { key: "services",  label: "Services",  href: "services.html" },
-    { key: "portfolio", label: "Portfolio", href: "portfolio.html" },
-    { key: "blog",      label: "Blog",      href: "blog.html" },
-    { key: "contact",   label: "Contact",   href: "contact.html" },
+    { key: "home",      label: "Home",      href: "home" },
+    { key: "about",     label: "About",     href: "about" },
+    { key: "services",  label: "Services",  href: "services" },
+    { key: "portfolio", label: "Portfolio", href: "portfolio" },
+    { key: "blog",      label: "Blog",      href: "blog" },
+    { key: "contact",   label: "Contact",   href: "contact" },
     { key: "youtube",   label: "YouTube",   href: "https://youtube.com/@joelflowstack" },
     { key: "tiktok",    label: "TikTok",    href: "https://tiktok.com/@joelflowstack" },
   ];
