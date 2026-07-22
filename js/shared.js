@@ -8,12 +8,12 @@
   "use strict";
 
   const NAV_LINKS = [
-    { label: "Home",      href: "home.html" },
-    { label: "About",     href: "about.html" },
-    { label: "Services",  href: "services.html" },
-    { label: "Portfolio", href: "portfolio.html" },
-    { label: "Blog",      href: "blog.html" },
-    { label: "Contact",   href: "contact.html" },
+    { label: "Home",      href: "home" },
+    { label: "About",     href: "about" },
+    { label: "Services",  href: "services" },
+    { label: "Portfolio", href: "portfolio" },
+    { label: "Blog",      href: "blog" },
+    { label: "Contact",   href: "contact" },
   ];
 
   const SOCIALS = [
@@ -27,7 +27,7 @@
 
   function currentFile() {
     const parts = window.location.pathname.split("/");
-    return parts[parts.length - 1] || "home.html";
+    return parts[parts.length - 1] || ""; // empty on the root/landing page — correctly matches none of NAV_LINKS, rather than incorrectly highlighting Home
   }
 
   function injectNav() {
@@ -41,7 +41,7 @@
 
     mount.innerHTML = `
       <nav class="site-nav">
-        <a class="logo" href="index.html"><img src="assets/logo.png" alt="" width="26" height="26" style="border-radius:6px;vertical-align:middle;margin-right:8px;" /><b>JOEL</b> FLOWSTACK</a>
+        <a class="logo" href="/"><img src="assets/logo.png" alt="" width="26" height="26" style="border-radius:6px;vertical-align:middle;margin-right:8px;" /><b>JOEL</b> FLOWSTACK</a>
         <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
         <ul id="nav-links">${links}</ul>
       </nav>`;
@@ -65,8 +65,8 @@
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") setOpen(false);
     });
-    // A tapped link should close the menu, not leave it open under the
-    // page-transition veil while the new page loads.
+    // Closing the mobile menu on link tap avoids it staying open while
+    // the browser's native view transition plays over the new page.
     list.querySelectorAll("a").forEach(a => a.addEventListener("click", () => setOpen(false)));
   }
 
@@ -241,15 +241,15 @@
   // View Transitions API (see the @view-transition rule in global.css) —
   // no click interception or manual routing needed here anymore. This
   // list is kept only for prefetching order/targets below.
-  const PAGE_ORDER = ["home.html", "about.html", "services.html", "portfolio.html", "blog.html", "contact.html"];
+  const PAGE_ORDER = ["home", "about", "services", "portfolio", "blog", "contact"];
 
   // Prefetches every page in the background shortly after load, so by the
   // time someone actually clicks a nav link, the browser already has it
   // cached and the real navigation underneath the view transition is
   // close to instant.
   function prefetchPages() {
-    const here = window.location.pathname.split("/").pop() || "index.html";
-    const targets = ["index.html", ...PAGE_ORDER].filter(p => p !== here);
+    const here = window.location.pathname.split("/").pop() || "";
+    const targets = ["/", ...PAGE_ORDER].filter(p => p !== here);
     setTimeout(() => {
       targets.forEach((p) => {
         const link = document.createElement("link");
