@@ -158,6 +158,26 @@
   // (type out, pause, delete, next) indefinitely. No-op on any page
   // without these elements, and skips straight to final text for anyone
   // with reduced-motion set.
+  // Cross-document view transitions can abort silently — no error, no
+  // visual sign, just a normal instant navigation as if the CSS wasn't
+  // there at all. This logs the actual reason to the console when that
+  // happens, so "it's not working" becomes a concrete, checkable cause
+  // instead of a guess.
+  window.addEventListener("pageswap", (event) => {
+    if (event.viewTransition) {
+      event.viewTransition.finished.catch((err) => {
+        console.warn("[view-transition] outgoing transition aborted:", err.name, err.message);
+      });
+    }
+  });
+  window.addEventListener("pagereveal", (event) => {
+    if (event.viewTransition) {
+      event.viewTransition.finished.catch((err) => {
+        console.warn("[view-transition] incoming transition aborted:", err.name, err.message);
+      });
+    }
+  });
+
   function initHeroTypewriter() {
     const nameEl = document.querySelector(".hero-brand-name");
     const sloganEl = document.querySelector(".hero-brand-slogan");
