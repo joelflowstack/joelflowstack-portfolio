@@ -125,7 +125,9 @@ section.tight { padding: 80px 0; }
 .site-nav {
   position: fixed; z-index: 500;
   top: calc(18px + var(--safe-top));
-  left: 50%; transform: translateX(-50%);
+  left: 50%;
+  transform: translate3d(-50%, 0, 0); /* 3d form forces its own GPU layer — plain translateX(-50%) doesn't reliably, and fixed+backdrop-filter without one is a known cause of scroll flicker */
+  will-change: transform;
   width: min(880px, calc(100vw - 48px));
   height: 62px;
   display: flex; align-items: center; justify-content: space-between;
