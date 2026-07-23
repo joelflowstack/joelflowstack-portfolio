@@ -200,21 +200,31 @@ import * as THREE from "three";
 
     bootStart = performance.now();
 
-    // Back/forward navigation can restore this exact page from the
-    // browser's bfcache — including whatever JS state it was in the
-    // moment you clicked away, mid-scatter. Snap everything back together
-    // instantly rather than leaving it looking broken.
+    // Two halves of the same fix, both about WebGL context accumulation:
+    //
+    // 1) pagehide: as soon as this page might be going into the browser's
+    //    back-forward cache (bfcache), proactively release the WebGL
+    //    context. Every page here creates its own THREE.WebGLRenderer;
+    //    browsers cap how many live contexts a tab can hold (commonly
+    //    ~16), and bfcache keeping several previous pages alive in memory
+    //    burns through that budget fast. Releasing it here means a
+    //    bfcached copy of this page holds zero GPU resources while it's
+    //    not being looked at.
+    //
+    // 2) pageshow with persisted=true: this page is being restored FROM
+    //    bfcache, meaning its WebGL context is the one we just released
+    //    in step 1 — it's dead and can't be resurrected. Rather than try
+    //    to cleverly reinitialize Three.js in place (real risk of leaked
+    //    listeners or duplicate scenes), force a clean reload — the cube
+    //    boots fresh, exactly like a normal first visit, and any
+    //    scattered-mid-navigation state is moot because nothing carries
+    //    over from a reload.
+    window.addEventListener("pagehide", () => {
+      try { renderer.dispose(); renderer.forceContextLoss(); } catch (e) { /* already gone — fine */ }
+    });
     window.addEventListener("pageshow", (e) => {
       if (!e.persisted) return;
-      scatterActive = false;
-      scatterTargetHref = null;
-      pieces.forEach((p) => {
-        p.mesh.position.copy(p.home);
-        p.mesh.rotation.set(0, 0, 0);
-        p.mesh.scale.setScalar(1);
-      });
-      const wrap = document.getElementById("nav-tile-labels");
-      if (wrap) wrap.style.opacity = "1";
+      window.location.reload();
     });
   }
 
