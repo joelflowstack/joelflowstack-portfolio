@@ -33,6 +33,7 @@
   --font-mono: 'IBM Plex Mono', monospace;
 
   --ease-out: cubic-bezier(.16,1,.3,1);
+  --ease-cinematic: cubic-bezier(.76,0,.24,1); /* heavier, more deliberate — used for the letterbox bars + page-cube transition */
   --radius: 16px;
   --radius-sm: 10px;
   --nav-h: 76px;
@@ -248,6 +249,23 @@ section.tight { padding: 80px 0; }
 .page-hero .hero-copy .btn { pointer-events: auto; }
 .page-hero .hero-copy p.lede { margin-top: 10px; }
 
+/* Cinematic letterbox bars + edge vignette — same treatment as the
+   #scroll-hero pin-stage below, kept in sync so every hero on the site
+   reads as one consistent "widescreen" frame. */
+.page-hero::before, .page-hero::after {
+  content: ""; position: absolute; left: 0; right: 0;
+  height: clamp(10px, 2.6vh, 28px);
+  background: #000; z-index: 4; pointer-events: none;
+}
+.page-hero::before { top: 0; }
+.page-hero::after { bottom: 0; }
+.page-hero .hero-copy::before {
+  content: ""; position: absolute; inset: -20vh -20vw;
+  z-index: -1;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.55) 100%);
+  pointer-events: none;
+}
+
 /* ---------- Scroll-pinned portal hero (index.html) ---------- */
 #scroll-hero {
   position: relative;
@@ -271,8 +289,15 @@ section.tight { padding: 80px 0; }
   z-index: 1;
 }
 #scroll-hero .pin-stage.hero-passed { display: none; }
+#scroll-hero .pin-stage::before, #scroll-hero .pin-stage::after {
+  content: ""; position: fixed; left: 0; right: 0;
+  height: clamp(10px, 2.6vh, 28px);
+  background: #000; z-index: 4; pointer-events: none;
+}
+#scroll-hero .pin-stage::before { top: 0; }
+#scroll-hero .pin-stage::after { bottom: 0; }
 #scroll-hero .hero-brand {
-  position: absolute; left: 40px; top: 50%; transform: translateY(-50%);
+  position: absolute; left: 40px; bottom: 60px; top: auto; transform: none;
   z-index: 3; pointer-events: none;
   display: flex; flex-direction: column; gap: 16px;
 }
@@ -587,6 +612,23 @@ a.card:hover, .card.interactive:hover {
 body { opacity: 0; animation: pageIn .6s var(--ease-out) forwards; animation-delay: .05s; }
 @keyframes pageIn { to { opacity: 1; } }
 
+/* Cinematic film grain — a fixed, full-viewport noise layer sitting above
+   everything (letterbox bars included) but never blocking clicks. Subtle
+   on purpose: it should read as "shot on film", not as a broken screen. */
+body::after {
+  content: "";
+  position: fixed; inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: .035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
+}
+@media (prefers-reduced-motion: reduce) {
+  body::after { display: none; }
+}
+
 /* Cube-face page transitions — powered by the browser's native
    cross-document View Transitions API, not custom JS. Every page opts in
    via the @view-transition rule below; when you click a same-origin
@@ -604,21 +646,37 @@ body { opacity: 0; animation: pageIn .6s var(--ease-out) forwards; animation-del
 @view-transition {
   navigation: auto;
 }
+/* Deep perspective + a dark void behind the two faces sells the illusion
+   that you're looking at the outside corner of an actual rotating cube
+   (the classic Linux "Desktop Cube" workspace-switcher effect), not a
+   flat card flipping in place. The key differences from a simple flip:
+   1. Each face pivots on its OWN edge (right edge for the page leaving,
+      left edge for the page arriving) instead of its own center — that's
+      what makes the two faces read as meeting at a shared cube corner.
+   2. Both faces darken as they swing away from/into view, like a real
+      surface catching less light as it turns — sold with `filter:
+      brightness()` alongside the rotation. */
 ::view-transition {
-  perspective: 1400px;
+  perspective: 2200px;
+}
+::view-transition-group(root) {
+  background: #000;
 }
 ::view-transition-old(root) {
-  animation: cubeFaceOut .5s cubic-bezier(.7,0,.3,1) both;
+  transform-origin: right center;
+  animation: cubeEdgeOut .68s var(--ease-cinematic) both;
 }
 ::view-transition-new(root) {
-  animation: cubeFaceIn .5s cubic-bezier(.7,0,.3,1) both;
+  transform-origin: left center;
+  animation: cubeEdgeIn .68s var(--ease-cinematic) both;
 }
-@keyframes cubeFaceOut {
-  to { transform: rotateY(-75deg); opacity: 0; }
+@keyframes cubeEdgeOut {
+  0%   { transform: rotateY(0deg);   filter: brightness(1); }
+  100% { transform: rotateY(-90deg); filter: brightness(.3); }
 }
-@keyframes cubeFaceIn {
-  from { transform: rotateY(75deg); opacity: 0; }
-  to { transform: rotateY(0deg); opacity: 1; }
+@keyframes cubeEdgeIn {
+  0%   { transform: rotateY(90deg);  filter: brightness(.3); }
+  100% { transform: rotateY(0deg);   filter: brightness(1); }
 }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(root), ::view-transition-new(root) {
