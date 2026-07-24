@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="icon" href="assets/logo.png" type="image/png" />
-<link rel="stylesheet" href="css/global.css?v=20260718c" />
+<link rel="stylesheet" href="css/global.css?v=20260724a" />
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
@@ -40,6 +40,10 @@
     <div class="card">
       <h3>Try it</h3>
       <p>Click the logo button in the bottom-right corner of any page on this site.</p>
+      <div id="flow-terminal" aria-hidden="true">
+        <div class="ft-bar"><span></span><span></span><span></span></div>
+        <div class="ft-body" id="ft-body"></div>
+      </div>
     </div>
   </div>
   <div style="margin-top:40px;" data-reveal>
@@ -117,8 +121,9 @@
 <div id="site-footer"></div>
 
 <script type="module" src="js/cube.js?v=20260718c"></script>
-<script src="js/shared.js?v=20260718c"></script>
-<script src="js/flowbot.js?v=20260718c"></script>
+<script src="js/shared.js?v=20260724a"></script>
+<script src="js/flowbot.js?v=20260724a"></script>
+<script src="js/enhance.js?v=20260724a"></script>
 <script>
   // Renders content/projects.json live — this is the file Flow's
   // update_portfolio tool commits to, so this section reflects new
