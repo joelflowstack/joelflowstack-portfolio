@@ -42,6 +42,9 @@
     mount.innerHTML = `
       <nav class="site-nav">
         <a class="logo" href="/"><img src="assets/logo.png" alt="" width="26" height="26" style="border-radius:6px;vertical-align:middle;margin-right:8px;" /><b>JOEL</b> FLOWSTACK</a>
+        <button id="cmdk-trigger" type="button" aria-label="Quick navigation (Ctrl+K)">
+          <span>Search</span><kbd>&#8984;K</kbd>
+        </button>
         <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
         <ul id="nav-links">${links}</ul>
       </nav>`;
