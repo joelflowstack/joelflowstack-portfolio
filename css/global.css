@@ -316,9 +316,14 @@ section.tight { padding: 80px 0; }
   text-shadow: 0 2px 4px rgba(0,0,0,.95), 0 4px 20px rgba(0,0,0,.85);
 }
 @media (max-width: 760px) {
-  /* Vertically-centered-left would collide with the cube tiles on a
-     narrow screen — top-left instead, out of the way. */
-  #scroll-hero .hero-brand { left: 20px; top: 20px; transform: none; }
+  /* Matches the desktop bottom-left anchor now (this used to be a
+     separate top-left placement from when the text was vertically
+     centered — that's gone, so mobile follows the same direction,
+     just tucked above the bottom letterbox bar + safe area). */
+  #scroll-hero .hero-brand {
+    left: 20px; transform: none;
+    bottom: calc(28px + var(--safe-bottom) + 20px);
+  }
   /* The desktop clamp() floor (2rem+) is too large combined with "JOEL
      FLOWSTACK" at this width — would risk horizontal overflow. */
   .hero-brand-name { font-size: 1.5rem; }
