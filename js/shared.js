@@ -306,6 +306,25 @@
     update();
   }
 
+  // Lets specific same-origin links opt OUT of the page-transition animation
+  // (e.g. the index.html "backdoor" card grid) while every other normal
+  // nav link still gets it. A plain <a href> click is real, user-initiated
+  // navigation, so the browser fires the transition by default unless told
+  // otherwise for that specific navigation — a sessionStorage flag set at
+  // click time, read once in pageswap, does that per-navigation opt-out.
+  function initTransitionSkipping() {
+    document.addEventListener("click", (e) => {
+      const link = e.target.closest("[data-no-transition]");
+      if (link) sessionStorage.setItem("skip-vt", "1");
+    });
+    window.addEventListener("pageswap", (event) => {
+      if (event.viewTransition && sessionStorage.getItem("skip-vt")) {
+        sessionStorage.removeItem("skip-vt");
+        event.viewTransition.skipTransition();
+      }
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     injectNav();
     injectFooter();
@@ -318,6 +337,7 @@
     initNavScrollState();
     initHeroTypewriter();
     initHeroNavVisibility();
+    initTransitionSkipping();
     prefetchPages();
   });
 })();
