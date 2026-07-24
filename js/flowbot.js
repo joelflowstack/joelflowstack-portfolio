@@ -89,17 +89,50 @@
       <text x="24" y="31" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="19" fill="#f0f0ee">JF</text>
     </svg>`;
 
+  // A HEAD request costs nothing (no LLM call, no token spend) but still
+  // proves the backend is actually reachable — any response at all, even
+  // an error status, means the server answered. Only a network-level
+  // failure or timeout counts as "offline". Re-checked periodically so
+  // the badge doesn't just reflect whatever was true at page load.
+  function checkStatus(onResult) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    fetch(API_URL, { method: "HEAD", signal: controller.signal })
+      .then(() => onResult(true))
+      .catch(() => onResult(false))
+      .finally(() => clearTimeout(timeout));
+  }
+
+  function applyStatus(online) {
+    const dots = document.querySelectorAll(".fb-dot");
+    const text = document.getElementById("fb-status-text");
+    dots.forEach(d => d.className = "fb-dot " + (online ? "online" : "offline"));
+    if (text) {
+      text.className = "fb-status " + (online ? "online" : "offline");
+      text.innerHTML = `<span class="fb-dot ${online ? "online" : "offline"}"></span>${online ? "online" : "offline — try email instead"}`;
+    }
+  }
+
+  function pollStatus() {
+    checkStatus(applyStatus);
+    setInterval(() => checkStatus(applyStatus), 90000); // re-check every 90s while the tab is open
+  }
+
   function buildWidget() {
     const launcher = document.createElement("button");
     launcher.id = "flowbot-launcher";
     launcher.setAttribute("aria-label", "Chat with Flow");
-    launcher.innerHTML = LOGO_SVG;
+    launcher.innerHTML = LOGO_SVG + '<span id="fb-status-dot" class="fb-dot checking"></span>';
     document.body.appendChild(launcher);
 
     const panel = document.createElement("div");
     panel.id = "flowbot-panel";
     panel.innerHTML = `
-      <div class="fb-head">${LOGO_SVG.replace('viewBox="0 0 48 48"', 'viewBox="0 0 48 48" width="18" height="18"')} Flow V3 — capability demo</div>
+      <div class="fb-head">
+        ${LOGO_SVG.replace('viewBox="0 0 48 48"', 'viewBox="0 0 48 48" width="18" height="18"')}
+        Flow V3 — capability demo
+        <span id="fb-status-text" class="fb-status checking"><span class="fb-dot checking"></span>checking&hellip;</span>
+      </div>
       <div class="fb-log" id="fb-log">
         <div class="fb-msg bot">Hey — I'm Flow, a live demo of the kind of AI agent Joel builds. Ask me anything about the studio's services.</div>
       </div>
@@ -170,5 +203,8 @@
     input.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
   }
 
-  document.addEventListener("DOMContentLoaded", buildWidget);
+  document.addEventListener("DOMContentLoaded", () => {
+    buildWidget();
+    pollStatus();
+  });
 })();
