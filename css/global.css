@@ -544,6 +544,26 @@ a.card:hover, .card.interactive:hover {
 }
 #flowbot-launcher:hover { border-color: var(--blue-line); transform: translateY(-3px) scale(1.03); box-shadow: 0 16px 40px rgba(0,0,0,.55), 0 0 34px var(--blue-glow-soft); }
 #flowbot-launcher svg { width: 26px; height: 26px; display: block; }
+.fb-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  display: inline-block; flex-shrink: 0;
+  background: var(--grey-dim);
+  box-shadow: 0 0 0 2px rgba(6,7,9,.9);
+}
+.fb-dot.online { background: #34d399; box-shadow: 0 0 0 2px rgba(6,7,9,.9), 0 0 10px rgba(52,211,153,.8); animation: fbPulse 2.4s ease-in-out infinite; }
+.fb-dot.offline { background: #f87171; box-shadow: 0 0 0 2px rgba(6,7,9,.9); }
+@keyframes fbPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+#flowbot-launcher .fb-dot {
+  position: absolute; top: 4px; right: 4px;
+}
+.fb-status {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .65rem; letter-spacing: .04em;
+}
+.fb-status.online { color: #34d399; }
+.fb-status.offline { color: #f87171; }
+.fb-status.checking { color: var(--grey-dim); }
 #flowbot-panel {
   position: fixed; bottom: calc(96px + var(--safe-bottom)); right: calc(24px + var(--safe-right)); z-index: 600;
   width: min(360px, calc(100vw - 48px));
@@ -794,6 +814,130 @@ body::after {
 @media (max-width: 760px) {
   #backdoor { margin-top: -46vh; padding-top: 110px; }
 }
+
+/* ---------- Nav "Search" trigger for the command palette ---------- */
+#cmdk-trigger {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: .68rem; letter-spacing: .04em;
+  color: var(--grey-dim);
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  padding: 7px 10px 7px 12px;
+  cursor: pointer; flex-shrink: 0;
+  transition: color .25s var(--ease-out), border-color .25s var(--ease-out), background .25s var(--ease-out);
+}
+#cmdk-trigger:hover { color: var(--white); border-color: var(--blue-line); background: rgba(255,255,255,.06); }
+#cmdk-trigger kbd {
+  font-family: var(--font-mono); font-size: .62rem;
+  background: rgba(255,255,255,.08); border: 1px solid var(--line-soft);
+  border-radius: 4px; padding: 1px 5px;
+  color: var(--grey);
+}
+@media (max-width: 760px) {
+  /* The nav pill is already tight on mobile, and a physical keyboard
+     shortcut doesn't apply on touch anyway — Ctrl/Cmd+K still opens the
+     palette from a connected keyboard, this is just the visual pill. */
+  #cmdk-trigger { display: none; }
+}
+
+/* ---------- Command palette (Cmd/Ctrl+K) ---------- */
+#cmdk-overlay {
+  position: fixed; inset: 0; z-index: 900;
+  background: rgba(2,2,4,.7);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: none;
+  align-items: flex-start; justify-content: center;
+  padding-top: min(18vh, 160px);
+}
+#cmdk-overlay.open { display: flex; animation: cmdkFade .18s var(--ease-out); }
+@keyframes cmdkFade { from { opacity: 0; } to { opacity: 1; } }
+#cmdk-panel {
+  width: min(520px, calc(100vw - 48px));
+  max-height: 60vh;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: rgba(8,9,14,.92);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: 0 30px 90px rgba(0,0,0,.65);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  animation: cmdkUp .22s var(--ease-out);
+}
+@keyframes cmdkUp { from { opacity: 0; transform: translateY(-10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+#cmdk-input {
+  width: 100%; padding: 18px 20px;
+  background: none; border: none; border-bottom: 1px solid var(--line-soft);
+  color: var(--white); font-family: var(--font-body); font-size: 1rem;
+}
+#cmdk-input:focus { outline: none; }
+#cmdk-list { overflow-y: auto; padding: 8px; }
+.cmdk-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  color: var(--white-dim); cursor: pointer;
+  font-family: var(--font-body); font-size: .92rem;
+}
+.cmdk-item.active, .cmdk-item:hover { background: rgba(63,169,232,.14); color: var(--white); }
+.cmdk-hint {
+  font-family: var(--font-mono); font-size: .65rem; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--grey-dim);
+}
+.cmdk-empty { padding: 24px; text-align: center; color: var(--grey-dim); font-size: .85rem; }
+
+/* ---------- Custom cursor (desktop, fine-pointer devices only — see
+   enhance.js, which gates this whole feature behind a hover/pointer
+   media query before ever adding this class) ---------- */
+html.custom-cursor-on, html.custom-cursor-on * { cursor: none !important; }
+#cursor-dot, #cursor-ring {
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9998;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+#cursor-dot {
+  width: 6px; height: 6px;
+  background: var(--blue-glow);
+  box-shadow: 0 0 10px var(--blue-glow);
+}
+#cursor-ring {
+  width: 34px; height: 34px;
+  border: 1px solid rgba(255,255,255,.35);
+  transition: width .2s var(--ease-out), height .2s var(--ease-out), border-color .2s var(--ease-out), background .2s var(--ease-out);
+}
+#cursor-ring.hovering {
+  width: 54px; height: 54px;
+  border-color: var(--blue-glow);
+  background: var(--blue-glow-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  html.custom-cursor-on, html.custom-cursor-on * { cursor: auto !important; }
+  #cursor-dot, #cursor-ring { display: none; }
+}
+
+/* ---------- Animated case-study terminal (portfolio.html) ---------- */
+#flow-terminal {
+  margin-top: 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-soft);
+  background: #050608;
+  overflow: hidden;
+}
+.ft-bar { display: flex; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--line-soft); }
+.ft-bar span { width: 10px; height: 10px; border-radius: 50%; background: var(--steel); }
+.ft-bar span:nth-child(1) { background: #ff5f57; }
+.ft-bar span:nth-child(2) { background: #febc2e; }
+.ft-bar span:nth-child(3) { background: #28c840; }
+.ft-body {
+  padding: 14px 16px; min-height: 140px; max-height: 180px; overflow-y: auto;
+  font-family: var(--font-mono); font-size: .78rem; line-height: 1.7;
+}
+.ft-line { white-space: pre-wrap; word-break: break-word; }
+.ft-line.visitor .ft-prompt { color: var(--grey); }
+.ft-line.flow .ft-prompt { color: var(--blue-glow); }
+.ft-line span:not(.ft-prompt) { color: var(--white-dim); }
 
 /* Cards echo the cube's own tiles: square, not a landscape rectangle. */
 .tile-match-grid { align-items: stretch; }
