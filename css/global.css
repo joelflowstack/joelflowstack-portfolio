@@ -139,7 +139,16 @@ section.tight { padding: 80px 0; }
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid rgba(255,255,255,.09);
   box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.04) inset;
+  opacity: 1;
+  transition: opacity .3s var(--ease-out);
 }
+/* Fades on upward scroll so the pill doesn't sit on top of whatever the
+   person scrolled back up to look at — see initNavScrollState in
+   shared.js. Still fully interactive while faded (not pointer-events:
+   none), and hovering it always brings it back regardless of scroll
+   state, so it's never actually hard to reach. */
+.site-nav.nav-faded { opacity: .25; }
+.site-nav.nav-faded:hover { opacity: 1; }
 .site-nav .logo {
   font-family: var(--font-mono);
   font-size: .92rem; letter-spacing: .04em;
@@ -176,28 +185,11 @@ section.tight { padding: 80px 0; }
 
 @media (max-width: 760px) {
   .site-nav { width: calc(100vw - 32px); padding: 0 8px 0 20px; }
-  .site-nav ul {
-    position: fixed; inset: calc(var(--nav-h) + var(--safe-top)) 0 0 0;
-    flex-direction: column; padding: 24px 24px calc(24px + var(--safe-bottom));
-    gap: 4px;
-    background: rgba(0,0,0,.9);
-    backdrop-filter: var(--glass-blur);
-    transform: translateX(100%);
-    transition: transform .35s var(--ease-out);
-    overflow-y: auto;
-    border-radius: 0;
-  }
-  .site-nav ul.open { transform: translateX(0); }
-  /* Full-width rows with generous height, not just inline text — a real
-     44px+ tap target per link, not a 16px line of text floating in space. */
-  .site-nav ul li { border-bottom: 1px solid var(--line-soft); }
-  .site-nav ul li:last-child { border-bottom: none; }
-  .site-nav ul a {
-    display: block; padding: 18px 4px;
-    font-size: .95rem; letter-spacing: .04em;
-    border-radius: 0;
-  }
-  .site-nav ul a.active { background: none; box-shadow: none; color: var(--blue-glow); }
+  /* The inline desktop link row is meaningless on mobile — the real
+     mobile menu is #mobile-nav-overlay below, kept outside the
+     transformed .site-nav pill on purpose (see the comment in
+     shared.js's injectNav for why). */
+  .site-nav ul#nav-links { display: none; }
   .nav-toggle {
     display: flex; align-items: center; justify-content: center;
     width: 44px; height: 44px; margin: -10px;
@@ -205,6 +197,41 @@ section.tight { padding: 80px 0; }
     font-family: var(--font-mono); font-size: 1.3rem; cursor: pointer;
     z-index: 501; position: relative;
   }
+}
+
+#mobile-nav-overlay {
+  display: none;
+}
+@media (max-width: 760px) {
+  #mobile-nav-overlay {
+    display: block;
+    position: fixed;
+    inset: calc(var(--nav-h) + var(--safe-top)) 0 0 0;
+    z-index: 499;
+    background: rgba(0,0,0,.9);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    transform: translateX(100%);
+    transition: transform .35s var(--ease-out);
+    overflow-y: auto;
+    pointer-events: none;
+  }
+  #mobile-nav-overlay.open { transform: translateX(0); pointer-events: auto; }
+  #mobile-nav-overlay ul {
+    list-style: none; margin: 0;
+    padding: 24px 24px calc(24px + var(--safe-bottom));
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  /* Full-width rows with generous height, not just inline text — a real
+     44px+ tap target per link, not a 16px line of text floating in space. */
+  #mobile-nav-overlay li { border-bottom: 1px solid var(--line-soft); }
+  #mobile-nav-overlay li:last-child { border-bottom: none; }
+  #mobile-nav-overlay a {
+    display: block; padding: 18px 4px;
+    font-family: var(--font-mono); font-size: .95rem; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--grey);
+  }
+  #mobile-nav-overlay a.active { color: var(--blue-glow); }
 }
 
 /* ---------- Buttons ---------- */
@@ -525,6 +552,27 @@ a.card:hover, .card.interactive:hover {
 .site-footer .fine {
   font-family: var(--font-mono); font-size: .7rem; color: var(--grey-dim);
   margin-top: 40px;
+}
+
+.changelog-strip {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line-soft);
+}
+.changelog-label {
+  display: block;
+  font-family: var(--font-mono); font-size: .68rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--grey-dim);
+  margin-bottom: 12px;
+}
+.changelog-strip ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.changelog-strip li {
+  font-size: .82rem; color: var(--white-dim);
+  display: flex; gap: 10px; align-items: baseline;
+}
+.changelog-date {
+  font-family: var(--font-mono); font-size: .68rem; color: var(--grey-dim);
+  flex-shrink: 0;
 }
 
 /* ---------- Flowbot widget — logo launcher + glass panel ---------- */
