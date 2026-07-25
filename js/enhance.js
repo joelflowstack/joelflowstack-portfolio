@@ -115,47 +115,77 @@
   }
 
   // ---------- Magnetic buttons (desktop only) ----------
+  // Same batching fix as the cursor below: mousemove only updates plain
+  // numbers, the actual style write happens once per frame.
   function initMagnetic() {
-    document.querySelectorAll(".btn").forEach((btn) => {
+    const buttons = Array.from(document.querySelectorAll(".btn"));
+    if (!buttons.length) return;
+    const state = new Map(buttons.map(btn => [btn, { active: false, x: 0, y: 0 }]));
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("mouseenter", () => { state.get(btn).active = true; });
       btn.addEventListener("mousemove", (e) => {
         const r = btn.getBoundingClientRect();
-        const x = e.clientX - r.left - r.width / 2;
-        const y = e.clientY - r.top - r.height / 2;
-        btn.style.transform = `translate(${x * 0.18}px, ${y * 0.28}px)`;
+        const s = state.get(btn);
+        s.x = (e.clientX - r.left - r.width / 2) * 0.18;
+        s.y = (e.clientY - r.top - r.height / 2) * 0.28;
+      }, { passive: true });
+      btn.addEventListener("mouseleave", () => {
+        const s = state.get(btn);
+        s.active = false;
+        btn.style.transform = "";
       });
-      btn.addEventListener("mouseleave", () => { btn.style.transform = ""; });
-    });
-  }
-
-  // ---------- Custom cursor (desktop only) ----------
-  function initCursor() {
-    document.documentElement.classList.add("custom-cursor-on");
-    const dot = document.createElement("div");
-    dot.id = "cursor-dot";
-    const ring = document.createElement("div");
-    ring.id = "cursor-ring";
-    document.body.appendChild(ring);
-    document.body.appendChild(dot);
-
-    let mx = window.innerWidth / 2, my = window.innerHeight / 2;
-    let rx = mx, ry = my;
-
-    window.addEventListener("mousemove", (e) => {
-      mx = e.clientX; my = e.clientY;
-      dot.style.transform = `translate(${mx}px, ${my}px)`;
-    });
-
-    document.addEventListener("mouseover", (e) => {
-      if (e.target.closest("a, button, .card")) ring.classList.add("hovering");
-    });
-    document.addEventListener("mouseout", (e) => {
-      if (e.target.closest("a, button, .card")) ring.classList.remove("hovering");
     });
 
     (function loop() {
-      rx += (mx - rx) * 0.18;
-      ry += (my - ry) * 0.18;
-      ring.style.transform = `translate(${rx}px, ${ry}px)`;
+      buttons.forEach((btn) => {
+        const s = state.get(btn);
+        if (s.active) btn.style.transform = `translate(${s.x}px, ${s.y}px)`;
+      });
+      requestAnimationFrame(loop);
+    })();
+  }
+
+  // ---------- Custom cursor (desktop only) ----------
+  // A genuine small CSS 3D cube (6 real faces via preserve-3d, not a
+  // flat icon) — matches how the site treats the nebula/particles as
+  // real 3D objects rather than flat overlays. Position is read from
+  // mousemove into two plain variables (near-zero cost) and only
+  // written to the DOM once per animation frame inside the rAF loop —
+  // that batching is the actual fix for the lag: the old version wrote
+  // to style.transform on every raw mouse event, which can fire far
+  // more often than the screen can even redraw.
+  function initCursor() {
+    document.documentElement.classList.add("custom-cursor-on");
+    const cube = document.createElement("div");
+    cube.id = "cursor-cube";
+    cube.innerHTML = `
+      <div class="cc-spin">
+        <span class="cc-face cc-front"></span>
+        <span class="cc-face cc-back"></span>
+        <span class="cc-face cc-right"></span>
+        <span class="cc-face cc-left"></span>
+        <span class="cc-face cc-top"></span>
+        <span class="cc-face cc-bottom"></span>
+      </div>`;
+    document.body.appendChild(cube);
+
+    let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+    let cx = mx, cy = my;
+
+    window.addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
+
+    document.addEventListener("mouseover", (e) => {
+      if (e.target.closest("a, button, .card")) cube.classList.add("hovering");
+    });
+    document.addEventListener("mouseout", (e) => {
+      if (e.target.closest("a, button, .card")) cube.classList.remove("hovering");
+    });
+
+    (function loop() {
+      cx += (mx - cx) * 0.35;
+      cy += (my - cy) * 0.35;
+      cube.style.transform = `translate3d(${cx}px, ${cy}px, 0)`;
       requestAnimationFrame(loop);
     })();
   }
