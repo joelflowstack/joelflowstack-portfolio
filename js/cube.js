@@ -115,6 +115,7 @@ import * as THREE from "three";
   let scatterStart = 0;
   let scatterTargetHref = null;
   let scrollP = 0; // 0..1, updated on scroll (portal mode only)
+  let rafPaused = false; // must be declared before the first animate() call below, or referencing it inside animate() throws (temporal dead zone) on that first call
 
   try {
     init();
@@ -838,7 +839,6 @@ import * as THREE from "three";
   // battery win, and safe to do here specifically because every frame
   // is recomputed from clock.getElapsedTime()/scrollP rather than any
   // saved "last frame" state, so there's nothing to restore on resume.
-  let rafPaused = false;
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       rafPaused = true;
