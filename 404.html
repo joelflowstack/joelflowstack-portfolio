@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>@view-transition { navigation: auto; }</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>404 — Joel Flowstack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/logo.png" type="image/png" />
+<link rel="stylesheet" href="css/global.css" />
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<header class="page-hero" style="min-height: 88vh;">
+  <canvas id="cube-canvas"></canvas>
+  <div class="container hero-copy">
+    <span class="eyebrow">404</span>
+    <h1 class="glitch-text" data-text="This tile doesn't exist.">This tile doesn't exist.</h1>
+    <p class="lede">Whatever you were looking for isn't one of this cube's faces — moved, renamed, or never real to begin with. Six real destinations exist; this page isn't one of them.</p>
+    <div style="margin-top:28px; display:flex; gap:14px; flex-wrap:wrap;">
+      <a class="btn btn-solid" href="/">Back to the cube</a>
+      <a class="btn" href="contact">Get in touch instead</a>
+    </div>
+    <p style="margin-top:22px; font-family:var(--font-mono); font-size:.72rem; color:var(--grey-dim); letter-spacing:.04em;">
+      Or press <kbd style="font-family:var(--font-mono); background:rgba(255,255,255,.08); border:1px solid var(--line-soft); border-radius:4px; padding:1px 6px;">&#8984;K</kbd> to jump straight to a page.
+    </p>
+  </div>
+</header>
+
+<div id="site-footer"></div>
+
+<script type="module" src="js/cube.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/flowbot.js"></script>
+<script src="js/enhance.js"></script>
+</body>
+</html>
