@@ -137,11 +137,16 @@
       });
     });
 
+    let paused = document.hidden;
+    document.addEventListener("visibilitychange", () => { paused = document.hidden; });
+
     (function loop() {
-      buttons.forEach((btn) => {
-        const s = state.get(btn);
-        if (s.active) btn.style.transform = `translate(${s.x}px, ${s.y}px)`;
-      });
+      if (!paused) {
+        buttons.forEach((btn) => {
+          const s = state.get(btn);
+          if (s.active) btn.style.transform = `translate(${s.x}px, ${s.y}px)`;
+        });
+      }
       requestAnimationFrame(loop);
     })();
   }
@@ -182,10 +187,15 @@
       if (e.target.closest("a, button, .card")) cube.classList.remove("hovering");
     });
 
+    let paused = document.hidden;
+    document.addEventListener("visibilitychange", () => { paused = document.hidden; });
+
     (function loop() {
-      cx += (mx - cx) * 0.35;
-      cy += (my - cy) * 0.35;
-      cube.style.transform = `translate3d(${cx}px, ${cy}px, 0)`;
+      if (!paused) {
+        cx += (mx - cx) * 0.35;
+        cy += (my - cy) * 0.35;
+        cube.style.transform = `translate3d(${cx}px, ${cy}px, 0)`;
+      }
       requestAnimationFrame(loop);
     })();
   }
