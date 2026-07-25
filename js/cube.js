@@ -834,7 +834,22 @@ import * as THREE from "three";
   // ---------------------------------------------------------------
   // ANIMATE
   // ---------------------------------------------------------------
+  // Stops the WebGL loop entirely while the tab is hidden — a real GPU/
+  // battery win, and safe to do here specifically because every frame
+  // is recomputed from clock.getElapsedTime()/scrollP rather than any
+  // saved "last frame" state, so there's nothing to restore on resume.
+  let rafPaused = false;
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      rafPaused = true;
+    } else if (rafPaused) {
+      rafPaused = false;
+      requestAnimationFrame(animate);
+    }
+  });
+
   function animate() {
+    if (rafPaused) return;
     requestAnimationFrame(animate);
     const elapsed = clock.getElapsedTime();
 
