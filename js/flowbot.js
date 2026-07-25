@@ -97,13 +97,14 @@
   function checkStatus(onResult) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
+    const startedAt = performance.now();
     fetch(API_URL, { method: "HEAD", signal: controller.signal })
-      .then(() => onResult(true))
-      .catch(() => onResult(false))
+      .then(() => onResult(true, Math.round(performance.now() - startedAt)))
+      .catch(() => onResult(false, null))
       .finally(() => clearTimeout(timeout));
   }
 
-  function applyStatus(online) {
+  function applyStatus(online, ms) {
     const dots = document.querySelectorAll(".fb-dot");
     const text = document.getElementById("fb-status-text");
     dots.forEach(d => d.className = "fb-dot " + (online ? "online" : "offline"));
@@ -111,6 +112,11 @@
       text.className = "fb-status " + (online ? "online" : "offline");
       text.innerHTML = `<span class="fb-dot ${online ? "online" : "offline"}"></span>${online ? "online" : "offline — try email instead"}`;
     }
+    // Only present on index.html's stats section — same real ping, just
+    // also surfaced as a number rather than a dot, so it's not a second
+    // separate request/cost.
+    const liveStat = document.getElementById("live-ping");
+    if (liveStat) liveStat.textContent = online ? ms + "ms" : "n/a";
   }
 
   function pollStatus() {
