@@ -96,6 +96,7 @@ import * as THREE from "three";
   let renderer, scene, camera, cubeGroup, shadowCatcher;
   let edgeLight = null;
   let hoveredNavIndex = -1;
+  let keyboardNavIndex = -1; // -1 = no keyboard selection; mouse movement clears it back
   let pointerPixel = { x: -9999, y: -9999 };
   let clickPulsePiece = null;
   let clickPulseStart = 0;
@@ -193,6 +194,7 @@ import * as THREE from "three";
       canvas.addEventListener("pointerdown", onPortalClick);
       canvas.addEventListener("pointermove", onPortalPointerMove);
       canvas.style.cursor = "default";
+      window.addEventListener("keydown", onPortalKeydown);
     }
 
     window.addEventListener("mousemove", onMouseMove, { passive: true });
@@ -645,16 +647,24 @@ import * as THREE from "three";
     const interactive = visibility > 0.9 && !scatterActive;
 
     if (interactive) {
-      pointer.x = (pointerPixel.x / window.innerWidth) * 2 - 1;
-      pointer.y = -(pointerPixel.y / window.innerHeight) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
-      const navMeshes = pieces.filter(p => p.isNavTile).map(p => p.mesh);
-      const hits = raycaster.intersectObjects(navMeshes, false);
-      const hitPiece = hits.length ? pieces.find(p => p.mesh === hits[0].object) : null;
-      hoveredNavIndex = hitPiece ? hitPiece.navIndex : -1;
+      if (keyboardNavIndex >= 0) {
+        // Arrow-key selection reuses the exact same glow system as mouse
+        // hover — same visual language either way, just a different
+        // input driving hoveredNavIndex.
+        hoveredNavIndex = keyboardNavIndex;
+      } else {
+        pointer.x = (pointerPixel.x / window.innerWidth) * 2 - 1;
+        pointer.y = -(pointerPixel.y / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(pointer, camera);
+        const navMeshes = pieces.filter(p => p.isNavTile).map(p => p.mesh);
+        const hits = raycaster.intersectObjects(navMeshes, false);
+        const hitPiece = hits.length ? pieces.find(p => p.mesh === hits[0].object) : null;
+        hoveredNavIndex = hitPiece ? hitPiece.navIndex : -1;
+      }
       canvas.style.cursor = hoveredNavIndex >= 0 ? "pointer" : "default";
     } else {
       hoveredNavIndex = -1;
+      keyboardNavIndex = -1;
       canvas.style.cursor = "default";
     }
 
@@ -734,6 +744,34 @@ import * as THREE from "three";
   function onPortalPointerMove(e) {
     pointerPixel.x = e.clientX;
     pointerPixel.y = e.clientY;
+    keyboardNavIndex = -1;
+  }
+
+  // Arrow keys cycle the same 8 nav tiles the mouse can hover; Enter/Space
+  // activates the current selection exactly like a click would (same
+  // confirmTileClick pulse-then-scatter path, so there's only one
+  // "navigate" code path total, not a separate keyboard one). Gated by
+  // the same scrollP/scatterActive checks onPortalClick already uses, so
+  // arrow keys don't do anything before the cube is actually locked.
+  function onPortalKeydown(e) {
+    if (scatterActive || bootStart === null || !bootDone) return;
+    if (scrollP < LOCK_POINT) return;
+    const count = NAV_ITEMS.length;
+
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      keyboardNavIndex = keyboardNavIndex < 0 ? 0 : (keyboardNavIndex + 1) % count;
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      keyboardNavIndex = keyboardNavIndex < 0 ? count - 1 : (keyboardNavIndex - 1 + count) % count;
+    } else if (e.key === "Enter" || e.key === " ") {
+      if (keyboardNavIndex < 0) return;
+      e.preventDefault();
+      const piece = pieces.find(p => p.navIndex === keyboardNavIndex);
+      if (piece) confirmTileClick(piece);
+    } else if (e.key === "Escape") {
+      keyboardNavIndex = -1;
+    }
   }
 
   function onPortalClick(e) {
