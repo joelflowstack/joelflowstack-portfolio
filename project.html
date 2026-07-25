@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>@view-transition { navigation: auto; }</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Project — Joel Flowstack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/logo.png" type="image/png" />
+<link rel="stylesheet" href="css/global.css" />
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<header class="page-hero">
+  <canvas id="cube-canvas"></canvas>
+  <div class="container hero-copy">
+    <span class="eyebrow">Case study</span>
+    <h1 id="proj-title">Loading&hellip;</h1>
+    <p class="lede" id="proj-tags"></p>
+  </div>
+</header>
+
+<section class="container tight">
+  <div id="proj-body" data-reveal>
+    <p style="color:var(--grey-dim);">Loading project details&hellip;</p>
+  </div>
+  <div style="margin-top:40px;">
+    <a class="btn" href="portfolio">&larr; Back to portfolio</a>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script type="module" src="js/cube.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/flowbot.js"></script>
+<script src="js/enhance.js"></script>
+<script>
+  // Single template for every project — content/projects.json feeds it
+  // via the ?slug= query param, the same slugify() logic portfolio.html
+  // uses to build each card's link, so nothing here has to change when
+  // Flow's update_portfolio tool commits a new entry.
+  function slugify(s) {
+    return (s || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  }
+  (async function loadProject() {
+    const slug = new URLSearchParams(window.location.search).get("slug") || "";
+    const titleEl = document.getElementById("proj-title");
+    const tagsEl = document.getElementById("proj-tags");
+    const bodyEl = document.getElementById("proj-body");
+
+    try {
+      const res = await fetch("content/projects.json", { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      const projects = data.projects || [];
+      const project = projects.find(p => slugify(p.title) === slug);
+
+      if (!project) {
+        titleEl.textContent = "Project not found";
+        tagsEl.textContent = "";
+        bodyEl.innerHTML = '<p style="color:var(--grey-dim);">That project isn\'t in the list — it may have moved. <a href="portfolio">See everything currently listed</a>.</p>';
+        return;
+      }
+
+      document.title = project.title + " — Joel Flowstack";
+      titleEl.textContent = project.title;
+      tagsEl.textContent = (project.tags || []).join(" · ");
+      bodyEl.innerHTML = `<p>${project.description}</p>`;
+    } catch (err) {
+      console.warn("[project] couldn't load content/projects.json:", err);
+      titleEl.textContent = "Couldn't load this project";
+      bodyEl.innerHTML = '<p style="color:var(--grey-dim);">Something went wrong fetching project data — <a href="portfolio">back to portfolio</a>.</p>';
+    }
+  })();
+</script>
+</body>
+</html>
