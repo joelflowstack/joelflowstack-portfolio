@@ -559,14 +559,6 @@ import * as THREE from "three";
     defs.appendChild(filter);
     svg.appendChild(defs);
 
-    // Faint full track so the frame reads as a deliberate element even
-    // where the bright sweep isn't currently passing.
-    const track = document.createElementNS(svgNS, "path");
-    track.setAttribute("fill", "none");
-    track.setAttribute("stroke", "rgba(63,169,232,.14)");
-    track.setAttribute("stroke-width", "2");
-    svg.appendChild(track);
-
     // The bold traveling light itself — a thick, blurred, bright dash.
     const sweep = document.createElementNS(svgNS, "path");
     sweep.setAttribute("fill", "none");
@@ -585,7 +577,7 @@ import * as THREE from "three";
     svg.appendChild(dot);
 
     stage.appendChild(svg);
-    edgeLight = { svg, track, sweep, dot, perimeter: 0 };
+    edgeLight = { svg, sweep, dot, perimeter: 0 };
     layoutEdgeLights();
     window.addEventListener("resize", layoutEdgeLights);
   }
@@ -603,7 +595,6 @@ import * as THREE from "three";
     // makes the sweep "accurately start at the top" rather than
     // approximating it through an angular offset.
     const d = `M ${w / 2},${inset} L ${w - inset},${inset} L ${w - inset},${h - inset} L ${inset},${h - inset} L ${inset},${inset} Z`;
-    edgeLight.track.setAttribute("d", d);
     edgeLight.sweep.setAttribute("d", d);
     edgeLight.perimeter = edgeLight.sweep.getTotalLength();
     const dash = edgeLight.perimeter * 0.14;
@@ -965,8 +956,11 @@ import * as THREE from "three";
     );
 
     // camera zoom: starting distance -> lockedCameraZ (the exact distance
-    // that fully frames all 9 front tiles for the current viewport/FOV)
-    const zoomAmt = smootherstep(LOCK_START, LOCK_POINT, P);
+    // that fully frames all 9 front tiles for the current viewport/FOV).
+    // Starts from P=0 (not LOCK_START) so the approach begins on the very
+    // first scroll pixel, running alongside the tumble rather than only
+    // kicking in once rotation is already easing toward lock.
+    const zoomAmt = smootherstep(0, LOCK_POINT, P);
     const startZ = 17;
     camera.position.z = startZ - zoomAmt * (startZ - lockedCameraZ);
     camera.position.y = 0.2 - zoomAmt * 0.2;
