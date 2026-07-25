@@ -35,10 +35,21 @@
     if (!mount) return;
     const here = currentFile();
 
-    const links = NAV_LINKS.map(l =>
+    const linkItems = () => NAV_LINKS.map(l =>
       `<li><a href="${l.href}" ${l.href === here ? 'class="active" aria-current="page"' : ""}>${l.label}</a></li>`
     ).join("");
 
+    // The mobile dropdown is deliberately built as a SEPARATE element,
+    // a sibling of .site-nav rather than a child of it. .site-nav has
+    // its own `transform` (for the GPU-layer scroll-flicker fix), and a
+    // transform on an ancestor makes it the containing block for any
+    // `position: fixed` descendant — exactly the same class of bug as
+    // the documented perspective/position:fixed issue elsewhere in this
+    // file. That silently made the old dropdown position itself relative
+    // to the ~62px nav pill instead of the viewport, which is why it
+    // wasn't visibly showing the page list. Keeping it outside .site-nav
+    // (but still inside the plain, untransformed #site-nav mount) means
+    // its position:fixed genuinely means "relative to the viewport".
     mount.innerHTML = `
       <nav class="site-nav">
         <a class="logo" href="/"><img src="assets/logo.png" alt="" width="26" height="26" style="border-radius:6px;vertical-align:middle;margin-right:8px;" /><b>JOEL</b> FLOWSTACK</a>
@@ -46,23 +57,24 @@
           <span>Search</span><kbd>&#8984;K</kbd>
         </button>
         <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
-        <ul id="nav-links">${links}</ul>
-      </nav>`;
+        <ul id="nav-links">${linkItems()}</ul>
+      </nav>
+      <div id="mobile-nav-overlay"><ul>${linkItems()}</ul></div>`;
 
     const toggle = mount.querySelector(".nav-toggle");
-    const list = mount.querySelector("#nav-links");
+    const overlay = mount.querySelector("#mobile-nav-overlay");
     const setOpen = (open) => {
-      list.classList.toggle("open", open);
+      overlay.classList.toggle("open", open);
       toggle.setAttribute("aria-expanded", String(open));
       toggle.innerHTML = open ? "&#10005;" : "&#9776;"; // ✕ vs ☰ — a real close affordance, not the same icon doing double duty
     };
     toggle.addEventListener("click", (e) => {
       e.stopPropagation();
-      setOpen(!list.classList.contains("open"));
+      setOpen(!overlay.classList.contains("open"));
     });
     document.addEventListener("click", (e) => {
-      if (!list.classList.contains("open")) return;
-      if (list.contains(e.target) || toggle.contains(e.target)) return;
+      if (!overlay.classList.contains("open")) return;
+      if (overlay.contains(e.target) || toggle.contains(e.target)) return;
       setOpen(false);
     });
     document.addEventListener("keydown", (e) => {
@@ -70,7 +82,7 @@
     });
     // Closing the mobile menu on link tap avoids it staying open while
     // the browser's native view transition plays over the new page.
-    list.querySelectorAll("a").forEach(a => a.addEventListener("click", () => setOpen(false)));
+    overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => setOpen(false)));
   }
 
   function injectFooter() {
@@ -88,9 +100,34 @@
             </div>
             <div class="socials">${socials}</div>
           </div>
+          <div id="changelog-strip" class="changelog-strip" aria-label="Recently shipped on this site"></div>
           <div class="fine">&copy; ${new Date().getFullYear()} Joel Flowstack. Built with Three.js, no build step.</div>
         </div>
       </footer>`;
+
+    loadChangelog();
+  }
+
+  // Most portfolio sites are static once launched — this one visibly
+  // isn't. content/changelog.json is a plain, hand-editable list (same
+  // "just a JSON file, no build step" philosophy as content/projects.json)
+  // — add a line, it shows up site-wide via this one shared footer.
+  async function loadChangelog() {
+    const mount = document.getElementById("changelog-strip");
+    if (!mount) return;
+    try {
+      const res = await fetch("content/changelog.json", { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      const entries = (data.entries || []).slice(0, 3);
+      if (!entries.length) { mount.remove(); return; }
+      mount.innerHTML = `
+        <span class="changelog-label">Recently shipped on this site</span>
+        <ul>${entries.map(e => `<li><span class="changelog-date">${e.date}</span>${e.text}</li>`).join("")}</ul>`;
+    } catch (err) {
+      console.warn("[changelog] couldn't load content/changelog.json:", err);
+      mount.remove();
+    }
   }
 
   function animateCount(el) {
@@ -190,10 +227,10 @@
     const taglines = [
       "Building workflows that scale.",
       "Interfaces that think back.",
-      "Where code meets creativity.",
-      "Automation with an edge.",
+      "One person. Every layer, top to bottom.",
+      "The bots ship. The workflows don't break.",
       "3D web. Real intelligence.",
-      "Turning ideas into interfaces.",
+      "Built once. No handoffs, no drift.",
     ];
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -245,9 +282,30 @@
   }
 
   function initNavScrollState() {
+    let lastY = window.scrollY;
+    let idleTimer = null;
     const update = () => {
       const nav = document.querySelector(".site-nav");
-      if (nav) nav.classList.toggle("scrolled", window.scrollY > 40);
+      if (!nav) return;
+      const y = window.scrollY;
+      nav.classList.toggle("scrolled", y > 40);
+
+      if (y <= 40) {
+        nav.classList.remove("nav-faded"); // always fully visible near the top
+      } else if (y < lastY) {
+        // Scrolling up — the person is looking back at content the pill
+        // would otherwise sit on top of, so fade it out of the way.
+        nav.classList.add("nav-faded");
+      } else if (y > lastY) {
+        nav.classList.remove("nav-faded");
+      }
+      lastY = y;
+
+      // Never leave it stuck faded — settle back to full opacity once
+      // scrolling actually stops, so it's always reachable just by
+      // pausing (the CSS hover rule covers reaching it mid-fade too).
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => nav.classList.remove("nav-faded"), 900);
     };
     window.addEventListener("scroll", update, { passive: true });
     update();
