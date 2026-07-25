@@ -418,8 +418,8 @@ a.card:hover, .card.interactive:hover {
 }
 
 /* ---------- Stats strip ---------- */
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
-@media (max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; }
+@media (max-width: 800px) { .stats { grid-template-columns: repeat(3, 1fr); } }
 .stat {
   border: 1px solid var(--line-soft); border-radius: var(--radius);
   background: var(--glass-bg); backdrop-filter: var(--glass-blur);
@@ -958,6 +958,36 @@ html.custom-cursor-on, html.custom-cursor-on * { cursor: none !important; }
 .ft-line.visitor .ft-prompt { color: var(--grey); }
 .ft-line.flow .ft-prompt { color: var(--blue-glow); }
 .ft-line span:not(.ft-prompt) { color: var(--white-dim); }
+
+/* ---------- 404 glitch heading ---------- */
+.glitch-text {
+  position: relative;
+}
+.glitch-text::before, .glitch-text::after {
+  content: attr(data-text);
+  position: absolute; left: 0; top: 0;
+  width: 100%; overflow: hidden;
+  color: var(--white);
+}
+.glitch-text::before {
+  color: var(--blue-glow);
+  clip-path: inset(0 0 60% 0);
+  animation: glitchShift 3.2s infinite steps(2, end);
+}
+.glitch-text::after {
+  color: #f87171;
+  clip-path: inset(60% 0 0 0);
+  animation: glitchShift 3.6s infinite steps(2, end) reverse;
+}
+@keyframes glitchShift {
+  0%, 88%, 100% { transform: translate(0, 0); opacity: 0; }
+  90% { transform: translate(-2px, 1px); opacity: .8; }
+  93% { transform: translate(2px, -1px); opacity: .8; }
+  96% { transform: translate(-1px, 0); opacity: .6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glitch-text::before, .glitch-text::after { display: none; }
+}
 
 /* Cards echo the cube's own tiles: square, not a landscape rectangle. */
 .tile-match-grid { align-items: stretch; }
