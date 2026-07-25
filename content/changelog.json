@@ -1,0 +1,9 @@
+{
+  "entries": [
+    { "date": "2026-07-25", "text": "Cube supports full keyboard navigation — arrow keys + Enter." },
+    { "date": "2026-07-25", "text": "Added Cmd/Ctrl+K quick navigation across the whole site." },
+    { "date": "2026-07-24", "text": "Rebuilt the page transition as a real edge-pivoting cube rotation." },
+    { "date": "2026-07-24", "text": "Regenerated the nebula backdrop at full HD resolution." },
+    { "date": "2026-07-23", "text": "Flow V3 chat now shows a live online/offline status." }
+  ]
+}
