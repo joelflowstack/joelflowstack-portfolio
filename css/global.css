@@ -462,6 +462,32 @@ a.card:hover, .card.interactive:hover {
   text-transform: uppercase; color: var(--grey-dim); margin-top: 6px;
 }
 
+/* ---------- Flow V3 live status panel (real ping history, not mock data) ---------- */
+.flow-status-panel {
+  margin-top: 18px;
+  border: 1px solid var(--line-soft); border-radius: var(--radius);
+  background: var(--glass-bg); backdrop-filter: var(--glass-blur);
+  padding: 22px 26px;
+}
+.flow-status-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.flow-status-title {
+  font-family: var(--font-mono); font-size: .74rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--grey);
+}
+.flow-status-uptime {
+  font-family: var(--font-mono); font-size: .82rem; color: var(--blue-glow);
+}
+.flow-status-spark { display: block; width: 100%; height: 36px; }
+.flow-status-spark .ping-ok { fill: var(--blue-glow); opacity: .85; }
+.flow-status-spark .ping-fail { fill: #e05a5a; }
+.flow-status-caption {
+  display: block; margin-top: 10px;
+  font-family: var(--font-mono); font-size: .68rem; color: var(--grey-dim);
+}
+
 /* ---------- Timeline (About / Process) ---------- */
 .timeline { position: relative; padding-left: 32px; }
 .timeline::before {
