@@ -645,8 +645,14 @@ body::after {
   position: fixed; inset: 0;
   z-index: 9999;
   pointer-events: none;
-  opacity: .035;
-  mix-blend-mode: overlay;
+  opacity: .05;
+  /* mix-blend-mode looked slightly richer but forces the browser to
+     recompute blending against the WebGL canvas on every single frame
+     it redraws (which is constantly, on the cube pages) — plain opacity
+     layering costs almost nothing to composite by comparison, and at
+     this low an opacity the visual difference is negligible. */
+  will-change: transform;
+  transform: translateZ(0);
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
   background-size: 180px 180px;
 }
@@ -887,34 +893,48 @@ body::after {
 }
 .cmdk-empty { padding: 24px; text-align: center; color: var(--grey-dim); font-size: .85rem; }
 
-/* ---------- Custom cursor (desktop, fine-pointer devices only — see
-   enhance.js, which gates this whole feature behind a hover/pointer
-   media query before ever adding this class) ---------- */
+/* ---------- Custom cursor: a real small 3D cube, not a flat icon —
+   built with actual preserve-3d faces, same philosophy as the nebula/
+   particles being genuine 3D objects rather than 2D overlays. Position
+   (translate3d) is set every animation frame by enhance.js; the tumble
+   is a separate, always-running CSS animation on the inner element so
+   the two transforms never fight each other. ---------- */
 html.custom-cursor-on, html.custom-cursor-on * { cursor: none !important; }
-#cursor-dot, #cursor-ring {
+#cursor-cube {
   position: fixed; top: 0; left: 0;
+  width: 20px; height: 20px;
   pointer-events: none; z-index: 9998;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
+  perspective: 160px;
+  margin: -10px 0 0 -10px; /* centers the cube on the tracked point */
 }
-#cursor-dot {
-  width: 6px; height: 6px;
-  background: var(--blue-glow);
-  box-shadow: 0 0 10px var(--blue-glow);
+.cc-spin {
+  position: relative; width: 100%; height: 100%;
+  transform-style: preserve-3d;
+  animation: ccSpin 5s linear infinite;
+  transition: filter .2s var(--ease-out);
 }
-#cursor-ring {
-  width: 34px; height: 34px;
-  border: 1px solid rgba(255,255,255,.35);
-  transition: width .2s var(--ease-out), height .2s var(--ease-out), border-color .2s var(--ease-out), background .2s var(--ease-out);
+@keyframes ccSpin {
+  from { transform: rotateX(-22deg) rotateY(0deg); }
+  to   { transform: rotateX(-22deg) rotateY(360deg); }
 }
-#cursor-ring.hovering {
-  width: 54px; height: 54px;
-  border-color: var(--blue-glow);
-  background: var(--blue-glow-soft);
+.cc-face {
+  position: absolute; inset: 0;
+  border: 1px solid rgba(63,169,232,.55);
+  background: rgba(10,10,12,.82);
 }
+.cc-front  { transform: translateZ(10px); }
+.cc-back   { transform: rotateY(180deg) translateZ(10px); }
+.cc-right  { transform: rotateY(90deg) translateZ(10px); }
+.cc-left   { transform: rotateY(-90deg) translateZ(10px); }
+.cc-top    { transform: rotateX(90deg) translateZ(10px); background: rgba(28,29,32,.82); }
+.cc-bottom { transform: rotateX(-90deg) translateZ(10px); background: rgba(4,4,5,.82); }
+#cursor-cube.hovering .cc-spin {
+  filter: drop-shadow(0 0 8px var(--blue-glow));
+}
+#cursor-cube.hovering .cc-face { border-color: var(--blue-glow); }
 @media (prefers-reduced-motion: reduce) {
   html.custom-cursor-on, html.custom-cursor-on * { cursor: auto !important; }
-  #cursor-dot, #cursor-ring { display: none; }
+  #cursor-cube { display: none; }
 }
 
 /* ---------- Animated case-study terminal (portfolio.html) ---------- */
