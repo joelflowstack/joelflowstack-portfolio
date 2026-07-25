@@ -104,6 +104,57 @@
       .finally(() => clearTimeout(timeout));
   }
 
+  const PING_HISTORY_KEY = "flowv3_ping_history";
+  const PING_HISTORY_MAX = 40;
+
+  // Every 90s check gets appended to a small rolling history in
+  // localStorage — same pings already being made for the badge, just
+  // kept instead of thrown away. Builds a genuine record over repeat
+  // visits rather than a mock chart with fake numbers in it.
+  function recordPing(online, ms) {
+    let history = [];
+    try { history = JSON.parse(localStorage.getItem(PING_HISTORY_KEY)) || []; } catch (e) { history = []; }
+    history.push({ t: Date.now(), ok: online, ms: ms });
+    if (history.length > PING_HISTORY_MAX) history = history.slice(history.length - PING_HISTORY_MAX);
+    try { localStorage.setItem(PING_HISTORY_KEY, JSON.stringify(history)); } catch (e) { /* private browsing etc — fine, just won't persist */ }
+  }
+
+  // Renders into #flow-status-panel if it's present on the page (only
+  // index.html has it). A plain inline SVG bar chart — bar height is
+  // real response time scaled against the worst response in the
+  // window, full-height red bar for a check that got no response at
+  // all. Native <title> per bar gives a hover tooltip for free.
+  function renderStatusPanel() {
+    const mount = document.getElementById("flow-status-panel");
+    if (!mount) return;
+    let history = [];
+    try { history = JSON.parse(localStorage.getItem(PING_HISTORY_KEY)) || []; } catch (e) { history = []; }
+    if (!history.length) { mount.innerHTML = ""; return; }
+
+    const total = history.length;
+    const okCount = history.filter(h => h.ok).length;
+    const uptimePct = Math.round((okCount / total) * 1000) / 10;
+    const maxMs = Math.max(1, ...history.filter(h => h.ok).map(h => h.ms));
+    const barW = 6, gap = 3, barH = 36;
+    const bars = history.map((h, i) => {
+      const x = i * (barW + gap);
+      const bh = h.ok ? Math.max(4, Math.round((h.ms / maxMs) * barH)) : barH;
+      const y = barH - bh;
+      const title = h.ok ? `${h.ms}ms` : "no response";
+      return `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="1.5" class="${h.ok ? "ping-ok" : "ping-fail"}"><title>${title}</title></rect>`;
+    }).join("");
+    const svgW = total * (barW + gap) - gap;
+    const firstLabel = new Date(history[0].t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+    mount.innerHTML = `
+      <div class="flow-status-head">
+        <span class="flow-status-title">Flow V3 &mdash; live status</span>
+        <span class="flow-status-uptime">${uptimePct}% uptime</span>
+      </div>
+      <svg class="flow-status-spark" viewBox="0 0 ${svgW} ${barH}" preserveAspectRatio="none">${bars}</svg>
+      <span class="flow-status-caption">Last ${total} checks &middot; tracking since ${firstLabel}</span>`;
+  }
+
   function applyStatus(online, ms) {
     const dots = document.querySelectorAll(".fb-dot");
     const text = document.getElementById("fb-status-text");
@@ -117,9 +168,13 @@
     // separate request/cost.
     const liveStat = document.getElementById("live-ping");
     if (liveStat) liveStat.textContent = online ? ms + "ms" : "n/a";
+
+    recordPing(online, ms);
+    renderStatusPanel();
   }
 
   function pollStatus() {
+    renderStatusPanel(); // paint whatever history already exists from past visits immediately
     checkStatus(applyStatus);
     setInterval(() => checkStatus(applyStatus), 90000); // re-check every 90s while the tab is open
   }
