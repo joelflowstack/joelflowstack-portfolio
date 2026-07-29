@@ -536,8 +536,16 @@ import * as THREE from "three";
       mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
       mesh.userData.vrx = (Math.random() - 0.5) * 0.006;
       mesh.userData.vry = (Math.random() - 0.5) * 0.008;
-      mesh.userData.floatSpeed = 0.15 + Math.random() * 0.25;
-      mesh.userData.floatPhase = Math.random() * Math.PI * 2;
+      // Each shard wanders both axes independently (different speed, phase,
+      // and radius per shard) — this is what makes the field read as
+      // actually drifting around the screen rather than just bobbing in
+      // place. baseX/baseY is the center each shard wanders around.
+      mesh.userData.driftSpeedX = 0.06 + Math.random() * 0.1;
+      mesh.userData.driftSpeedY = 0.15 + Math.random() * 0.25;
+      mesh.userData.driftPhaseX = Math.random() * Math.PI * 2;
+      mesh.userData.driftPhaseY = Math.random() * Math.PI * 2;
+      mesh.userData.driftAmpX = 0.6 + Math.random() * 0.7;
+      mesh.userData.driftAmpY = 0.45 + Math.random() * 0.45;
       mesh.userData.baseY = mesh.position.y;
       mesh.userData.baseX = mesh.position.x;
       scene.add(mesh);
@@ -545,16 +553,45 @@ import * as THREE from "three";
     }
   }
 
+  // Cursor reach in the same rough world units the shards live in — not a
+  // real screen-space projection (these live at varying z-depths behind
+  // the cube), just enough to make "near the cursor" feel roughly right.
+  const SHARD_REPEL_RADIUS = 2.3;
+  const SHARD_REPEL_STRENGTH = 1.15;
+
   function updateFloatingGlass(elapsed) {
     if (!floatingGlass) return;
+    // Rough cursor position in the shards' world-unit space (see the
+    // comment above SHARD_REPEL_RADIUS) — computed once per frame, not
+    // per shard.
+    const cursorWX = mouseCurX * 4.5;
+    const cursorWY = -mouseCurY * 3;
+
     floatingGlass.forEach((mesh) => {
       const u = mesh.userData;
       mesh.rotation.x += u.vrx;
       mesh.rotation.y += u.vry;
-      // gentle bob + drift, plus a small parallax nudge toward the cursor
-      // so the whole field feels reactive without any per-particle physics
-      mesh.position.y = u.baseY + Math.sin(elapsed * u.floatSpeed + u.floatPhase) * 0.35;
-      mesh.position.x = u.baseX + mouseCurX * 0.4;
+
+      // Autonomous wander: each shard's own path, independent of the
+      // cursor entirely — this is the "moving around the screen" part.
+      const wx = u.baseX + Math.sin(elapsed * u.driftSpeedX + u.driftPhaseX) * u.driftAmpX;
+      const wy = u.baseY + Math.sin(elapsed * u.driftSpeedY + u.driftPhaseY) * u.driftAmpY;
+
+      // Cursor repulsion: shards within SHARD_REPEL_RADIUS of the cursor
+      // get pushed away individually, strength fading smoothly to zero at
+      // the edge of that radius. A real per-shard reaction, not the whole
+      // field shifting together like before.
+      const dx = wx - cursorWX, dy = wy - cursorWY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      let pushX = 0, pushY = 0;
+      if (dist < SHARD_REPEL_RADIUS && dist > 0.0001) {
+        const push = (1 - dist / SHARD_REPEL_RADIUS) * SHARD_REPEL_STRENGTH;
+        pushX = (dx / dist) * push;
+        pushY = (dy / dist) * push;
+      }
+
+      mesh.position.x = wx + pushX;
+      mesh.position.y = wy + pushY;
     });
   }
 
