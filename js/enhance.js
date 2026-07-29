@@ -250,9 +250,159 @@
     playNext();
   }
 
+  // ---------------------------------------------------------------
+  // SERVICE QUIZ — two short questions max, always ending at one of
+  // the four real services already listed above it on the page (or a
+  // plain "let's talk" fallback). No-op on any page without
+  // #service-quiz, so it's safe to call everywhere.
+  // ---------------------------------------------------------------
+  const QUIZ_STEPS = {
+    start: {
+      q: "What best describes what you need?",
+      options: [
+        { label: "A site that actually looks different", next: "web" },
+        { label: "Something that talks to people", next: "channel" },
+        { label: "Connect tools I already use", next: "auto" },
+        { label: "Not sure yet", next: "unsure" },
+      ],
+    },
+    channel: {
+      q: "Where should it live?",
+      options: [
+        { label: "My own website or app", next: "ai" },
+        { label: "Discord, Telegram, or WhatsApp", next: "bots" },
+      ],
+    },
+  };
+  const QUIZ_RESULTS = {
+    web: { title: "3D interactive websites", pitch: "Three.js-driven sites where the visual is load-bearing, not decorative — scroll-driven scenes, WebGL heroes, product visualizers.", tab: "web" },
+    ai: { title: "AI chatbots & agents", pitch: "Assistants wired to production LLM infrastructure with real conversation context and automatic reliability failover.", tab: "ai" },
+    bots: { title: "Discord / Telegram / WhatsApp bots", pitch: "Community bots, support bots, and inquiry routers built directly on each platform's own API.", tab: "bots" },
+    auto: { title: "n8n workflow automation", pitch: "Connecting the tools you already use — forms, CRMs, spreadsheets, notifications — so the manual steps between them disappear.", tab: "auto" },
+    unsure: { title: "Let's just talk it through", pitch: "Most projects turn out more scoped than they first seem — describe what you're picturing and it'll get sorted honestly from there.", tab: null },
+  };
+
+  function initServiceQuiz() {
+    const mount = document.getElementById("service-quiz");
+    if (!mount) return;
+
+    function renderStep(key) {
+      const step = QUIZ_STEPS[key];
+      mount.innerHTML = `
+        <p class="quiz-q">${step.q}</p>
+        <div class="quiz-options">
+          ${step.options.map((o, i) => `<button type="button" class="quiz-opt" data-i="${i}">${o.label}</button>`).join("")}
+        </div>`;
+      mount.querySelectorAll(".quiz-opt").forEach((btn, i) => {
+        btn.addEventListener("click", () => {
+          const next = step.options[i].next;
+          if (QUIZ_STEPS[next]) renderStep(next); else renderResult(next);
+        });
+      });
+    }
+
+    function renderResult(key) {
+      const r = QUIZ_RESULTS[key];
+      const href = "contact?" + new URLSearchParams({ service: key }).toString();
+      mount.innerHTML = `
+        <div class="quiz-result">
+          <span class="quiz-result-label">Sounds like</span>
+          <h3>${r.title}</h3>
+          <p>${r.pitch}</p>
+          <div class="quiz-actions">
+            <a class="btn btn-solid" href="${href}">Start the conversation</a>
+            ${r.tab ? `<button type="button" class="btn quiz-details">See full details</button>` : ""}
+            <button type="button" class="quiz-restart">Start over</button>
+          </div>
+        </div>`;
+      const detailsBtn = mount.querySelector(".quiz-details");
+      if (detailsBtn) {
+        detailsBtn.addEventListener("click", () => {
+          const tabBtn = document.querySelector(`.tab-btn[data-tab="${r.tab}"]`);
+          if (!tabBtn) return;
+          tabBtn.click(); // reuses initTabs' own click handler in shared.js — no duplicate switching logic here
+          tabBtn.closest("section").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+      mount.querySelector(".quiz-restart").addEventListener("click", () => renderStep("start"));
+    }
+
+    renderStep("start");
+  }
+
+  // ---------------------------------------------------------------
+  // EASTER EGG — the classic Konami code (↑↑↓↓←→←→BA). Purely a
+  // delight, not surfaced anywhere in the UI. Ignored while focus is
+  // in a text field so someone typing "a" or "b" in the contact form
+  // never accidentally trips it.
+  // ---------------------------------------------------------------
+  function initEasterEgg() {
+    const seq = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+    let pos = 0;
+    document.addEventListener("keydown", (e) => {
+      const tag = document.activeElement && document.activeElement.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (key === seq[pos]) {
+        pos++;
+        if (pos === seq.length) { pos = 0; triggerEasterEgg(); }
+      } else {
+        pos = key === seq[0] ? 1 : 0;
+      }
+    });
+  }
+
+  // Maps the quiz's ?service= key (see initServiceQuiz) to the existing
+  // #project-type select on contact.html — no new field, just a
+  // same-page connection between the two. No-op on any page without
+  // #project-type or without the query param.
+  function initContactPrefill() {
+    const select = document.getElementById("project-type");
+    if (!select) return;
+    const service = new URLSearchParams(location.search).get("service");
+    if (!service) return;
+    const optionText = {
+      web: "3D website",
+      ai: "AI chatbot / agent",
+      bots: "Discord / Telegram / WhatsApp bot",
+      auto: "n8n automation",
+    }[service];
+    if (!optionText) return; // "unsure" falls through here on purpose — no wrong guess is better than a real one
+    const match = Array.from(select.options).find(o => o.text === optionText);
+    if (match) select.value = match.value;
+    const message = document.getElementById("message");
+    if (message) message.focus();
+  }
+
+  function triggerEasterEgg() {
+    const colors = ["#3fa9e8", "#8b5cf6", "#eef8ff", "#7c3aed"];
+    for (let i = 0; i < 28; i++) {
+      const bit = document.createElement("div");
+      bit.className = "egg-confetti";
+      bit.style.left = Math.random() * 100 + "vw";
+      bit.style.background = colors[i % colors.length];
+      bit.style.animationDelay = (Math.random() * 0.4) + "s";
+      bit.style.animationDuration = (1.6 + Math.random() * 1.2) + "s";
+      document.body.appendChild(bit);
+      bit.addEventListener("animationend", () => bit.remove());
+    }
+    const toast = document.createElement("div");
+    toast.className = "egg-toast";
+    toast.textContent = "You found it. — Joel";
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add("show"), 20);
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 400);
+    }, 3200);
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     buildPalette();
     initTerminal();
+    initServiceQuiz();
+    initContactPrefill();
+    initEasterEgg();
     // Real-mouse check — matchMedia here, not viewport width, since a
     // touch laptop or a plugged-in mouse on a tablet should still get
     // these; a narrow desktop window should NOT lose them.
