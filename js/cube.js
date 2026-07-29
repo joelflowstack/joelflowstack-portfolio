@@ -118,6 +118,15 @@ import * as THREE from "three";
   let rafPaused = false; // must be declared before the first animate() call below, or referencing it inside animate() throws (temporal dead zone) on that first call
   let isMobile = window.innerWidth < 760; // computed once; several mobile-specific perf trims below all key off this same flag
   let frameSkip = 0; // used only on mobile — see the render throttle in animate()
+  // Cursor reach for the floating glass shards, in the same rough world
+  // units the shards live in — see updateFloatingGlass. Declared here
+  // (not next to updateFloatingGlass further down) for the same reason
+  // as rafPaused above: animate() runs for the first time long before
+  // this point in the file is reached in source order, so anything it
+  // references has to already be initialized up here, not just above
+  // the function that happens to use it.
+  const SHARD_REPEL_RADIUS = 2.3;
+  const SHARD_REPEL_STRENGTH = 1.15;
 
   try {
     init();
@@ -553,11 +562,9 @@ import * as THREE from "three";
     }
   }
 
-  // Cursor reach in the same rough world units the shards live in — not a
-  // real screen-space projection (these live at varying z-depths behind
-  // the cube), just enough to make "near the cursor" feel roughly right.
-  const SHARD_REPEL_RADIUS = 2.3;
-  const SHARD_REPEL_STRENGTH = 1.15;
+  // SHARD_REPEL_RADIUS / SHARD_REPEL_STRENGTH are declared up in the
+  // top-level state block near rafPaused, not here — see the comment
+  // there for why.
 
   function updateFloatingGlass(elapsed) {
     if (!floatingGlass) return;
