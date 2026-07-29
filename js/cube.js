@@ -116,6 +116,8 @@ import * as THREE from "three";
   let scatterTargetHref = null;
   let scrollP = 0; // 0..1, updated on scroll (portal mode only)
   let rafPaused = false; // must be declared before the first animate() call below, or referencing it inside animate() throws (temporal dead zone) on that first call
+  let isMobile = window.innerWidth < 760; // computed once; several mobile-specific perf trims below all key off this same flag
+  let frameSkip = 0; // used only on mobile — see the render throttle in animate()
 
   try {
     init();
@@ -140,11 +142,14 @@ import * as THREE from "three";
   // INIT
   // ---------------------------------------------------------------
   function init() {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+    // MSAA (antialias) has a genuine fill-rate cost, and buys very little
+    // on a phone screen where pixel density is already doing most of the
+    // smoothing anti-aliasing would — off on mobile, on for desktop.
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, alpha: false });
     // Mobile GPUs push a lot fewer pixels/sec than desktop — capping the
     // ratio lower on small viewports keeps this smooth on mid-range phones
     // without a visible sharpness hit at that screen size anyway.
-    const pixelRatioCap = window.innerWidth < 760 ? 1.5 : 1.75;
+    const pixelRatioCap = isMobile ? 1.3 : 1.75;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioCap));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -487,12 +492,28 @@ import * as THREE from "three";
   // rather than pasted on top.
   function buildFloatingGlass() {
     const shardGeo = new THREE.OctahedronGeometry(1, 0);
-    const count = window.innerWidth < 760 ? 11 : 24; // kept modest — real geometry in a shared render loop is pricier than a flat canvas pass
+    const count = isMobile ? 11 : 24; // kept modest — real geometry in a shared render loop is pricier than a flat canvas pass
     floatingGlass = [];
 
     for (let i = 0; i < count; i++) {
       const size = 0.1 + Math.random() * 0.2;
-      const mat = new THREE.MeshPhysicalMaterial({
+      // `transmission` forces WebGLRenderer to render an extra full copy of
+      // the opaque scene to a texture every frame, once, regardless of how
+      // many transmissive objects exist — on mobile that's a genuinely
+      // heavy tax for a background detail. Mobile shards drop transmission
+      // and lean on opacity + clearcoat + the real env map instead, which
+      // still reads as glass-like without the extra render pass.
+      const mat = isMobile ? new THREE.MeshPhysicalMaterial({
+        color: 0xe4d6ff,
+        transparent: true,
+        opacity: 0.42 + Math.random() * 0.2,
+        roughness: 0.15,
+        metalness: 0,
+        clearcoat: 0.8,
+        clearcoatRoughness: 0.1,
+        emissive: 0x8b5cf6,
+        emissiveIntensity: 0.6,
+      }) : new THREE.MeshPhysicalMaterial({
         color: 0xe4d6ff,
         transparent: true,
         opacity: 0.5 + Math.random() * 0.25,
@@ -696,8 +717,9 @@ import * as THREE from "three";
   }
 
   function onResize() {
+    isMobile = window.innerWidth < 760;
     renderer.setSize(window.innerWidth, window.innerHeight);
-    const pixelRatioCap = window.innerWidth < 760 ? 1.5 : 1.75;
+    const pixelRatioCap = isMobile ? 1.3 : 1.75;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioCap));
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -858,6 +880,17 @@ import * as THREE from "three";
       updateDecorativeFrame(elapsed);
     }
 
+    // On mobile, actually painting every requestAnimationFrame tick is the
+    // single biggest sustained GPU cost here. Update logic every frame (so
+    // scroll response stays frame-accurate) but only render every other
+    // frame — effectively ~30fps instead of up to 60/120fps. Safe because
+    // every frame is recomputed fresh from elapsed/scrollP rather than
+    // relying on the previous frame's state, so skipping a paint never
+    // desyncs anything, it's just one fewer picture drawn.
+    if (isMobile) {
+      frameSkip = (frameSkip + 1) % 2;
+      if (frameSkip !== 0) return;
+    }
     renderer.render(scene, camera);
   }
 
