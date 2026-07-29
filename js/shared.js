@@ -386,6 +386,118 @@
     });
   }
 
+  // ---------------------------------------------------------------
+  // LEAD CAPTURE POPUP — shows once per new visitor, a few seconds
+  // after landing on any page. Closing it (X, "No thanks", backdrop
+  // click, or Escape) is treated as a real answer, not a snooze: it
+  // sets the same "don't show again" flag as actually submitting, so
+  // no one — including Joel testing his own site — gets nagged by it
+  // on a later visit.
+  //
+  // Submits to Flow V3's existing /api/chat endpoint with
+  // { action: "capture_lead" }, a small addition to that file's
+  // handler (not a new serverless function — Vercel Hobby's 12-
+  // function cap on that project is already maxed) that appends to
+  // content/leads.json in this repo via GitHub's Contents API. Open
+  // that file on GitHub anytime to see everyone who's signed up.
+  // ---------------------------------------------------------------
+  const LEAD_API_URL = "https://flow-v3-mu.vercel.app/api/chat";
+  const LEAD_STORAGE_KEY = "leadPromptDone";
+
+  function initLeadCapture() {
+    if (localStorage.getItem(LEAD_STORAGE_KEY)) return;
+    if (document.title.startsWith("404")) return; // an error page is a bad first impression to pitch on
+    setTimeout(showLeadModal, 5000);
+  }
+
+  function markLeadPromptDone() {
+    try { localStorage.setItem(LEAD_STORAGE_KEY, "1"); } catch (_) { /* private browsing — fine, just may reappear next visit */ }
+  }
+
+  function showLeadModal() {
+    // Don't stack on top of the mobile menu or the command palette if
+    // either happens to be open right as the timer fires.
+    if (document.querySelector("#mobile-nav-overlay.open, #cmdk-overlay.open")) return;
+
+    const overlay = document.createElement("div");
+    overlay.id = "lead-modal-overlay";
+    overlay.innerHTML = `
+      <div class="lead-modal" role="dialog" aria-modal="true" aria-labelledby="lead-modal-title">
+        <button type="button" class="lead-modal-close" aria-label="Close">&#10005;</button>
+        <span class="eyebrow">Have a project in mind?</span>
+        <h3 id="lead-modal-title">Leave your email — I'll reach out.</h3>
+        <form id="lead-form" novalidate>
+          <input type="text" name="website" class="lead-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <input type="text" name="name" placeholder="Name (optional)" autocomplete="name" />
+          <input type="email" name="email" placeholder="Email" autocomplete="email" required />
+          <select name="interest">
+            <option value="">What are you interested in? (optional)</option>
+            <option>3D website</option>
+            <option>AI chatbot / agent</option>
+            <option>Discord / Telegram / WhatsApp bot</option>
+            <option>n8n automation</option>
+            <option>Something else</option>
+          </select>
+          <button type="submit" class="btn btn-solid">Keep me posted</button>
+          <p class="lead-error" hidden></p>
+        </form>
+        <button type="button" class="lead-no-thanks">No thanks</button>
+      </div>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("open"));
+
+    const close = () => {
+      overlay.classList.remove("open");
+      markLeadPromptDone();
+      setTimeout(() => overlay.remove(), 300);
+    };
+    overlay.querySelector(".lead-modal-close").addEventListener("click", close);
+    overlay.querySelector(".lead-no-thanks").addEventListener("click", close);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+    document.addEventListener("keydown", function onEsc(e) {
+      if (e.key === "Escape") { close(); document.removeEventListener("keydown", onEsc); }
+    });
+
+    const form = overlay.querySelector("#lead-form");
+    const errorEl = overlay.querySelector(".lead-error");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const submitBtn = form.querySelector("button[type=submit]");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Sending\u2026";
+      errorEl.hidden = true;
+
+      try {
+        const res = await fetch(LEAD_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "capture_lead",
+            lead: {
+              name: fd.get("name") || "",
+              email: fd.get("email") || "",
+              interest: fd.get("interest") || "",
+              page: location.pathname,
+              honeypot: fd.get("website") || "",
+            },
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Something went wrong.");
+
+        overlay.querySelector(".lead-modal").innerHTML = `<p class="lead-thanks">Thanks \u2014 I'll be in touch.</p>`;
+        markLeadPromptDone();
+        setTimeout(close, 1800);
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Keep me posted";
+        errorEl.textContent = "Couldn't send that \u2014 try again, or just email joelflowstack@gmail.com directly.";
+        errorEl.hidden = false;
+      }
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     injectNav();
     injectFooter();
@@ -399,6 +511,7 @@
     initHeroTypewriter();
     initHeroNavVisibility();
     initTransitionSkipping();
+    initLeadCapture();
     prefetchPages();
   });
 })();
