@@ -1024,6 +1024,67 @@ body::after {
 }
 
 /* ---------- Command palette (Cmd/Ctrl+K) ---------- */
+/* ---------- Lead capture popup ---------- */
+#lead-modal-overlay {
+  position: fixed; inset: 0; z-index: 950;
+  background: rgba(2,2,4,.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  transition: opacity .3s var(--ease-out);
+}
+#lead-modal-overlay.open { opacity: 1; }
+.lead-modal {
+  position: relative;
+  width: min(420px, 100%);
+  padding: 34px 32px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: rgba(8,9,14,.94);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: 0 30px 90px rgba(0,0,0,.65);
+  transform: translateY(10px) scale(.98);
+  transition: transform .3s var(--ease-out);
+  text-align: left;
+}
+#lead-modal-overlay.open .lead-modal { transform: translateY(0) scale(1); }
+.lead-modal .eyebrow { margin-bottom: 10px; }
+.lead-modal h3 { font-size: 1.3rem; margin-bottom: 22px; }
+.lead-modal-close {
+  position: absolute; top: 18px; right: 18px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: none; border: 1px solid var(--line-soft); color: var(--grey);
+  cursor: pointer; font-size: .85rem;
+}
+.lead-modal-close:hover { color: var(--white); border-color: rgba(255,255,255,.3); }
+#lead-form { display: flex; flex-direction: column; gap: 12px; }
+#lead-form input, #lead-form select {
+  width: 100%; padding: 12px 14px;
+  background: rgba(255,255,255,.03); border: 1px solid var(--line-soft); border-radius: 8px;
+  color: var(--white); font-family: var(--font-body); font-size: .92rem;
+}
+#lead-form input:focus, #lead-form select:focus { outline: none; border-color: rgba(255,255,255,.35); }
+#lead-form select { color: var(--grey); }
+#lead-form button[type=submit] { margin-top: 6px; }
+.lead-honeypot {
+  position: absolute !important; left: -9999px !important; width: 1px; height: 1px; opacity: 0;
+}
+.lead-error { color: #e05a5a; font-size: .8rem; margin-top: 4px; }
+.lead-no-thanks {
+  display: block; margin: 16px auto 0;
+  background: none; border: none; color: var(--grey-dim);
+  font-family: var(--font-mono); font-size: .76rem; text-decoration: underline;
+  cursor: pointer;
+}
+.lead-no-thanks:hover { color: var(--grey); }
+.lead-thanks {
+  font-family: var(--font-display); font-size: 1.15rem; color: var(--white);
+  padding: 20px 0;
+}
+
 #cmdk-overlay {
   position: fixed; inset: 0; z-index: 900;
   background: rgba(2,2,4,.7);
