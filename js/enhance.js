@@ -263,6 +263,7 @@
         { label: "A site that actually looks different", next: "web" },
         { label: "Something that talks to people", next: "channel" },
         { label: "Connect tools I already use", next: "auto" },
+        { label: "Marketing or video content", next: "marketing" },
         { label: "Not sure yet", next: "unsure" },
       ],
     },
@@ -273,12 +274,21 @@
         { label: "Discord, Telegram, or WhatsApp", next: "bots" },
       ],
     },
+    marketing: {
+      q: "Which kind?",
+      options: [
+        { label: "Paid Telegram ad campaigns", next: "telegram-ads" },
+        { label: "AI-generated video content", next: "ai-video" },
+      ],
+    },
   };
   const QUIZ_RESULTS = {
     web: { title: "3D interactive websites", pitch: "Three.js-driven sites where the visual is load-bearing, not decorative — scroll-driven scenes, WebGL heroes, product visualizers.", tab: "web" },
     ai: { title: "AI chatbots & agents", pitch: "Assistants wired to production LLM infrastructure with real conversation context and automatic reliability failover.", tab: "ai" },
     bots: { title: "Discord / Telegram / WhatsApp bots", pitch: "Community bots, support bots, and inquiry routers built directly on each platform's own API.", tab: "bots" },
     auto: { title: "n8n workflow automation", pitch: "Connecting the tools you already use — forms, CRMs, spreadsheets, notifications — so the manual steps between them disappear.", tab: "auto" },
+    "telegram-ads": { title: "Telegram Ads", pitch: "Paid campaigns run through Telegram's own Ad Platform — targeting, creative setup, and ongoing budget and performance management.", tab: "telegram-ads" },
+    "ai-video": { title: "AI video creation", pitch: "Short-form AI-generated video — script to final cut, no camera crew required.", tab: "ai-video" },
     unsure: { title: "Let's just talk it through", pitch: "Most projects turn out more scoped than they first seem — describe what you're picturing and it'll get sorted honestly from there.", tab: null },
   };
 
@@ -366,6 +376,8 @@
       ai: "AI chatbot / agent",
       bots: "Discord / Telegram / WhatsApp bot",
       auto: "n8n automation",
+      "telegram-ads": "Telegram ad campaign",
+      "ai-video": "AI video creation",
     }[service];
     if (!optionText) return; // "unsure" falls through here on purpose — no wrong guess is better than a real one
     const match = Array.from(select.options).find(o => o.text === optionText);
