@@ -682,27 +682,6 @@ a.card:hover, .card.interactive:hover {
   margin-top: 40px;
 }
 
-.changelog-strip {
-  margin-top: 40px;
-  padding-top: 24px;
-  border-top: 1px solid var(--line-soft);
-}
-.changelog-label {
-  display: block;
-  font-family: var(--font-mono); font-size: .68rem; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--grey-dim);
-  margin-bottom: 12px;
-}
-.changelog-strip ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.changelog-strip li {
-  font-size: .82rem; color: var(--white-dim);
-  display: flex; gap: 10px; align-items: baseline;
-}
-.changelog-date {
-  font-family: var(--font-mono); font-size: .68rem; color: var(--grey-dim);
-  flex-shrink: 0;
-}
-
 /* ---------- Flowbot widget — logo launcher + glass panel ---------- */
 #flowbot-launcher {
   position: fixed; bottom: calc(24px + var(--safe-bottom)); right: calc(24px + var(--safe-right)); z-index: 600;
@@ -1235,3 +1214,4 @@ html.custom-cursor-on, html.custom-cursor-on * { cursor: none !important; }
 @media (max-width: 800px) {
   .card.tile-match { aspect-ratio: auto; } /* single column at this width — a forced square reads odd stacked with lots of text */
 }
+
