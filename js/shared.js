@@ -100,34 +100,9 @@
             </div>
             <div class="socials">${socials}</div>
           </div>
-          <div id="changelog-strip" class="changelog-strip" aria-label="Recently shipped on this site"></div>
           <div class="fine">&copy; ${new Date().getFullYear()} Joel Flowstack. Built with Three.js, no build step.</div>
         </div>
       </footer>`;
-
-    loadChangelog();
-  }
-
-  // Most portfolio sites are static once launched — this one visibly
-  // isn't. content/changelog.json is a plain, hand-editable list (same
-  // "just a JSON file, no build step" philosophy as content/projects.json)
-  // — add a line, it shows up site-wide via this one shared footer.
-  async function loadChangelog() {
-    const mount = document.getElementById("changelog-strip");
-    if (!mount) return;
-    try {
-      const res = await fetch("content/changelog.json", { cache: "no-store" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
-      const entries = (data.entries || []).slice(0, 3);
-      if (!entries.length) { mount.remove(); return; }
-      mount.innerHTML = `
-        <span class="changelog-label">Recently shipped on this site</span>
-        <ul>${entries.map(e => `<li><span class="changelog-date">${e.date}</span>${e.text}</li>`).join("")}</ul>`;
-    } catch (err) {
-      console.warn("[changelog] couldn't load content/changelog.json:", err);
-      mount.remove();
-    }
   }
 
   function animateCount(el) {
@@ -515,3 +490,4 @@
     prefetchPages();
   });
 })();
+
