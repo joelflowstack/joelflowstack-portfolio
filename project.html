@@ -73,7 +73,13 @@
       document.title = project.title + " — Joel Flowstack";
       titleEl.textContent = project.title;
       tagsEl.textContent = (project.tags || []).join(" · ");
-      bodyEl.innerHTML = `<p>${project.description}</p>`;
+      const mediaHtml = (project.media && project.media.length)
+        ? `<div class="project-media-grid">${project.media.map(m => m.type === "video"
+            ? `<video controls preload="none" style="width:100%;border-radius:var(--radius);border:1px solid var(--line-soft);"><source src="${m.src}" type="video/mp4" /></video>`
+            : `<img src="${m.src}" alt="" style="width:100%;border-radius:var(--radius);border:1px solid var(--line-soft);" />`
+          ).join("")}</div>`
+        : "";
+      bodyEl.innerHTML = `<p>${project.description}</p>${mediaHtml}`;
     } catch (err) {
       console.warn("[project] couldn't load content/projects.json:", err);
       titleEl.textContent = "Couldn't load this project";
