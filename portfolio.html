@@ -144,6 +144,7 @@
       }
       mount.innerHTML = projects.map(p => `
         <a class="card interactive" href="project?slug=${encodeURIComponent(slugify(p.title))}" data-reveal>
+          ${p.media?.find(m => m.type === "image") ? `<img src="${p.media.find(m => m.type === "image").src}" alt="" style="width:100%;border-radius:var(--radius) var(--radius) 0 0;margin:-1px -1px 16px;display:block;max-width:calc(100% + 2px);" />` : ""}
           ${p.tags?.length ? `<div class="tag-row">${p.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>` : ""}
           <h3>${p.title}</h3>
           <p>${p.description}</p>
