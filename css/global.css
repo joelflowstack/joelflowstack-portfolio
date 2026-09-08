@@ -682,6 +682,16 @@ a.card:hover, .card.interactive:hover {
   margin-top: 40px;
 }
 
+.project-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+@media (max-width: 600px) {
+  .project-media-grid { grid-template-columns: 1fr; }
+}
+
 /* ---------- Flowbot widget — logo launcher + glass panel ---------- */
 #flowbot-launcher {
   position: fixed; bottom: calc(24px + var(--safe-bottom)); right: calc(24px + var(--safe-right)); z-index: 600;
