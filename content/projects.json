@@ -1,4 +1,17 @@
 {
   "schema_version": 1,
-  "projects": []
+  "projects": [
+    {
+      "title": "Telegram Ads Campaign Management",
+      "tags": ["Telegram Ads", "Paid Media", "Client Work"],
+      "description": "Running paid campaigns directly through Telegram's own Ad Platform for clients — audience targeting by channel category and language, creative setup, and ongoing budget and performance tracking. The shots below are pulled straight from live, active campaign dashboards, not mockups.",
+      "media": [
+        { "type": "image", "src": "assets/telegram-ads-dashboard.jpg" },
+        { "type": "image", "src": "assets/telegram-ads-table.jpg" },
+        { "type": "image", "src": "assets/telegram-ads-post.jpg" },
+        { "type": "video", "src": "assets/telegram-ads-demo-1.mp4" },
+        { "type": "video", "src": "assets/telegram-ads-demo-2.mp4" }
+      ]
+    }
+  ]
 }
