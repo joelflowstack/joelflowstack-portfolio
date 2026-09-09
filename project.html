@@ -76,12 +76,12 @@
       const mediaHtml = (project.media && project.media.length)
         ? `<div class="project-media-grid">${project.media.map(m => {
             if (m.type === "video") {
-              return `<video controls preload="none" style="width:100%;border-radius:var(--radius);border:1px solid var(--line-soft);"><source src="${m.src}" type="video/mp4" /></video>`;
+              return `<div class="media-item"><video controls preload="none"><source src="${m.src}" type="video/mp4" /></video>${m.caption ? `<span class="media-caption">${m.caption}</span>` : ""}</div>`;
             }
             if (m.type === "tiktok") {
-              return `<blockquote class="tiktok-embed" cite="${m.url}" data-video-id="${m.videoId}" style="max-width:325px;min-width:280px;margin:0 auto;"><section></section></blockquote>`;
+              return `<div class="media-item"><blockquote class="tiktok-embed" cite="${m.url}" data-video-id="${m.videoId}" style="max-width:325px;min-width:280px;margin:0 auto;"><section></section></blockquote></div>`;
             }
-            return `<img src="${m.src}" alt="" style="width:100%;border-radius:var(--radius);border:1px solid var(--line-soft);" />`;
+            return `<div class="media-item"><img src="${m.src}" alt="${m.caption || ""}" />${m.caption ? `<span class="media-caption">${m.caption}</span>` : ""}</div>`;
           }).join("")}</div>`
         : "";
       bodyEl.innerHTML = `<p>${project.description}</p>${mediaHtml}`;
