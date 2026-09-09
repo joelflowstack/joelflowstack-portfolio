@@ -105,6 +105,7 @@ import * as THREE from "three";
   let nebulaBaseX = 0;
   let nebulaBaseY = 0;
   let pieces = []; // {mesh, grid:{x,y,z}, home:Vector3, scattered:Vector3, delay:number, isFrontOuter:bool, navIndex:number}
+  let navMeshesCache = []; // pieces[].isNavTile never changes after buildPieces(), so this is computed once instead of filter+map on every raycast (was happening every animation frame in updateTileHover)
   let clock = new THREE.Clock();
   let raycaster = new THREE.Raycaster();
   let pointer = new THREE.Vector2();
@@ -115,6 +116,8 @@ import * as THREE from "three";
   let scatterStart = 0;
   let scatterTargetHref = null;
   let scrollP = 0; // 0..1, updated on scroll (portal mode only)
+  let scrollDirty = true; // set on scroll, consumed once per rendered frame in animate() — see onScroll
+  let pinStageEl = null; // cached in init(), avoids a querySelector on every scroll event
   let rafPaused = false; // must be declared before the first animate() call below, or referencing it inside animate() throws (temporal dead zone) on that first call
   let isMobile = window.innerWidth < 760; // computed once; several mobile-specific perf trims below all key off this same flag
   let frameSkip = 0; // used only on mobile — see the render throttle in animate()
@@ -196,6 +199,7 @@ import * as THREE from "three";
     scene.add(cubeGroup);
 
     buildPieces();
+    navMeshesCache = pieces.filter(p => p.isNavTile).map(p => p.mesh);
     buildShadowCatcher();
     buildNebulaBackdrop();
     buildFloatingGlass();
@@ -204,6 +208,7 @@ import * as THREE from "three";
 
     if (PORTAL_MODE) {
       buildEdgeLights();
+      pinStageEl = document.querySelector("#scroll-hero .pin-stage");
       window.addEventListener("scroll", onScroll, { passive: true });
       onScroll();
       canvas.addEventListener("pointerdown", onPortalClick);
@@ -713,8 +718,7 @@ import * as THREE from "three";
         pointer.x = (pointerPixel.x / window.innerWidth) * 2 - 1;
         pointer.y = -(pointerPixel.y / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(pointer, camera);
-        const navMeshes = pieces.filter(p => p.isNavTile).map(p => p.mesh);
-        const hits = raycaster.intersectObjects(navMeshes, false);
+        const hits = raycaster.intersectObjects(navMeshesCache, false);
         const hitPiece = hits.length ? pieces.find(p => p.mesh === hits[0].object) : null;
         hoveredNavIndex = hitPiece ? hitPiece.navIndex : -1;
       }
@@ -785,7 +789,18 @@ import * as THREE from "three";
     return Math.max(distForHeight, distForWidth);
   }
 
+  // Mobile fires many more scroll events per second than the render loop
+  // ever needs (momentum/elastic scrolling in particular) — doing a
+  // getBoundingClientRect() + querySelector on every single one forces a
+  // synchronous layout on top of the WebGL frame work already competing
+  // for the main thread, which is what produced the occasional mobile
+  // hangs. Scroll now just flips a flag; the actual (cheap, ~60fps-rate)
+  // read happens once per rendered frame in animate() via computeScrollP().
   function onScroll() {
+    scrollDirty = true;
+  }
+
+  function computeScrollP() {
     if (!heroEl) return;
     const rect = heroEl.getBoundingClientRect();
     const total = heroEl.offsetHeight - window.innerHeight;
@@ -795,8 +810,7 @@ import * as THREE from "three";
     // With position:fixed (not sticky), the pin-stage is ALWAYS pinned to
     // the viewport regardless of scroll — this explicitly hides it once
     // fully scrolled past, which sticky used to do on its own.
-    const pinStage = document.querySelector("#scroll-hero .pin-stage");
-    if (pinStage) pinStage.classList.toggle("hero-passed", scrollP >= 1);
+    if (pinStageEl) pinStageEl.classList.toggle("hero-passed", scrollP >= 1);
   }
 
   function onPortalPointerMove(e) {
@@ -839,8 +853,7 @@ import * as THREE from "three";
     pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
     pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(pointer, camera);
-    const navMeshes = pieces.filter(p => p.isNavTile).map(p => p.mesh);
-    const hits = raycaster.intersectObjects(navMeshes, false);
+    const hits = raycaster.intersectObjects(navMeshesCache, false);
     if (hits.length === 0) return;
     const hitMesh = hits[0].object;
     const piece = pieces.find(p => p.mesh === hitMesh);
@@ -909,6 +922,11 @@ import * as THREE from "three";
     if (rafPaused) return;
     requestAnimationFrame(animate);
     const elapsed = clock.getElapsedTime();
+
+    if (scrollDirty) {
+      computeScrollP();
+      scrollDirty = false;
+    }
 
     mouseCurX += (mouseTargetX - mouseCurX) * 0.06;
     mouseCurY += (mouseTargetY - mouseCurY) * 0.06;
