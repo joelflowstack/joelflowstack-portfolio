@@ -12,6 +12,14 @@
         { "type": "video", "src": "assets/telegram-ads-demo-1.mp4" },
         { "type": "video", "src": "assets/telegram-ads-demo-2.mp4" }
       ]
+    },
+    {
+      "title": "AI Video Creation",
+      "tags": ["AI Video", "Product Motion Lab", "Short-Form Content"],
+      "description": "Short-form AI-generated video — script to final cut, no camera crew required. This is a live example pulled straight from an active TikTok account run on this pipeline.",
+      "media": [
+        { "type": "tiktok", "url": "https://www.tiktok.com/@aibrainrots1/video/7681320106869198100", "videoId": "7681320106869198100" }
+      ]
     }
   ]
 }
