@@ -682,14 +682,46 @@ a.card:hover, .card.interactive:hover {
   margin-top: 40px;
 }
 
+/* A mixed set of screenshots and phone-recorded videos never share an
+   aspect ratio, so stretching each to the full width of a grid cell (the
+   old approach) made them look like random unrelated sizes stacked
+   together. This instead caps every item to the same height and lets
+   width follow its own aspect ratio — the classic "justified gallery"
+   pattern — so a wide dashboard shot and a tall phone screenshot read as
+   one deliberately-curated set instead of a grab-bag of screenshots. */
 .project-media-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
   margin-top: 28px;
 }
+.project-media-grid .media-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+.project-media-grid img,
+.project-media-grid video {
+  max-height: 260px;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: rgba(255,255,255,.02);
+  object-fit: contain;
+}
+.project-media-grid .media-caption {
+  font-family: var(--font-mono); font-size: .68rem; letter-spacing: .04em;
+  color: var(--grey-dim); text-align: center;
+}
 @media (max-width: 600px) {
-  .project-media-grid { grid-template-columns: 1fr; }
+  .project-media-grid img,
+  .project-media-grid video { max-height: 200px; }
 }
 
 /* ---------- Flowbot widget — logo launcher + glass panel ---------- */
