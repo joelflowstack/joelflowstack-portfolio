@@ -9,8 +9,8 @@
         { "type": "image", "src": "assets/telegram-ads-dashboard.jpg", "caption": "Live campaign list — views, CTR, spend, budget" },
         { "type": "image", "src": "assets/telegram-ads-table.jpg", "caption": "Per-channel active ad results" },
         { "type": "image", "src": "assets/telegram-ads-post.jpg", "caption": "Client-side results proof" },
-        { "type": "video", "src": "assets/telegram-ads-demo-1.mp4", "caption": "Dashboard walkthrough" },
-        { "type": "video", "src": "assets/telegram-ads-demo-2.mp4", "caption": "Per-channel breakdown" }
+        { "type": "video", "src": "assets/telegram-ads-demo-1.mp4", "poster": "assets/telegram-ads-demo-1-poster.jpg", "caption": "Dashboard walkthrough" },
+        { "type": "video", "src": "assets/telegram-ads-demo-2.mp4", "poster": "assets/telegram-ads-demo-2-poster.jpg", "caption": "Per-channel breakdown" }
       ]
     },
     {
