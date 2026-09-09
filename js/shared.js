@@ -30,6 +30,26 @@
     return parts[parts.length - 1] || ""; // empty on the root/landing page — correctly matches none of NAV_LINKS, rather than incorrectly highlighting Home
   }
 
+  // Mobile fires "scroll" far more often than the render rate ever needs
+  // (momentum/elastic scrolling especially) — three separate listeners
+  // below each doing a synchronous layout read (getBoundingClientRect /
+  // offsetHeight / scrollHeight) on every single one, on top of whatever
+  // the landing page's WebGL loop (cube.js) is doing the same frame, is
+  // what produced the occasional mobile hangs. This coalesces however
+  // many scroll events fire in a frame down to one update, run on the
+  // next paint — same fix pattern as cube.js's scrollDirty flag.
+  function rafThrottle(fn) {
+    let scheduled = false;
+    return function throttled(...args) {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        scheduled = false;
+        fn.apply(this, args);
+      });
+    };
+  }
+
   function injectNav() {
     const mount = document.getElementById("site-nav");
     if (!mount) return;
@@ -164,7 +184,7 @@
         : 0;
       bar.style.width = pct + "%";
     };
-    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("scroll", rafThrottle(update), { passive: true });
     update();
   }
 
@@ -259,6 +279,12 @@
   function initNavScrollState() {
     let lastY = window.scrollY;
     let idleTimer = null;
+    // Re-queried each call rather than cached: the landing page's
+    // eraseNav()/restoreNav() below actually removes and recreates this
+    // element, so a cached reference would silently go stale after the
+    // first erase/restore cycle. querySelector itself doesn't force a
+    // layout the way getBoundingClientRect does, so this is cheap; the
+    // rAF throttle below is what actually cuts the per-scroll-event cost.
     const update = () => {
       const nav = document.querySelector(".site-nav");
       if (!nav) return;
@@ -282,7 +308,7 @@
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => nav.classList.remove("nav-faded"), 900);
     };
-    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("scroll", rafThrottle(update), { passive: true });
     update();
   }
 
@@ -332,13 +358,21 @@
 
     eraseNav(); // starts fully removed, before any scroll
 
+    // Hysteresis, not just a single threshold: without a gap between the
+    // "erase" and "restore" trigger points, a scroll position that settles
+    // right at the boundary (e.g. iOS elastic overscroll bouncing a few px
+    // either side of it) would erase/restore — a full innerHTML rebuild —
+    // repeatedly, many times a second. 4px was that single threshold; now
+    // restoring needs 4px of clearance but erasing needs to fall back
+    // further (24px), so a few px of jitter around the line doesn't retrigger it.
     const update = () => {
       const total = hero.offsetHeight - window.innerHeight;
       const scrolled = -hero.getBoundingClientRect().top;
-      const pastHero = total > 0 ? scrolled >= total - 4 : true;
-      if (pastHero) restoreNav(); else eraseNav();
+      if (total <= 0) { restoreNav(); return; }
+      if (!navExists && scrolled >= total - 4) restoreNav();
+      else if (navExists && scrolled < total - 24) eraseNav();
     };
-    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("scroll", rafThrottle(update), { passive: true });
     update();
   }
 
