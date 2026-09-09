@@ -74,12 +74,27 @@
       titleEl.textContent = project.title;
       tagsEl.textContent = (project.tags || []).join(" · ");
       const mediaHtml = (project.media && project.media.length)
-        ? `<div class="project-media-grid">${project.media.map(m => m.type === "video"
-            ? `<video controls preload="none" style="width:100%;border-radius:var(--radius);border:1px solid var(--line-soft);"><source src="${m.src}" type="video/mp4" /></video>`
-            : `<img src="${m.src}" alt="" style="width:100%;border-radius:var(--radius);border:1px solid var(--line-soft);" />`
-          ).join("")}</div>`
+        ? `<div class="project-media-grid">${project.media.map(m => {
+            if (m.type === "video") {
+              return `<video controls preload="none" style="width:100%;border-radius:var(--radius);border:1px solid var(--line-soft);"><source src="${m.src}" type="video/mp4" /></video>`;
+            }
+            if (m.type === "tiktok") {
+              return `<blockquote class="tiktok-embed" cite="${m.url}" data-video-id="${m.videoId}" style="max-width:325px;min-width:280px;margin:0 auto;"><section></section></blockquote>`;
+            }
+            return `<img src="${m.src}" alt="" style="width:100%;border-radius:var(--radius);border:1px solid var(--line-soft);" />`;
+          }).join("")}</div>`
         : "";
       bodyEl.innerHTML = `<p>${project.description}</p>${mediaHtml}`;
+
+      // TikTok's embed script scans the DOM for .tiktok-embed blockquotes on
+      // load, so a dynamically-inserted one needs the script (re)injected —
+      // innerHTML-injected <script> tags never execute on their own.
+      if (project.media?.some(m => m.type === "tiktok")) {
+        const s = document.createElement("script");
+        s.async = true;
+        s.src = "https://www.tiktok.com/embed.js";
+        document.body.appendChild(s);
+      }
     } catch (err) {
       console.warn("[project] couldn't load content/projects.json:", err);
       titleEl.textContent = "Couldn't load this project";
