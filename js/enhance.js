@@ -157,9 +157,17 @@
   // real 3D objects rather than flat overlays. Position is read from
   // mousemove into two plain variables (near-zero cost) and only
   // written to the DOM once per animation frame inside the rAF loop —
-  // that batching is the actual fix for the lag: the old version wrote
-  // to style.transform on every raw mouse event, which can fire far
-  // more often than the screen can even redraw.
+  // that batching avoids writing style.transform on every raw mouse
+  // event, which can fire far more often than the screen redraws.
+  //
+  // Position tracking is intentionally NOT eased/lerped toward the
+  // mouse. An eased "trailing" cursor is a nice effect when it sits
+  // alongside a normal, always-visible system pointer — but this site
+  // hides the system cursor entirely (`cursor: none` in CSS), so the
+  // cube IS the pointer. Any smoothing delay on the only visible
+  // pointer reads as the mouse itself lagging, not a stylistic trail.
+  // The tumble/spin below is a separate, always-running CSS animation,
+  // so removing position easing doesn't lose any of the 3D-cube visual.
   function initCursor() {
     document.documentElement.classList.add("custom-cursor-on");
     const cube = document.createElement("div");
@@ -176,9 +184,9 @@
     document.body.appendChild(cube);
 
     let mx = window.innerWidth / 2, my = window.innerHeight / 2;
-    let cx = mx, cy = my;
+    let dirty = true;
 
-    window.addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
+    window.addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; dirty = true; }, { passive: true });
 
     document.addEventListener("mouseover", (e) => {
       if (e.target.closest("a, button, .card")) cube.classList.add("hovering");
@@ -191,10 +199,9 @@
     document.addEventListener("visibilitychange", () => { paused = document.hidden; });
 
     (function loop() {
-      if (!paused) {
-        cx += (mx - cx) * 0.35;
-        cy += (my - cy) * 0.35;
-        cube.style.transform = `translate3d(${cx}px, ${cy}px, 0)`;
+      if (!paused && dirty) {
+        cube.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
+        dirty = false;
       }
       requestAnimationFrame(loop);
     })();
