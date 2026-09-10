@@ -120,6 +120,9 @@ import * as THREE from "three";
   let pinStageEl = null; // cached in init(), avoids a querySelector on every scroll event
   let rafPaused = false; // must be declared before the first animate() call below, or referencing it inside animate() throws (temporal dead zone) on that first call
   let isMobile = window.innerWidth < 760; // computed once; several mobile-specific perf trims below all key off this same flag
+  let checkerTexCache = {}; // keyed by parity (0/1) — see makeCheckerTexture
+  let plasticMatCache = {}; // keyed by parity (0/1) — see makePlasticMaterial
+  let blackFaceMatCache = null; // single shared instance — see makeBlackFaceMaterial
   let frameSkip = 0; // used only on mobile — see the render throttle in animate()
   // Cursor reach for the floating glass shards, in the same rough world
   // units the shards live in — see updateFloatingGlass. Declared here
@@ -254,6 +257,19 @@ import * as THREE from "three";
   // GEOMETRY / MATERIALS
   // ---------------------------------------------------------------
   function makeCheckerTexture(seedOffset) {
+    // The checker pattern only ever depends on seedOffset's PARITY
+    // (isA = (x+y+seedOffset) % 2) — every even seedOffset and every odd
+    // seedOffset produces pixel-for-pixel the same 256x256 canvas. Despite
+    // that, this used to be called with a dozen+ distinct seedOffset
+    // values across the 26 pieces, generating that many separate
+    // <canvas> elements + GPU texture uploads for only 2 actually-unique
+    // results. Caching by parity cuts that to 2 real textures, and lets
+    // every matching face share the exact same texture object — which
+    // also lets the renderer batch those faces instead of rebinding a
+    // "new" (but visually identical) texture between them.
+    const parity = ((seedOffset % 2) + 2) % 2;
+    if (checkerTexCache[parity]) return checkerTexCache[parity];
+
     const size = 256;
     const c = document.createElement("canvas");
     c.width = c.height = size;
@@ -262,7 +278,7 @@ import * as THREE from "three";
     const step = size / squares;
     for (let y = 0; y < squares; y++) {
       for (let x = 0; x < squares; x++) {
-        const isA = (x + y + seedOffset) % 2 === 0;
+        const isA = (x + y + parity) % 2 === 0;
         ctx.fillStyle = isA ? "#0c0c0d" : "#1c1d20";
         ctx.fillRect(x * step, y * step, step, step);
       }
@@ -275,28 +291,52 @@ import * as THREE from "three";
     ctx.fillRect(0, 0, size, size);
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
+    checkerTexCache[parity] = tex;
     return tex;
   }
 
   function makePlasticMaterial(seedOffset) {
-    return new THREE.MeshPhysicalMaterial({
-      map: makeCheckerTexture(seedOffset),
+    // Every call uses identical roughness/metalness/clearcoat — the only
+    // thing that ever varies is which of the 2 checker textures it gets
+    // (see makeCheckerTexture above), so the material itself is cached by
+    // that same parity and reused wholesale, not just its texture. Fewer
+    // distinct Material objects means fewer shader/uniform rebinds
+    // between draw calls, which is the more expensive part on mobile GPUs.
+    const parity = ((seedOffset % 2) + 2) % 2;
+    if (plasticMatCache[parity]) return plasticMatCache[parity];
+    const mat = new THREE.MeshPhysicalMaterial({
+      map: makeCheckerTexture(parity),
       color: 0xffffff,
       roughness: CONFIG.roughness,
       metalness: CONFIG.metalness,
-      clearcoat: CONFIG.clearcoat,
+      // Clearcoat is the single most expensive term in this shader (a full
+      // extra specular BRDF evaluation per light, per pixel) — worth its
+      // keep on desktop for the glossy plastic look, but real cost on
+      // mobile GPUs multiplied across every face of all 26 pieces, every
+      // frame. Dropping it there is the highest-impact single change for
+      // mobile smoothness; roughness/metalness (cheap either way) stay so
+      // the material doesn't just look flat-gray without it.
+      clearcoat: isMobile ? 0 : CONFIG.clearcoat,
       clearcoatRoughness: CONFIG.clearcoatRoughness,
     });
+    plasticMatCache[parity] = mat;
+    return mat;
   }
 
   function makeBlackFaceMaterial() {
-    return new THREE.MeshPhysicalMaterial({
+    // Fully static — same params every single call, no texture — so
+    // this is the simplest possible case for sharing one instance across
+    // every inner/hidden face on every piece instead of creating a new
+    // (identical) material per face.
+    if (blackFaceMatCache) return blackFaceMatCache;
+    blackFaceMatCache = new THREE.MeshPhysicalMaterial({
       color: CONFIG.plasticColor,
       roughness: 0.55,
       metalness: 0.05,
-      clearcoat: 0.6,
+      clearcoat: isMobile ? 0 : 0.6,
       clearcoatRoughness: 0.3,
     });
+    return blackFaceMatCache;
   }
 
   function makeLabelMaterial(text) {
@@ -323,7 +363,7 @@ import * as THREE from "three";
     return new THREE.MeshPhysicalMaterial({
       map: tex, color: 0xffffff,
       roughness: CONFIG.roughness, metalness: CONFIG.metalness,
-      clearcoat: CONFIG.clearcoat, clearcoatRoughness: CONFIG.clearcoatRoughness,
+      clearcoat: isMobile ? 0 : CONFIG.clearcoat, clearcoatRoughness: CONFIG.clearcoatRoughness,
       emissive: 0xf2f2f0, emissiveIntensity: 0, // hover/click glow, modulated per-frame in updateTileHover — neutral white, not blue
       transparent: true, opacity: 1, // enables the hover "ghosting" transparency dip
     });
@@ -352,7 +392,7 @@ import * as THREE from "three";
     return new THREE.MeshPhysicalMaterial({
       map: makeLogoTexture(scale), color: 0xffffff,
       roughness: CONFIG.roughness, metalness: CONFIG.metalness,
-      clearcoat: CONFIG.clearcoat, clearcoatRoughness: CONFIG.clearcoatRoughness,
+      clearcoat: isMobile ? 0 : CONFIG.clearcoat, clearcoatRoughness: CONFIG.clearcoatRoughness,
     });
   }
 
@@ -435,7 +475,11 @@ import * as THREE from "three";
   // so it stays legible on the tiny mini-cube geometry.
   function buildMiniCube(parentMesh) {
     const geo = new THREE.BoxGeometry(0.32, 0.32, 0.32);
-    const materials = Array.from({ length: 6 }, () => makeLogoMaterial(0.85));
+    // All 6 faces show the exact same JF logo at the same scale — one
+    // shared material for all of them, not 6 separately-generated
+    // (but pixel-identical) textures and material instances.
+    const sharedMat = makeLogoMaterial(0.85);
+    const materials = Array.from({ length: 6 }, () => sharedMat);
     const mini = new THREE.Mesh(geo, materials);
     mini.position.set(0, 0, CONFIG.pieceSize / 2 + 0.2);
     mini.name = "miniCube";
@@ -523,8 +567,7 @@ import * as THREE from "three";
         opacity: 0.42 + Math.random() * 0.2,
         roughness: 0.15,
         metalness: 0,
-        clearcoat: 0.8,
-        clearcoatRoughness: 0.1,
+        clearcoat: 0,
         emissive: 0x8b5cf6,
         emissiveIntensity: 0.6,
       }) : new THREE.MeshPhysicalMaterial({
