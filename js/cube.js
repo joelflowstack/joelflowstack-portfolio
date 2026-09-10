@@ -517,9 +517,16 @@ import * as THREE from "three";
     nebulaBaseX = plane.position.x;
     nebulaBaseY = plane.position.y;
 
-    // Real environment map for cube reflections — from a separate load of
-    // the same image so the flat plane and the reflection can be tuned
-    // independently.
+    // Real environment map for cube reflections — genuinely worth its
+    // GPU cost (loading the image a second time + a PMREMGenerator pass)
+    // on the interactive index-page cube, where it's the visual
+    // centerpiece being looked at up close. On every other page the cube
+    // is a small idle background decoration nobody is scrutinizing for
+    // reflection accuracy — paying this same cost there on every single
+    // page navigation was pure waste, and likely a real contributor to
+    // "site feels slow loading a new page" since it ran unconditionally
+    // before this.
+    if (!PORTAL_MODE) return;
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
     new THREE.TextureLoader().load("assets/nebula-bg.jpg", (envTex) => {
@@ -550,7 +557,12 @@ import * as THREE from "three";
   // rather than pasted on top.
   function buildFloatingGlass() {
     const shardGeo = new THREE.OctahedronGeometry(1, 0);
-    const count = isMobile ? 11 : 24; // kept modest — real geometry in a shared render loop is pricier than a flat canvas pass
+    // Portal page: full count, since these are a deliberate visual
+    // feature of the hero people actually look at. Decorative pages:
+    // it's a small idle background cube — cut further on top of the
+    // existing mobile trim, since nobody's looking closely and this
+    // setup cost is paid fresh on every single page navigation.
+    const count = isMobile ? (PORTAL_MODE ? 11 : 6) : (PORTAL_MODE ? 24 : 12);
     floatingGlass = [];
 
     for (let i = 0; i < count; i++) {
