@@ -7,6 +7,28 @@
 (function () {
   "use strict";
 
+  // The cube-flip page transition (see the @view-transition CSS) works
+  // by having the browser snapshot the ENTIRE outgoing page — including
+  // the live WebGL canvas — into a bitmap, then cross-fading into a
+  // snapshot of the incoming page. That canvas readback is the genuinely
+  // expensive part, and it's inherent to how browsers handle WebGL
+  // content in view transitions, not something stylable away. Rather
+  // than removing the effect for everyone, it's tied to the same
+  // reduced-effects signal cube.js uses (the "flow-fx-mode" localStorage
+  // key, shared with initFxControl below): full effects keep the
+  // transition, reduced effects fall back to a plain instant navigation.
+  // This runs immediately (not waiting for DOMContentLoaded) since the
+  // inline <style>@view-transition{...}</style> tag in <head> is already
+  // parsed by the time this script — loaded at the end of body — runs,
+  // and it only needs to be in place before any future navigation click.
+  (function initTransitionMode() {
+    let mode = "auto";
+    try { mode = localStorage.getItem("flow-fx-mode") || "auto"; } catch {}
+    const reduced = mode === "low" || (mode === "auto" && window.innerWidth < 760);
+    const tag = Array.from(document.querySelectorAll("style")).find(s => s.textContent.includes("@view-transition"));
+    if (tag) tag.textContent = `@view-transition { navigation: ${reduced ? "none" : "auto"}; }`;
+  })();
+
   const NAV_LINKS = [
     { label: "Home",      href: "home" },
     { label: "About",     href: "about" },
