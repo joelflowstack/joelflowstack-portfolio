@@ -119,7 +119,66 @@ import * as THREE from "three";
   let scrollDirty = true; // set on scroll, consumed once per rendered frame in animate() — see onScroll
   let pinStageEl = null; // cached in init(), avoids a querySelector on every scroll event
   let rafPaused = false; // must be declared before the first animate() call below, or referencing it inside animate() throws (temporal dead zone) on that first call
-  let isMobile = window.innerWidth < 760; // computed once; several mobile-specific perf trims below all key off this same flag
+  let isMobile = window.innerWidth < 760; // viewport-width guess — kept for onResize's own pixel-ratio recompute
+
+  // `lowFX` is what every rendering-cost trim below actually checks
+  // (antialiasing, pixel ratio, clearcoat, shard count, render rate) —
+  // this used to just BE `isMobile`, which correctly caught phones but
+  // completely missed any wide-screen device with a weak GPU (a
+  // Chromebook's integrated graphics, an older laptop): those got full
+  // desktop settings and full lag, with no way to tell the site to back
+  // off. `lowFX` starts from that same isMobile guess but can also be
+  // set explicitly (a stored preference, read by the toggle control in
+  // shared.js) or flipped on automatically at runtime if this specific
+  // device measures sustained low framerate — see monitorPerformance().
+  const FX_KEY = "flow-fx-mode"; // "auto" | "high" | "low" — shared.js's toggle control reads/writes the same key
+  function getFxMode() {
+    try { return localStorage.getItem(FX_KEY) || "auto"; } catch { return "auto"; }
+  }
+  let fxMode = getFxMode();
+  let lowFX = fxMode === "low" ? true : fxMode === "high" ? false : isMobile;
+
+  // Runtime framerate watch — only active while fxMode is "auto" and
+  // still on full effects. Measures real, sustained framerate (not a
+  // device/screen-size guess) over a few rolling windows; if it's
+  // consistently poor, this is a device where lowFX SHOULD have been on
+  // from the start but the viewport-width guess couldn't tell (a
+  // Chromebook or older laptop with a normal-width screen but a weak
+  // GPU, for instance). Saves the same preference the manual toggle
+  // uses and reloads once, so the device gets a clean low-FX init
+  // instead of trying to hot-swap already-built materials/renderer
+  // settings mid-session.
+  let fxCheckStartElapsed = null;
+  let fxCheckFrameCount = 0;
+  let fxBadWindows = 0;
+  const FX_CHECK_WINDOW = 2.5; // seconds per sample window
+  const FX_FPS_THRESHOLD = 35;
+  const FX_BAD_WINDOWS_NEEDED = 2; // ~5s of sustained struggle before acting — avoids reacting to one brief hiccup
+
+  function monitorPerformance(elapsed) {
+    if (fxMode !== "auto" || lowFX || !bootDone) return;
+    if (fxCheckStartElapsed === null) { fxCheckStartElapsed = elapsed; fxCheckFrameCount = 0; return; }
+    fxCheckFrameCount++;
+    const windowElapsed = elapsed - fxCheckStartElapsed;
+    if (windowElapsed < FX_CHECK_WINDOW) return;
+
+    const avgFps = fxCheckFrameCount / windowElapsed;
+    if (avgFps < FX_FPS_THRESHOLD) {
+      fxBadWindows++;
+      if (fxBadWindows >= FX_BAD_WINDOWS_NEEDED) {
+        try {
+          localStorage.setItem(FX_KEY, "low");
+          localStorage.setItem("flow-fx-auto-notice", "1"); // shared.js shows a one-time toast after reload, explaining what happened and how to undo it
+        } catch {}
+        location.reload();
+        return;
+      }
+    } else {
+      fxBadWindows = 0; // any good window resets the streak — only sustained trouble triggers this
+    }
+    fxCheckStartElapsed = elapsed;
+    fxCheckFrameCount = 0;
+  }
   let checkerTexCache = {}; // keyed by parity (0/1) — see makeCheckerTexture
   let plasticMatCache = {}; // keyed by parity (0/1) — see makePlasticMaterial
   let blackFaceMatCache = null; // single shared instance — see makeBlackFaceMaterial
@@ -160,11 +219,11 @@ import * as THREE from "three";
     // MSAA (antialias) has a genuine fill-rate cost, and buys very little
     // on a phone screen where pixel density is already doing most of the
     // smoothing anti-aliasing would — off on mobile, on for desktop.
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, alpha: false });
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowFX, alpha: false });
     // Mobile GPUs push a lot fewer pixels/sec than desktop — capping the
     // ratio lower on small viewports keeps this smooth on mid-range phones
     // without a visible sharpness hit at that screen size anyway.
-    const pixelRatioCap = isMobile ? 1.3 : 1.75;
+    const pixelRatioCap = lowFX ? 1.3 : 1.75;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioCap));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -316,7 +375,7 @@ import * as THREE from "three";
       // frame. Dropping it there is the highest-impact single change for
       // mobile smoothness; roughness/metalness (cheap either way) stay so
       // the material doesn't just look flat-gray without it.
-      clearcoat: isMobile ? 0 : CONFIG.clearcoat,
+      clearcoat: lowFX ? 0 : CONFIG.clearcoat,
       clearcoatRoughness: CONFIG.clearcoatRoughness,
     });
     plasticMatCache[parity] = mat;
@@ -333,7 +392,7 @@ import * as THREE from "three";
       color: CONFIG.plasticColor,
       roughness: 0.55,
       metalness: 0.05,
-      clearcoat: isMobile ? 0 : 0.6,
+      clearcoat: lowFX ? 0 : 0.6,
       clearcoatRoughness: 0.3,
     });
     return blackFaceMatCache;
@@ -363,7 +422,7 @@ import * as THREE from "three";
     return new THREE.MeshPhysicalMaterial({
       map: tex, color: 0xffffff,
       roughness: CONFIG.roughness, metalness: CONFIG.metalness,
-      clearcoat: isMobile ? 0 : CONFIG.clearcoat, clearcoatRoughness: CONFIG.clearcoatRoughness,
+      clearcoat: lowFX ? 0 : CONFIG.clearcoat, clearcoatRoughness: CONFIG.clearcoatRoughness,
       emissive: 0xf2f2f0, emissiveIntensity: 0, // hover/click glow, modulated per-frame in updateTileHover — neutral white, not blue
       transparent: true, opacity: 1, // enables the hover "ghosting" transparency dip
     });
@@ -392,7 +451,7 @@ import * as THREE from "three";
     return new THREE.MeshPhysicalMaterial({
       map: makeLogoTexture(scale), color: 0xffffff,
       roughness: CONFIG.roughness, metalness: CONFIG.metalness,
-      clearcoat: isMobile ? 0 : CONFIG.clearcoat, clearcoatRoughness: CONFIG.clearcoatRoughness,
+      clearcoat: lowFX ? 0 : CONFIG.clearcoat, clearcoatRoughness: CONFIG.clearcoatRoughness,
     });
   }
 
@@ -526,7 +585,7 @@ import * as THREE from "three";
     // page navigation was pure waste, and likely a real contributor to
     // "site feels slow loading a new page" since it ran unconditionally
     // before this.
-    if (!PORTAL_MODE) return;
+    if (!PORTAL_MODE || lowFX) return;
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
     new THREE.TextureLoader().load("assets/nebula-bg.jpg", (envTex) => {
@@ -562,7 +621,7 @@ import * as THREE from "three";
     // it's a small idle background cube — cut further on top of the
     // existing mobile trim, since nobody's looking closely and this
     // setup cost is paid fresh on every single page navigation.
-    const count = isMobile ? (PORTAL_MODE ? 11 : 6) : (PORTAL_MODE ? 24 : 12);
+    const count = lowFX ? (PORTAL_MODE ? 11 : 6) : (PORTAL_MODE ? 24 : 12);
     floatingGlass = [];
 
     for (let i = 0; i < count; i++) {
@@ -573,7 +632,7 @@ import * as THREE from "three";
       // heavy tax for a background detail. Mobile shards drop transmission
       // and lean on opacity + clearcoat + the real env map instead, which
       // still reads as glass-like without the extra render pass.
-      const mat = isMobile ? new THREE.MeshPhysicalMaterial({
+      const mat = lowFX ? new THREE.MeshPhysicalMaterial({
         color: 0xe4d6ff,
         transparent: true,
         opacity: 0.42 + Math.random() * 0.2,
@@ -821,8 +880,14 @@ import * as THREE from "three";
 
   function onResize() {
     isMobile = window.innerWidth < 760;
+    // Only let a resize/rotation change lowFX when the person hasn't
+    // explicitly picked a mode — an explicit "high" or "low" choice
+    // (from the toggle control, or from an auto-detected downgrade)
+    // should survive rotating a phone or resizing a window, not get
+    // silently overwritten by the viewport-width guess.
+    if (fxMode === "auto") lowFX = isMobile;
     renderer.setSize(window.innerWidth, window.innerHeight);
-    const pixelRatioCap = isMobile ? 1.3 : 1.75;
+    const pixelRatioCap = lowFX ? 1.3 : 1.75;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioCap));
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -987,6 +1052,7 @@ import * as THREE from "three";
     mouseCurY += (mouseTargetY - mouseCurY) * 0.06;
 
     updateBoot();
+    monitorPerformance(elapsed);
     updateFloatingGlass(elapsed);
     updateNebulaBackdrop(elapsed);
     if (scatterActive) {
@@ -1004,7 +1070,7 @@ import * as THREE from "three";
     // every frame is recomputed fresh from elapsed/scrollP rather than
     // relying on the previous frame's state, so skipping a paint never
     // desyncs anything, it's just one fewer picture drawn.
-    if (isMobile) {
+    if (lowFX) {
       frameSkip = (frameSkip + 1) % 2;
       if (frameSkip !== 0) return;
     }
