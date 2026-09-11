@@ -724,6 +724,65 @@ a.card:hover, .card.interactive:hover {
   .project-media-grid video { max-height: 200px; }
 }
 
+/* ---------- Visual-effects toggle (see initFxControl in shared.js) ---------- */
+#fx-toggle {
+  position: fixed; bottom: calc(24px + var(--safe-bottom)); left: calc(24px + var(--safe-left));
+  z-index: 600;
+  font-family: var(--font-mono); font-size: .68rem; letter-spacing: .03em;
+  color: var(--grey-dim); background: var(--glass-bg); backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line-soft); border-radius: 999px;
+  padding: 9px 14px; cursor: pointer;
+  transition: color .2s var(--ease-out), border-color .2s var(--ease-out), background .2s var(--ease-out);
+}
+#fx-toggle:hover { color: var(--white-dim); border-color: var(--blue-line); background: var(--glass-bg-strong); }
+#fx-menu {
+  position: fixed; bottom: calc(64px + var(--safe-bottom)); left: calc(24px + var(--safe-left));
+  z-index: 600;
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--glass-bg-strong); backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line-soft); border-radius: var(--radius-sm);
+  padding: 6px; min-width: 120px;
+}
+#fx-menu button {
+  font-family: var(--font-mono); font-size: .72rem; text-align: left;
+  color: var(--white-dim); background: none; border: none; border-radius: 6px;
+  padding: 8px 10px; cursor: pointer;
+}
+#fx-menu button:hover { background: rgba(255,255,255,.06); color: var(--white); }
+@media (max-width: 600px) {
+  #fx-toggle { font-size: .62rem; padding: 8px 12px; bottom: calc(16px + var(--safe-bottom)); left: calc(16px + var(--safe-left)); }
+  #fx-menu { bottom: calc(56px + var(--safe-bottom)); left: calc(16px + var(--safe-left)); }
+}
+
+#fx-toast {
+  position: fixed; left: 50%; bottom: calc(24px + var(--safe-bottom)); transform: translateX(-50%);
+  z-index: 700; max-width: min(460px, calc(100vw - 32px));
+  display: flex; align-items: center; gap: 14px;
+  background: var(--glass-bg-strong); backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line-soft); border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.5);
+}
+#fx-toast span { font-size: .82rem; color: var(--white-dim); line-height: 1.4; flex: 1; }
+.fx-toast-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.fx-toast-actions button[data-action="restore"] {
+  font-family: var(--font-mono); font-size: .7rem; white-space: nowrap;
+  color: var(--white); background: rgba(255,255,255,.08); border: 1px solid var(--line-soft);
+  border-radius: 999px; padding: 8px 12px; cursor: pointer;
+}
+.fx-toast-actions button[data-action="restore"]:hover { background: rgba(255,255,255,.14); }
+.fx-toast-actions button[data-action="dismiss"] {
+  font-size: 1.1rem; line-height: 1; color: var(--grey-dim); background: none; border: none; cursor: pointer; padding: 4px;
+}
+.fx-toast-actions button[data-action="dismiss"]:hover { color: var(--white); }
+@media (max-width: 600px) {
+  #fx-toast { flex-direction: column; align-items: stretch; text-align: left; }
+  .fx-toast-actions { justify-content: space-between; }
+}
+
 /* ---------- Flowbot widget — logo launcher + glass panel ---------- */
 #flowbot-launcher {
   position: fixed; bottom: calc(24px + var(--safe-bottom)); right: calc(24px + var(--safe-right)); z-index: 600;
