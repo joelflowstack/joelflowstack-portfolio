@@ -521,7 +521,79 @@
     initHeroNavVisibility();
     initTransitionSkipping();
     initLeadCapture();
+    initFxControl();
     prefetchPages();
   });
+  // ---------- Visual-effects toggle ----------
+  // cube.js reads/writes the same "flow-fx-mode" localStorage key to
+  // decide how much rendering cost the cube pays (antialiasing, pixel
+  // ratio, clearcoat, shard count — see cube.js's `lowFX`). This is the
+  // person-facing side of that: a small always-available control so
+  // anyone can drop to reduced effects for smoother performance, or
+  // put them back to full, at any time — not just a one-time prompt
+  // they might miss. cube.js can also flip this automatically if it
+  // measures sustained low framerate; the toast below is what explains
+  // that when it happens.
+  const FX_KEY = "flow-fx-mode";
+  function getFxMode() {
+    try { return localStorage.getItem(FX_KEY) || "auto"; } catch { return "auto"; }
+  }
+  function setFxMode(mode) {
+    try { localStorage.setItem(FX_KEY, mode); } catch {}
+    location.reload(); // simplest reliable way to apply — several of the settings this controls (antialiasing, material clearcoat) can't be hot-swapped on an already-built scene
+  }
+
+  const FX_LABELS = { auto: "Auto", high: "Full", low: "Reduced" };
+
+  function initFxControl() {
+    const btn = document.createElement("button");
+    btn.id = "fx-toggle";
+    btn.setAttribute("aria-label", "Visual effects setting");
+    const renderLabel = () => { btn.textContent = `⚡ Effects: ${FX_LABELS[getFxMode()]}`; };
+    renderLabel();
+    document.body.appendChild(btn);
+
+    const menu = document.createElement("div");
+    menu.id = "fx-menu";
+    menu.innerHTML = ["auto", "high", "low"].map(m =>
+      `<button data-mode="${m}">${FX_LABELS[m]}</button>`
+    ).join("");
+    menu.hidden = true;
+    document.body.appendChild(menu);
+
+    btn.addEventListener("click", () => { menu.hidden = !menu.hidden; });
+    menu.addEventListener("click", (e) => {
+      const mode = e.target.closest("button")?.dataset.mode;
+      if (mode) setFxMode(mode);
+    });
+    document.addEventListener("click", (e) => {
+      if (!menu.hidden && !menu.contains(e.target) && e.target !== btn) menu.hidden = true;
+    });
+
+    // One-time notice after cube.js auto-downgrades this device — the
+    // flag is written right before its reload and consumed (removed)
+    // here immediately, so it's shown exactly once, not on every
+    // subsequent page navigation while running in reduced mode.
+    let noticeShown = false;
+    try { noticeShown = localStorage.getItem("flow-fx-auto-notice") === "1"; } catch {}
+    if (noticeShown) {
+      try { localStorage.removeItem("flow-fx-auto-notice"); } catch {}
+      const toast = document.createElement("div");
+      toast.id = "fx-toast";
+      toast.innerHTML = `
+        <span>This device seemed to be struggling with the 3D effects, so they've been reduced for smoother scrolling.</span>
+        <div class="fx-toast-actions">
+          <button data-action="restore">Restore full effects</button>
+          <button data-action="dismiss" aria-label="Dismiss">&times;</button>
+        </div>`;
+      document.body.appendChild(toast);
+      toast.addEventListener("click", (e) => {
+        const action = e.target.closest("button")?.dataset.action;
+        if (action === "restore") setFxMode("high");
+        else if (action === "dismiss") toast.remove();
+      });
+    }
+  }
+
 })();
 
