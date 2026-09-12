@@ -118,6 +118,7 @@
     <button type="submit" class="btn btn-solid">Reset password</button>
     <p class="admin-err" hidden></p>
   </form>
+  <div class="admin-switch"><button type="button" id="back-to-login">Back to login</button></div>
 </div>
 
 <div class="admin-card" id="loading-view">
@@ -282,6 +283,8 @@
     document.getElementById("forgot-confirm-form").hidden = true;
     show("forgot");
   });
+
+  document.getElementById("back-to-login").addEventListener("click", () => show("login"));
 
   document.getElementById("forgot-request-form").addEventListener("submit", async (e) => {
     e.preventDefault();
