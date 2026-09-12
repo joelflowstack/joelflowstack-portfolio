@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — Joel Flowstack</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="assets/logo.png" type="image/png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/global.css" />
+<!--
+  Deliberately standalone: no cube.js/three.js, no shared.js nav/footer/
+  lead-popup, no enhance.js. This is a utility page for one person, not
+  a marketing page — every one of those adds weight and surface area
+  this page has no use for, and the plain, different-from-the-rest-of-
+  the-site look is itself a useful signal that you're somewhere else
+  now, not on the public site.
+
+  STATUS: front-end shell only — the actual setup/login verification
+  needs a server-side endpoint (so a password check can't just be read
+  out of this page's JavaScript and bypassed), which lives in the
+  Flow V3 backend repo, not this one. Wire-up pending repo access.
+-->
+<style>
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+  .admin-card { width: 100%; max-width: 380px; }
+  .admin-card h1 { font-size: 1.4rem; margin-bottom: 6px; }
+  .admin-card .lede { margin-bottom: 28px; }
+  .admin-card form { display: flex; flex-direction: column; gap: 14px; }
+  .admin-card label { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .04em; color: var(--grey-dim); display: block; margin-bottom: 6px; }
+  .admin-card input {
+    width: 100%; background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--line-soft); border-radius: var(--radius-sm); color: var(--white);
+    font-family: var(--font-body); font-size: 1rem; padding: 12px 14px;
+  }
+  .admin-notice {
+    margin-top: 20px; font-size: .78rem; color: var(--grey-dim); line-height: 1.5;
+    background: rgba(255,255,255,.03); border: 1px solid var(--line-soft); border-radius: var(--radius-sm); padding: 12px 14px;
+  }
+  .admin-switch { margin-top: 18px; font-size: .8rem; color: var(--grey-dim); text-align: center; }
+  .admin-switch button { background: none; border: none; color: var(--white-dim); text-decoration: underline; cursor: pointer; font-size: inherit; }
+</style>
+</head>
+<body>
+
+<div class="admin-card">
+  <div id="setup-view">
+    <span class="eyebrow">Admin</span>
+    <h1>Set up admin access</h1>
+    <p class="lede">One-time setup — this account is what you'll use to log in and see leads and site analytics.</p>
+    <form id="setup-form">
+      <div>
+        <label for="setup-email">Gmail</label>
+        <input type="email" id="setup-email" required placeholder="you@gmail.com" />
+      </div>
+      <div>
+        <label for="setup-password">Password</label>
+        <input type="password" id="setup-password" required minlength="8" placeholder="At least 8 characters" />
+      </div>
+      <div>
+        <label for="setup-password-confirm">Confirm password</label>
+        <input type="password" id="setup-password-confirm" required minlength="8" />
+      </div>
+      <button type="submit" class="btn btn-solid">Create admin account</button>
+      <p class="lead-error" hidden style="color:#e88; font-size:.82rem;"></p>
+    </form>
+    <div class="admin-switch">Already set up? <button type="button" id="show-login">Log in instead</button></div>
+  </div>
+
+  <div id="login-view" hidden>
+    <span class="eyebrow">Admin</span>
+    <h1>Log in</h1>
+    <p class="lede">&nbsp;</p>
+    <form id="login-form">
+      <div>
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" required placeholder="Password" />
+      </div>
+      <button type="submit" class="btn btn-solid">Log in</button>
+      <p class="lead-error" hidden style="color:#e88; font-size:.82rem;"></p>
+    </form>
+  </div>
+
+  <div class="admin-notice">
+    This page isn't wired up to a backend yet — creating an account or logging in won't do anything until that's connected. Nothing you type here goes anywhere right now.
+  </div>
+</div>
+
+<script>
+  const setupView = document.getElementById("setup-view");
+  const loginView = document.getElementById("login-view");
+  document.getElementById("show-login").addEventListener("click", () => {
+    setupView.hidden = true;
+    loginView.hidden = false;
+  });
+
+  // Placeholder handlers — real submission (hashing, server-side
+  // verification, session issuance) lands once the backend endpoint
+  // exists. Deliberately doesn't pretend to succeed in the meantime.
+  function notReadyYet(form) {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const err = form.querySelector(".lead-error");
+      err.textContent = "Not connected yet — check back once the backend is wired up.";
+      err.hidden = false;
+    });
+  }
+  notReadyYet(document.getElementById("setup-form"));
+  notReadyYet(document.getElementById("login-form"));
+</script>
+
+</body>
+</html>
