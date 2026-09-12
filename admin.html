@@ -95,6 +95,29 @@
     <button type="submit" class="btn btn-solid">Log in</button>
     <p class="admin-err" hidden></p>
   </form>
+  <div class="admin-switch"><button type="button" id="show-forgot">Forgot password?</button></div>
+</div>
+
+<div class="admin-card" id="forgot-view" hidden>
+  <span class="eyebrow">Admin</span>
+  <h1>Reset password</h1>
+  <p class="lede" id="forgot-lede">We'll email a 6-digit code to the address on the account.</p>
+  <form id="forgot-request-form">
+    <button type="submit" class="btn btn-solid">Send reset code</button>
+    <p class="admin-err" hidden></p>
+  </form>
+  <form id="forgot-confirm-form" hidden>
+    <div>
+      <label for="reset-code">6-digit code</label>
+      <input type="text" id="reset-code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" />
+    </div>
+    <div>
+      <label for="reset-new-password">New password</label>
+      <input type="password" id="reset-new-password" required minlength="8" placeholder="At least 8 characters" />
+    </div>
+    <button type="submit" class="btn btn-solid">Reset password</button>
+    <p class="admin-err" hidden></p>
+  </form>
 </div>
 
 <div class="admin-card" id="loading-view">
@@ -125,6 +148,7 @@
   const views = {
     setup: document.getElementById("setup-view"),
     login: document.getElementById("login-view"),
+    forgot: document.getElementById("forgot-view"),
     loading: document.getElementById("loading-view"),
     dash: document.getElementById("dash-view"),
   };
@@ -249,6 +273,46 @@
   document.getElementById("logout-btn").addEventListener("click", () => {
     clearToken();
     show("login");
+  });
+
+  document.getElementById("show-forgot").addEventListener("click", () => {
+    // Reset to the "send code" step each time this is opened, in case
+    // it was left mid-flow from an earlier visit.
+    document.getElementById("forgot-request-form").hidden = false;
+    document.getElementById("forgot-confirm-form").hidden = true;
+    show("forgot");
+  });
+
+  document.getElementById("forgot-request-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const btn = form.querySelector("button");
+    btn.disabled = true;
+    try {
+      await api({ action: "admin_forgot_password" });
+      form.hidden = true;
+      document.getElementById("forgot-confirm-form").hidden = false;
+      document.getElementById("forgot-lede").textContent = "Code sent — check your inbox. It's valid for 15 minutes.";
+    } catch (err) {
+      showErr(form, err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById("forgot-confirm-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const code = document.getElementById("reset-code").value;
+    const newPassword = document.getElementById("reset-new-password").value;
+    try {
+      const data = await api({ action: "admin_reset_password", code, newPassword });
+      setToken(data.token);
+      show("loading");
+      await loadDashboard();
+    } catch (err) {
+      showErr(form, err.message);
+    }
   });
 
   // Entry point: figure out setup-vs-login, or go straight to the
