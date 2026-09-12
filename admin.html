@@ -12,16 +12,17 @@
 <link rel="stylesheet" href="css/global.css" />
 <!--
   Deliberately standalone: no cube.js/three.js, no shared.js nav/footer/
-  lead-popup, no enhance.js. This is a utility page for one person, not
-  a marketing page — every one of those adds weight and surface area
-  this page has no use for, and the plain, different-from-the-rest-of-
-  the-site look is itself a useful signal that you're somewhere else
-  now, not on the public site.
+  lead-popup/pageview-beacon, no enhance.js. A utility page for one
+  person shouldn't carry the marketing site's weight, and the plainer,
+  different-from-the-rest-of-the-site look is itself a useful signal
+  that you're somewhere else now, not on the public site.
 
-  STATUS: front-end shell only — the actual setup/login verification
-  needs a server-side endpoint (so a password check can't just be read
-  out of this page's JavaScript and bypassed), which lives in the
-  Flow V3 backend repo, not this one. Wire-up pending repo access.
+  Auth: password is verified server-side in flow-V3's api/chat.js
+  (admin_setup/admin_login actions) — scrypt-hashed, never compared in
+  this page's own JS, which is the only way a login here actually means
+  anything rather than being trivially readable/bypassable from the
+  page source. This page only ever holds a short-lived signed session
+  token, in localStorage, after a real login.
 -->
 <style>
   body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
@@ -35,80 +36,233 @@
     border: 1px solid var(--line-soft); border-radius: var(--radius-sm); color: var(--white);
     font-family: var(--font-body); font-size: 1rem; padding: 12px 14px;
   }
-  .admin-notice {
-    margin-top: 20px; font-size: .78rem; color: var(--grey-dim); line-height: 1.5;
-    background: rgba(255,255,255,.03); border: 1px solid var(--line-soft); border-radius: var(--radius-sm); padding: 12px 14px;
-  }
   .admin-switch { margin-top: 18px; font-size: .8rem; color: var(--grey-dim); text-align: center; }
   .admin-switch button { background: none; border: none; color: var(--white-dim); text-decoration: underline; cursor: pointer; font-size: inherit; }
+  .admin-err { color: #e88; font-size: .82rem; margin: 0; }
+
+  /* ---- Dashboard ---- */
+  #dash-view { width: 100%; max-width: 900px; }
+  .dash-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+  .dash-head h1 { font-size: 1.4rem; margin: 0; }
+  #logout-btn { font-family: var(--font-mono); font-size: .72rem; color: var(--grey-dim); background: none; border: 1px solid var(--line-soft); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+  #logout-btn:hover { color: var(--white); border-color: var(--blue-line); }
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 32px; }
+  .stat-card { padding: 18px; }
+  .stat-card .num { font-family: var(--font-display); font-size: 2rem; }
+  .stat-card .label { font-family: var(--font-mono); font-size: .68rem; letter-spacing: .04em; color: var(--grey-dim); text-transform: uppercase; }
+  .dash-section { margin-bottom: 36px; }
+  .dash-section h2 { font-size: 1rem; margin-bottom: 14px; }
+  table.leads-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+  table.leads-table th { text-align: left; font-family: var(--font-mono); font-size: .66rem; letter-spacing: .04em; color: var(--grey-dim); text-transform: uppercase; padding: 8px 10px; border-bottom: 1px solid var(--line-soft); }
+  table.leads-table td { padding: 10px; border-bottom: 1px solid var(--line-soft); color: var(--white-dim); vertical-align: top; }
+  table.leads-table tr:last-child td { border-bottom: none; }
+  .empty-note { color: var(--grey-dim); font-size: .85rem; }
 </style>
 </head>
 <body>
 
-<div class="admin-card">
-  <div id="setup-view">
-    <span class="eyebrow">Admin</span>
-    <h1>Set up admin access</h1>
-    <p class="lede">One-time setup — this account is what you'll use to log in and see leads and site analytics.</p>
-    <form id="setup-form">
-      <div>
-        <label for="setup-email">Gmail</label>
-        <input type="email" id="setup-email" required placeholder="you@gmail.com" />
-      </div>
-      <div>
-        <label for="setup-password">Password</label>
-        <input type="password" id="setup-password" required minlength="8" placeholder="At least 8 characters" />
-      </div>
-      <div>
-        <label for="setup-password-confirm">Confirm password</label>
-        <input type="password" id="setup-password-confirm" required minlength="8" />
-      </div>
-      <button type="submit" class="btn btn-solid">Create admin account</button>
-      <p class="lead-error" hidden style="color:#e88; font-size:.82rem;"></p>
-    </form>
-    <div class="admin-switch">Already set up? <button type="button" id="show-login">Log in instead</button></div>
-  </div>
+<div class="admin-card" id="setup-view" hidden>
+  <span class="eyebrow">Admin</span>
+  <h1>Set up admin access</h1>
+  <p class="lede">One-time setup — this is what you'll use to log in and see leads and site analytics.</p>
+  <form id="setup-form">
+    <div>
+      <label for="setup-email">Gmail</label>
+      <input type="email" id="setup-email" required placeholder="you@gmail.com" />
+    </div>
+    <div>
+      <label for="setup-password">Password</label>
+      <input type="password" id="setup-password" required minlength="8" placeholder="At least 8 characters" />
+    </div>
+    <div>
+      <label for="setup-password-confirm">Confirm password</label>
+      <input type="password" id="setup-password-confirm" required minlength="8" />
+    </div>
+    <button type="submit" class="btn btn-solid">Create admin account</button>
+    <p class="admin-err" hidden></p>
+  </form>
+</div>
 
-  <div id="login-view" hidden>
-    <span class="eyebrow">Admin</span>
-    <h1>Log in</h1>
-    <p class="lede">&nbsp;</p>
-    <form id="login-form">
-      <div>
-        <label for="login-password">Password</label>
-        <input type="password" id="login-password" required placeholder="Password" />
-      </div>
-      <button type="submit" class="btn btn-solid">Log in</button>
-      <p class="lead-error" hidden style="color:#e88; font-size:.82rem;"></p>
-    </form>
-  </div>
+<div class="admin-card" id="login-view" hidden>
+  <span class="eyebrow">Admin</span>
+  <h1>Log in</h1>
+  <p class="lede">&nbsp;</p>
+  <form id="login-form">
+    <div>
+      <label for="login-password">Password</label>
+      <input type="password" id="login-password" required placeholder="Password" />
+    </div>
+    <button type="submit" class="btn btn-solid">Log in</button>
+    <p class="admin-err" hidden></p>
+  </form>
+</div>
 
-  <div class="admin-notice">
-    This page isn't wired up to a backend yet — creating an account or logging in won't do anything until that's connected. Nothing you type here goes anywhere right now.
+<div class="admin-card" id="loading-view">
+  <p class="empty-note">Loading…</p>
+</div>
+
+<div id="dash-view" hidden>
+  <div class="dash-head">
+    <h1>Dashboard</h1>
+    <button id="logout-btn">Log out</button>
+  </div>
+  <div class="stat-row" id="stat-row"></div>
+  <div class="dash-section">
+    <h2>Leads</h2>
+    <div id="leads-mount"></div>
+  </div>
+  <div class="dash-section">
+    <h2>Traffic by day</h2>
+    <div id="days-mount"></div>
   </div>
 </div>
 
 <script>
-  const setupView = document.getElementById("setup-view");
-  const loginView = document.getElementById("login-view");
-  document.getElementById("show-login").addEventListener("click", () => {
-    setupView.hidden = true;
-    loginView.hidden = false;
+(function () {
+  const API = "https://flow-v3-mu.vercel.app/api/chat";
+  const TOKEN_KEY = "flow-admin-token";
+
+  const views = {
+    setup: document.getElementById("setup-view"),
+    login: document.getElementById("login-view"),
+    loading: document.getElementById("loading-view"),
+    dash: document.getElementById("dash-view"),
+  };
+  function show(name) {
+    Object.entries(views).forEach(([k, el]) => { el.hidden = k !== name; });
+  }
+
+  async function api(body) {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Something went wrong");
+    return data;
+  }
+
+  function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } }
+  function setToken(t) { try { localStorage.setItem(TOKEN_KEY, t); } catch {} }
+  function clearToken() { try { localStorage.removeItem(TOKEN_KEY); } catch {} }
+
+  function showErr(form, msg) {
+    const err = form.querySelector(".admin-err");
+    err.textContent = msg;
+    err.hidden = false;
+  }
+
+  async function loadDashboard() {
+    const token = getToken();
+    if (!token) { show("login"); return; }
+    try {
+      const data = await api({ action: "get_dashboard_data", token });
+      renderDashboard(data);
+      show("dash");
+    } catch {
+      clearToken();
+      show("login");
+    }
+  }
+
+  function renderDashboard(data) {
+    const a = data.analytics || {};
+    document.getElementById("stat-row").innerHTML = `
+      <div class="card stat-card"><div class="num">${data.leads?.length ?? 0}</div><div class="label">Leads</div></div>
+      <div class="card stat-card"><div class="num">${a.totalPageviews ?? 0}</div><div class="label">Pageviews</div></div>
+      <div class="card stat-card"><div class="num">${a.totalSessions ?? 0}</div><div class="label">Sessions</div></div>
+      <div class="card stat-card"><div class="num">${a.bounceRate != null ? a.bounceRate + "%" : "—"}</div><div class="label">Bounce rate</div></div>
+    `;
+
+    const leadsMount = document.getElementById("leads-mount");
+    if (!data.leads?.length) {
+      leadsMount.innerHTML = `<p class="empty-note">No leads yet.</p>`;
+    } else {
+      leadsMount.innerHTML = `
+        <table class="leads-table">
+          <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Interest</th><th>Page</th></tr></thead>
+          <tbody>
+            ${data.leads.map(l => `
+              <tr>
+                <td>${new Date(l.ts).toLocaleDateString()}</td>
+                <td>${l.name || "—"}</td>
+                <td>${l.email}</td>
+                <td>${l.interest || "—"}</td>
+                <td>${l.page || "—"}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    const daysMount = document.getElementById("days-mount");
+    const days = (a.byDay || []).slice().reverse().slice(0, 14); // most recent 14 days
+    if (!days.length) {
+      daysMount.innerHTML = `<p class="empty-note">No traffic recorded yet.</p>`;
+    } else {
+      daysMount.innerHTML = `
+        <table class="leads-table">
+          <thead><tr><th>Date</th><th>Pageviews</th><th>Sessions</th><th>Bounces</th></tr></thead>
+          <tbody>
+            ${days.map(d => `
+              <tr><td>${d.date}</td><td>${d.pageviews}</td><td>${d.sessions}</td><td>${d.bounces}</td></tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+  }
+
+  document.getElementById("setup-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const email = document.getElementById("setup-email").value;
+    const password = document.getElementById("setup-password").value;
+    const confirm = document.getElementById("setup-password-confirm").value;
+    if (password !== confirm) { showErr(form, "Passwords don't match."); return; }
+    try {
+      const data = await api({ action: "admin_setup", email, password });
+      setToken(data.token);
+      show("loading");
+      await loadDashboard();
+    } catch (err) {
+      showErr(form, err.message);
+    }
   });
 
-  // Placeholder handlers — real submission (hashing, server-side
-  // verification, session issuance) lands once the backend endpoint
-  // exists. Deliberately doesn't pretend to succeed in the meantime.
-  function notReadyYet(form) {
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const err = form.querySelector(".lead-error");
-      err.textContent = "Not connected yet — check back once the backend is wired up.";
-      err.hidden = false;
-    });
-  }
-  notReadyYet(document.getElementById("setup-form"));
-  notReadyYet(document.getElementById("login-form"));
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const password = document.getElementById("login-password").value;
+    try {
+      const data = await api({ action: "admin_login", password });
+      setToken(data.token);
+      show("loading");
+      await loadDashboard();
+    } catch (err) {
+      showErr(form, err.message);
+    }
+  });
+
+  document.getElementById("logout-btn").addEventListener("click", () => {
+    clearToken();
+    show("login");
+  });
+
+  // Entry point: figure out setup-vs-login, or go straight to the
+  // dashboard if a still-valid session token is already stored.
+  (async function init() {
+    if (getToken()) { await loadDashboard(); return; }
+    try {
+      const status = await api({ action: "admin_status" });
+      show(status.setupComplete ? "login" : "setup");
+    } catch {
+      show("login"); // backend unreachable — default to login rather than risking exposing setup
+    }
+  })();
+})();
 </script>
 
 </body>
