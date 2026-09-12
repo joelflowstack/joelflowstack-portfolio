@@ -182,7 +182,6 @@ import * as THREE from "three";
   let checkerTexCache = {}; // keyed by parity (0/1) — see makeCheckerTexture
   let plasticMatCache = {}; // keyed by parity (0/1) — see makePlasticMaterial
   let blackFaceMatCache = null; // single shared instance — see makeBlackFaceMaterial
-  let frameSkip = 0; // used only on mobile — see the render throttle in animate()
   // Cursor reach for the floating glass shards, in the same rough world
   // units the shards live in — see updateFloatingGlass. Declared here
   // (not next to updateFloatingGlass further down) for the same reason
@@ -221,9 +220,11 @@ import * as THREE from "three";
     // smoothing anti-aliasing would — off on mobile, on for desktop.
     renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowFX, alpha: false });
     // Mobile GPUs push a lot fewer pixels/sec than desktop — capping the
-    // ratio lower on small viewports keeps this smooth on mid-range phones
-    // without a visible sharpness hit at that screen size anyway.
-    const pixelRatioCap = lowFX ? 1.3 : 1.75;
+    // ratio lower keeps this smooth on weaker devices. Was 1.3, bumped to
+    // 1.5 after reports of visible softness/low-res look on higher-DPI
+    // phones — 1.5 is still a real saving over the full 1.75 without
+    // looking noticeably blurry.
+    const pixelRatioCap = lowFX ? 1.5 : 1.75;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioCap));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -887,7 +888,7 @@ import * as THREE from "three";
     // silently overwritten by the viewport-width guess.
     if (fxMode === "auto") lowFX = isMobile;
     renderer.setSize(window.innerWidth, window.innerHeight);
-    const pixelRatioCap = lowFX ? 1.3 : 1.75;
+    const pixelRatioCap = lowFX ? 1.5 : 1.75;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioCap));
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -1063,17 +1064,14 @@ import * as THREE from "three";
       updateDecorativeFrame(elapsed);
     }
 
-    // On mobile, actually painting every requestAnimationFrame tick is the
-    // single biggest sustained GPU cost here. Update logic every frame (so
-    // scroll response stays frame-accurate) but only render every other
-    // frame — effectively ~30fps instead of up to 60/120fps. Safe because
-    // every frame is recomputed fresh from elapsed/scrollP rather than
-    // relying on the previous frame's state, so skipping a paint never
-    // desyncs anything, it's just one fewer picture drawn.
-    if (lowFX) {
-      frameSkip = (frameSkip + 1) % 2;
-      if (frameSkip !== 0) return;
-    }
+    // Frame-skipping (rendering every other tick) used to happen here for
+    // lowFX devices, but for a CONTINUOUSLY rotating object specifically,
+    // cutting the render rate is the single most visually obvious corner
+    // to cut — it reads as literal stutter/skipped steps, not just "a bit
+    // softer" the way the other lowFX trims (no clearcoat, fewer shards,
+    // lower pixel ratio) do. Those other trims give up real GPU cost
+    // without being nearly as perceptible, so they're doing the actual
+    // performance work now and every frame renders at full rate again.
     renderer.render(scene, camera);
   }
 
