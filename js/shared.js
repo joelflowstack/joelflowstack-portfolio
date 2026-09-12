@@ -29,6 +29,30 @@
     if (tag) tag.textContent = `@view-transition { navigation: ${reduced ? "none" : "auto"}; }`;
   })();
 
+  // Fire-and-forget pageview beacon for the admin dashboard's visitor
+  // count and bounce rate (see flow-V3's track_pageview action).
+  // sessionId lives in sessionStorage specifically, not localStorage —
+  // it should reset when the browser tab/session ends, so a visitor
+  // returning tomorrow counts as a new session rather than an endless
+  // continuation of their first one for bounce-rate purposes. Never
+  // throws, never blocks anything, never visible to the visitor either
+  // way — this is purely for the dashboard, not the page's own logic.
+  (function trackPageview() {
+    try {
+      let sessionId = sessionStorage.getItem("flow-session-id");
+      if (!sessionId) {
+        sessionId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        sessionStorage.setItem("flow-session-id", sessionId);
+      }
+      fetch("https://flow-v3-mu.vercel.app/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "track_pageview", page: location.pathname, sessionId }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch {}
+  })();
+
   const NAV_LINKS = [
     { label: "Home",      href: "home" },
     { label: "About",     href: "about" },
