@@ -184,7 +184,7 @@ section.tight { padding: 80px 0; }
 .nav-toggle { display: none; }
 
 @media (max-width: 760px) {
-  .site-nav { width: calc(100vw - 32px); padding: 0 8px 0 20px; }
+  .site-nav { width: calc(100vw - 32px); padding: 0 18px 0 20px; }
   /* The inline desktop link row is meaningless on mobile — the real
      mobile menu is #mobile-nav-overlay below, kept outside the
      transformed .site-nav pill on purpose (see the comment in
@@ -192,7 +192,7 @@ section.tight { padding: 80px 0; }
   .site-nav ul#nav-links { display: none; }
   .nav-toggle {
     display: flex; align-items: center; justify-content: center;
-    width: 44px; height: 44px; margin: -10px;
+    width: 44px; height: 44px; margin: -6px;
     background: none; border: none; color: var(--white);
     font-family: var(--font-mono); font-size: 1.3rem; cursor: pointer;
     z-index: 501; position: relative;
@@ -233,6 +233,40 @@ section.tight { padding: 80px 0; }
   }
   #mobile-nav-overlay a.active { color: var(--blue-glow); }
 }
+
+/* ---------- Custom select (see initCustomSelects in enhance.js) ----------
+   Replaces native <select> dropdowns where the OS-native open-list
+   popup would otherwise clash with the site's look — mobile browsers
+   don't allow styling that list, so this builds an equivalent that's
+   entirely our own markup instead. */
+.custom-select { position: relative; margin-top: 6px; }
+.custom-select-trigger {
+  width: 100%; text-align: left; position: relative;
+  background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line-soft); border-radius: var(--radius-sm); color: var(--white);
+  font-family: var(--font-body); font-size: 1rem; padding: 12px 40px 12px 14px;
+  cursor: pointer;
+}
+.custom-select-trigger::after {
+  content: "";
+  position: absolute; right: 16px; top: 50%; width: 8px; height: 8px;
+  border-right: 1.5px solid var(--grey-dim); border-bottom: 1.5px solid var(--grey-dim);
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform .2s var(--ease-out);
+}
+.custom-select-trigger.open::after { transform: translateY(-30%) rotate(-135deg); }
+.custom-select-trigger:focus { outline: none; border-color: rgba(255,255,255,.35); }
+.custom-select-options {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 50;
+  background: var(--glass-bg-strong); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line-soft); border-radius: var(--radius-sm);
+  padding: 6px; max-height: 240px; overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0,0,0,.5);
+}
+.custom-select-option {
+  padding: 10px 12px; border-radius: 6px; font-size: .92rem; color: var(--white-dim); cursor: pointer;
+}
+.custom-select-option:hover { background: rgba(255,255,255,.06); color: var(--white); }
 
 /* ---------- Buttons ---------- */
 .btn {
@@ -746,9 +780,12 @@ a.card:hover, .card.interactive:hover {
 }
 
 /* ---------- Visual-effects toggle (see initFxControl in shared.js) ---------- */
+/* Sits just below the nav pill (nav: top 18px + 62px tall ≈ 80px clearance
+   needed) rather than bottom-left, which used to collide with the landing
+   page's hero brand/typewriter text sitting in that same corner. */
 #fx-toggle {
-  position: fixed; bottom: calc(24px + var(--safe-bottom)); left: calc(24px + var(--safe-left));
-  z-index: 600;
+  position: fixed; top: calc(100px + var(--safe-top)); left: calc(24px + var(--safe-left));
+  z-index: 480; /* below the nav (500) so the nav pill can still slide over it if a page's content ever runs long, but above ordinary page content */
   font-family: var(--font-mono); font-size: .68rem; letter-spacing: .03em;
   color: var(--grey-dim); background: var(--glass-bg); backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -758,7 +795,7 @@ a.card:hover, .card.interactive:hover {
 }
 #fx-toggle:hover { color: var(--white-dim); border-color: var(--blue-line); background: var(--glass-bg-strong); }
 #fx-menu {
-  position: fixed; bottom: calc(64px + var(--safe-bottom)); left: calc(24px + var(--safe-left));
+  position: fixed; top: calc(144px + var(--safe-top)); left: calc(24px + var(--safe-left));
   z-index: 600;
   display: flex; flex-direction: column; gap: 2px;
   background: var(--glass-bg-strong); backdrop-filter: var(--glass-blur);
@@ -773,8 +810,8 @@ a.card:hover, .card.interactive:hover {
 }
 #fx-menu button:hover { background: rgba(255,255,255,.06); color: var(--white); }
 @media (max-width: 600px) {
-  #fx-toggle { font-size: .62rem; padding: 8px 12px; bottom: calc(16px + var(--safe-bottom)); left: calc(16px + var(--safe-left)); }
-  #fx-menu { bottom: calc(56px + var(--safe-bottom)); left: calc(16px + var(--safe-left)); }
+  #fx-toggle { font-size: .62rem; padding: 8px 12px; top: calc(88px + var(--safe-top)); left: calc(16px + var(--safe-left)); }
+  #fx-menu { top: calc(128px + var(--safe-top)); left: calc(16px + var(--safe-left)); }
 }
 
 #fx-toast {
