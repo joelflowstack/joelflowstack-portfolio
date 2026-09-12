@@ -236,6 +236,8 @@ section.tight { padding: 80px 0; }
 
 /* ---------- Buttons ---------- */
 .btn {
+  position: relative;
+  overflow: hidden;
   display: inline-flex; align-items: center; gap: .5em;
   font-family: var(--font-mono); font-size: .8rem; letter-spacing: .06em;
   text-transform: uppercase;
@@ -248,6 +250,25 @@ section.tight { padding: 80px 0; }
   -webkit-backdrop-filter: var(--glass-blur);
   cursor: pointer;
   transition: border-color .25s var(--ease-out), background .25s var(--ease-out), transform .25s var(--ease-out), box-shadow .25s var(--ease-out);
+}
+/* A thin diagonal band of light that sweeps across on hover — echoes
+   the glass material used throughout (cards, nav pill) actually
+   catching light, rather than a flat color swap being the only hover
+   feedback. Pure CSS (position animated via `left`, not `transform`,
+   so it never fights with initMagnetic's own transform writes on
+   these same elements). */
+.btn::before {
+  content: "";
+  position: absolute; top: 0; left: -60%;
+  width: 40%; height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,.35), transparent);
+  transform: skewX(-20deg);
+  transition: left .55s var(--ease-out);
+  pointer-events: none;
+}
+.btn:hover::before { left: 130%; }
+@media (prefers-reduced-motion: reduce) {
+  .btn::before { display: none; }
 }
 .btn:hover {
   border-color: var(--blue-line);
