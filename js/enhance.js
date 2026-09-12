@@ -1,6 +1,6 @@
 /**
  * JOEL FLOWSTACK — enhance.js
- * Three independent polish features, each safe to fail on its own:
+ * Four independent polish features, each safe to fail on its own:
  *   1. Cmd/Ctrl+K command palette — jump to any page or trigger a
  *      quick action (open Flow chat, email Joel) without leaving the
  *      keyboard.
@@ -8,11 +8,14 @@
  *      cursor on hover.
  *   3. Custom cursor — a small glowing dot + trailing ring, replacing
  *      the system cursor.
- * (2) and (3) are gated behind a real-mouse check (`hover: hover` and
- * `pointer: fine`) so touch devices are completely untouched — no
- * custom cursor, no magnetic pull, just the normal system behavior.
- * The command palette works everywhere the keyboard shortcut can be
- * typed; on touch devices it's reachable via the "Search" pill in nav.
+ *   4. Card tilt — .card.interactive elements tilt in perspective
+ *      toward the cursor, echoing the site's real-3D language.
+ * (2), (3), and (4) are gated behind a real-mouse check (`hover: hover`
+ * and `pointer: fine`) so touch devices are completely untouched — no
+ * custom cursor, no magnetic pull, no tilt, just the normal system
+ * behavior. The command palette works everywhere the keyboard shortcut
+ * can be typed; on touch devices it's reachable via the "Search" pill
+ * in nav.
  */
 (function () {
   "use strict";
@@ -168,6 +171,70 @@
   // pointer reads as the mouse itself lagging, not a stylistic trail.
   // The tumble/spin below is a separate, always-running CSS animation,
   // so removing position easing doesn't lose any of the 3D-cube visual.
+  // ---------- Card tilt (desktop only) ----------
+  // A subtle perspective tilt that follows the cursor across any
+  // .card.interactive — reinforces the site's whole "real 3D, not flat
+  // overlays" language (the cube, the floating glass shards) instead of
+  // cards behaving like static flat rectangles. Uses event delegation
+  // (one listener on `document`, `closest()` to find the card under the
+  // pointer) rather than binding per-card, specifically so it keeps
+  // working on cards injected after page load — portfolio.html's
+  // project cards are fetched and rendered async, so a per-element
+  // binding done at DOMContentLoaded would simply miss them. The actual
+  // geometry read (getBoundingClientRect, the same layout-forcing call
+  // that caused the scroll-jank bugs fixed earlier) happens at most
+  // once per rendered frame inside the rAF callback, never per raw
+  // pointermove event.
+  //
+  // Skips entirely under prefers-reduced-motion, and respects the same
+  // "flow-fx-mode" reduced-effects signal as cube.js/the page-transition
+  // gating — a per-pointermove transform write is real, avoidable cost
+  // on a device already flagged as struggling.
+  function initCardTilt() {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let fxMode = "auto";
+    try { fxMode = localStorage.getItem("flow-fx-mode") || "auto"; } catch {}
+    if (fxMode === "low") return;
+
+    const MAX_DEG = 6;
+    let raf = null;
+    let activeCard = null;
+    let clientX = 0, clientY = 0;
+
+    function applyTilt() {
+      raf = null;
+      if (!activeCard) return;
+      const rect = activeCard.getBoundingClientRect();
+      const px = (clientX - rect.left) / rect.width;
+      const py = (clientY - rect.top) / rect.height;
+      const rotY = (px - 0.5) * MAX_DEG * 2;
+      const rotX = (0.5 - py) * MAX_DEG * 2;
+      // translateY(-4px) replicates the existing CSS :hover lift — an
+      // inline style.transform always wins the cascade over that
+      // stylesheet rule, so it has to be included here or the lift
+      // would silently disappear the moment this JS-driven tilt starts.
+      activeCard.style.transform = `perspective(800px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateY(-4px) translateZ(0)`;
+    }
+
+    document.addEventListener("pointermove", (e) => {
+      const card = e.target.closest(".card.interactive");
+      if (card !== activeCard) {
+        if (activeCard) activeCard.style.transform = "";
+        activeCard = card;
+      }
+      if (!activeCard) return;
+      clientX = e.clientX; clientY = e.clientY;
+      if (!raf) raf = requestAnimationFrame(applyTilt);
+    }, { passive: true });
+
+    // Tab-away safeguard — without this a card could stay visibly
+    // tilted if the pointer leaves the OS window entirely mid-hover,
+    // since no further pointermove fires to reset it.
+    window.addEventListener("blur", () => {
+      if (activeCard) { activeCard.style.transform = ""; activeCard = null; }
+    });
+  }
+
   function initCursor() {
     document.documentElement.classList.add("custom-cursor-on");
     const cube = document.createElement("div");
@@ -428,6 +495,7 @@
     if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
       initMagnetic();
       initCursor();
+      initCardTilt();
     }
   });
 })();
