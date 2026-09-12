@@ -155,14 +155,19 @@
         mount.innerHTML = '<p style="color:var(--grey-dim);">New work lands here as projects wrap — check back soon.</p>';
         return;
       }
-      mount.innerHTML = projects.map(p => `
-        <a class="card interactive" href="project?slug=${encodeURIComponent(slugify(p.title))}" data-reveal>
+      mount.innerHTML = projects.map(p => {
+        const href = p.externalUrl || `project?slug=${encodeURIComponent(slugify(p.title))}`;
+        const external = !!p.externalUrl;
+        return `
+        <a class="card interactive" href="${href}"${external ? ' target="_blank" rel="noopener"' : ""} data-reveal>
           ${p.media?.find(m => m.type === "image") ? `<img src="${p.media.find(m => m.type === "image").src}" alt="" style="width:100%;border-radius:var(--radius) var(--radius) 0 0;margin:-1px -1px 16px;display:block;max-width:calc(100% + 2px);" />` : ""}
           ${p.tags?.length ? `<div class="tag-row">${p.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>` : ""}
           <h3>${p.title}</h3>
           <p>${p.description}</p>
+          ${external ? `<p style="margin-top:12px;"><span class="btn" style="pointer-events:none;">${p.ctaLabel || "View"} ↗</span></p>` : ""}
         </a>
-      `).join("");
+      `;
+      }).join("");
       mount.querySelectorAll("[data-reveal]").forEach(el => el.classList.add("revealed"));
     } catch (err) {
       console.warn("[latest-work] couldn't load content/projects.json:", err);
