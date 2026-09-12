@@ -483,12 +483,101 @@
     }, 3200);
   }
 
+  // ---------- Custom select ----------
+  // Native <select> dropdown TRIGGERS can be styled fine (already are,
+  // via global.css's form input/select rules) — the problem is the
+  // OPEN options list, which mobile browsers render as a genuinely
+  // unstylable OS-native control (iOS's wheel picker especially can't
+  // be touched by CSS at all; Android Chrome allows a little but not
+  // much). That's a real platform limitation, not a missed style rule,
+  // so any select that needs to look like part of this site rather than
+  // a jarring plain-white OS popup has to be a custom-built dropdown
+  // instead of a real <select>.
+  //
+  // This converts any <select class="js-custom-select"> found on the
+  // page into one: a styled trigger + a styled options panel, built
+  // from the original <option> elements (so the content is still just
+  // plain HTML, easy to edit later without touching this script) — and
+  // keeps the original <select> in the DOM (visually hidden, not
+  // removed) so form submission works completely unchanged; this is
+  // purely a visual layer on top of it.
+  function initCustomSelects() {
+    document.querySelectorAll("select.js-custom-select").forEach((select) => {
+      if (select.dataset.customized) return;
+      select.dataset.customized = "1";
+
+      const wrap = document.createElement("div");
+      wrap.className = "custom-select";
+
+      const trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.className = "custom-select-trigger";
+      trigger.setAttribute("aria-haspopup", "listbox");
+      trigger.setAttribute("aria-expanded", "false");
+
+      const panel = document.createElement("div");
+      panel.className = "custom-select-options";
+      panel.setAttribute("role", "listbox");
+      panel.hidden = true;
+
+      const options = Array.from(select.options);
+      const syncTrigger = () => {
+        const selected = options[select.selectedIndex];
+        trigger.textContent = selected ? selected.textContent : "";
+      };
+
+      options.forEach((opt, i) => {
+        const item = document.createElement("div");
+        item.className = "custom-select-option";
+        item.textContent = opt.textContent;
+        item.setAttribute("role", "option");
+        item.tabIndex = -1;
+        item.addEventListener("click", () => {
+          select.selectedIndex = i;
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+          syncTrigger();
+          closePanel();
+        });
+        panel.appendChild(item);
+      });
+
+      function openPanel() {
+        panel.hidden = false;
+        trigger.setAttribute("aria-expanded", "true");
+        trigger.classList.add("open");
+      }
+      function closePanel() {
+        panel.hidden = true;
+        trigger.setAttribute("aria-expanded", "false");
+        trigger.classList.remove("open");
+      }
+
+      trigger.addEventListener("click", () => {
+        panel.hidden ? openPanel() : closePanel();
+      });
+      document.addEventListener("click", (e) => {
+        if (!wrap.contains(e.target)) closePanel();
+      });
+      trigger.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closePanel();
+      });
+
+      syncTrigger();
+      select.style.display = "none"; // hidden, not removed — still the real form field
+      select.parentNode.insertBefore(wrap, select);
+      wrap.appendChild(trigger);
+      wrap.appendChild(panel);
+      wrap.appendChild(select);
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     buildPalette();
     initTerminal();
     initServiceQuiz();
     initContactPrefill();
     initEasterEgg();
+    initCustomSelects();
     // Real-mouse check — matchMedia here, not viewport width, since a
     // touch laptop or a plugged-in mouse on a tablet should still get
     // these; a narrow desktop window should NOT lose them.
