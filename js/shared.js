@@ -434,21 +434,82 @@
   // ---------------------------------------------------------------
   const LEAD_API_URL = "https://flow-v3-mu.vercel.app/api/chat";
   const LEAD_STORAGE_KEY = "leadPromptDone";
+  const LEAD_SKIPS_KEY = "leadPromptSkips";
+  const LEAD_NEXT_KEY = "leadPromptNextAt";
+  // Backing off, not nagging forever: first prompt at 20s, then — only if
+  // it was actually dismissed unanswered, not submitted — re-prompt at
+  // increasingly generous gaps (1min, 3min, 10min). After that last
+  // attempt also goes unanswered, it stops asking for good rather than
+  // fighting for attention indefinitely; a popup that reappears every
+  // few seconds reads as a dark pattern and tends to hurt trust (and
+  // conversions) more than it helps.
+  const LEAD_DELAYS = [20000, 60000, 180000, 600000];
 
   function initLeadCapture() {
     if (localStorage.getItem(LEAD_STORAGE_KEY)) return;
     if (document.title.startsWith("404")) return; // an error page is a bad first impression to pitch on
-    setTimeout(showLeadModal, 5000);
+
+    let skips = 0;
+    try { skips = parseInt(localStorage.getItem(LEAD_SKIPS_KEY) || "0", 10); } catch {}
+    if (skips >= LEAD_DELAYS.length) { markLeadPromptDone(); return; }
+
+    // No stored "next attempt" time yet → this is the very first prompt
+    // this visitor has ever been eligible for, so just use the initial
+    // delay. Otherwise a previous skip already set an absolute point in
+    // time to try again — respecting that (rather than restarting the
+    // delay) is what makes this work correctly across page navigations,
+    // not just within one page.
+    let storedNextAt = 0;
+    try { storedNextAt = parseInt(localStorage.getItem(LEAD_NEXT_KEY) || "0", 10); } catch {}
+    const delay = storedNextAt ? Math.max(1000, storedNextAt - Date.now()) : LEAD_DELAYS[0];
+    setTimeout(showLeadModal, delay);
   }
 
   function markLeadPromptDone() {
-    try { localStorage.setItem(LEAD_STORAGE_KEY, "1"); } catch (_) { /* private browsing — fine, just may reappear next visit */ }
+    try {
+      localStorage.setItem(LEAD_STORAGE_KEY, "1");
+      localStorage.removeItem(LEAD_SKIPS_KEY);
+      localStorage.removeItem(LEAD_NEXT_KEY);
+    } catch (_) { /* private browsing — fine, just may reappear next visit */ }
   }
 
+  // Called when the modal is dismissed WITHOUT submitting. Returns the
+  // delay (ms) until the next attempt, or null once the schedule is
+  // exhausted (in which case this also marks it permanently done).
+  function scheduleNextLeadPrompt() {
+    let skips = 0;
+    try { skips = parseInt(localStorage.getItem(LEAD_SKIPS_KEY) || "0", 10) + 1; } catch {}
+    if (skips >= LEAD_DELAYS.length) { markLeadPromptDone(); return null; }
+    try {
+      localStorage.setItem(LEAD_SKIPS_KEY, String(skips));
+      localStorage.setItem(LEAD_NEXT_KEY, String(Date.now() + LEAD_DELAYS[skips]));
+    } catch (_) {}
+    return LEAD_DELAYS[skips];
+  }
+
+  // Hidden admin entry point: Ctrl+Shift+F only does anything while the
+  // lead-capture modal is actually open on screen — a visitor pressing
+  // it any other time gets completely normal behavior, nothing to
+  // discover or stumble into. Checked live against the DOM (not a
+  // stored "is it open" flag) so it can never fire against a stale
+  // state.
+  document.addEventListener("keydown", (e) => {
+    if (!e.ctrlKey || !e.shiftKey || e.key.toLowerCase() !== "f") return;
+    const modal = document.getElementById("lead-modal-overlay");
+    if (!modal || !modal.classList.contains("open")) return;
+    e.preventDefault();
+    location.href = "admin";
+  });
+
   function showLeadModal() {
+    if (localStorage.getItem(LEAD_STORAGE_KEY)) return; // e.g. submitted on another tab since this timer was set
     // Don't stack on top of the mobile menu or the command palette if
-    // either happens to be open right as the timer fires.
-    if (document.querySelector("#mobile-nav-overlay.open, #cmdk-overlay.open")) return;
+    // either happens to be open right as the timer fires — try again
+    // shortly rather than silently losing this attempt for good.
+    if (document.querySelector("#mobile-nav-overlay.open, #cmdk-overlay.open")) {
+      setTimeout(showLeadModal, 5000);
+      return;
+    }
 
     const overlay = document.createElement("div");
     overlay.id = "lead-modal-overlay";
@@ -477,9 +538,14 @@
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add("open"));
 
-    const close = () => {
+    const close = (submitted) => {
       overlay.classList.remove("open");
-      markLeadPromptDone();
+      if (submitted) {
+        markLeadPromptDone();
+      } else {
+        const delay = scheduleNextLeadPrompt();
+        if (delay != null) setTimeout(showLeadModal, delay);
+      }
       setTimeout(() => overlay.remove(), 300);
     };
     overlay.querySelector(".lead-modal-close").addEventListener("click", close);
@@ -518,8 +584,7 @@
         if (!res.ok) throw new Error(data.error || "Something went wrong.");
 
         overlay.querySelector(".lead-modal").innerHTML = `<p class="lead-thanks">Thanks \u2014 I'll be in touch.</p>`;
-        markLeadPromptDone();
-        setTimeout(close, 1800);
+        setTimeout(() => close(true), 1800);
       } catch (err) {
         submitBtn.disabled = false;
         submitBtn.textContent = "Keep me posted";
