@@ -371,13 +371,6 @@ section.tight { padding: 80px 0; }
   z-index: 1;
 }
 #scroll-hero .pin-stage.hero-passed { display: none; }
-#scroll-hero .pin-stage::before, #scroll-hero .pin-stage::after {
-  content: ""; position: fixed; left: 0; right: 0;
-  height: clamp(10px, 2.6vh, 28px);
-  background: #000; z-index: 4; pointer-events: none;
-}
-#scroll-hero .pin-stage::before { top: 0; }
-#scroll-hero .pin-stage::after { bottom: 0; }
 #scroll-hero .hero-brand {
   position: absolute; left: 40px; bottom: 60px; top: auto; transform: none;
   z-index: 3; pointer-events: none;
