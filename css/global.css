@@ -796,6 +796,14 @@ a.card:hover, .card.interactive:hover {
   border: 1px solid var(--line-soft); border-radius: var(--radius-sm);
   padding: 6px; min-width: 120px;
 }
+/* Without this, the plain `display: flex` above wins over the browser's
+   default `[hidden] { display: none }` UA rule — an ID selector always
+   beats a bare attribute selector regardless of which one is "supposed"
+   to apply, so the menu.hidden JS toggle had zero visual effect and it
+   just sat there permanently open. This one-line override is the
+   standard fix: it out-specifies the base rule specifically for the
+   hidden state. */
+#fx-menu[hidden] { display: none; }
 #fx-menu button {
   font-family: var(--font-mono); font-size: .72rem; text-align: left;
   color: var(--white-dim); background: none; border: none; border-radius: 6px;
