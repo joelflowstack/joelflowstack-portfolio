@@ -106,9 +106,23 @@ video { max-width: 100%; height: auto; display: block; }
   filter: blur(90px);
   background: radial-gradient(circle, var(--blue-glow-soft), transparent 70%);
 }
-.glow-field::before { width: 46vw; height: 46vw; top: -14vw; left: -10vw; }
+/* Slow, subtle drift instead of a perfectly static blob — reads as an
+   ambient, "living" background rather than a fixed decoration, at a
+   pace slow enough (20+s) to never feel like motion competing for
+   attention. Pure transform/opacity, no scroll listeners or JS
+   involved, and already covered by the site's existing
+   prefers-reduced-motion rule (animation-duration forced to ~0). */
+.glow-field::before { width: 46vw; height: 46vw; top: -14vw; left: -10vw; animation: glowDrift1 22s ease-in-out infinite alternate; }
 .glow-field::after { width: 38vw; height: 38vw; bottom: -12vw; right: -8vw;
-  background: radial-gradient(circle, rgba(63,169,232,.10), transparent 70%); }
+  background: radial-gradient(circle, rgba(63,169,232,.10), transparent 70%); animation: glowDrift2 27s ease-in-out infinite alternate; }
+@keyframes glowDrift1 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(3vw, 2.5vw) scale(1.08); }
+}
+@keyframes glowDrift2 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-2.5vw, -3vw) scale(1.06); }
+}
 
 /* ---------- Typography ---------- */
 h1, h2, h3, h4 {
