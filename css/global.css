@@ -57,6 +57,29 @@ body {
   position: relative;
 }
 
+/* Subtle film-grain texture — a fixed, full-viewport, low-opacity noise
+   layer that never scrolls (so it reads as a property of the screen,
+   not the page). This is the kind of thing that's invisible if you go
+   looking for it but reads as "premium/cinematic" in aggregate rather
+   than the flat, dead-solid dark backgrounds a lot of dark-themed sites
+   have — a still-image screenshot won't fully do it justice the way
+   seeing it move subtly with the page does. Self-contained inline SVG
+   (feTurbulence), no image request needed. Disabled for reduced-motion
+   preference not because it moves, but because it's a texture some
+   people specifically find visually noisy/distracting regardless of
+   whether anything is animating. */
+body::after {
+  content: "";
+  position: fixed; inset: 0; z-index: 2;
+  pointer-events: none;
+  opacity: .035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@media (prefers-reduced-motion: reduce) {
+  body::after { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
@@ -490,6 +513,21 @@ a.card:hover, .card.interactive:hover {
   border-color: var(--blue-line);
   background: var(--glass-bg-strong);
   box-shadow: 0 20px 50px rgba(0,0,0,.5), 0 0 34px var(--blue-glow-soft);
+}
+
+/* Original line icons (drawn directly as inline SVG, not stock imagery)
+   for the services cards — monochrome and quiet by default so they
+   don't compete with the heading, warming to the site's blue accent
+   and a soft glow on hover as one more small premium touch alongside
+   the card's own lift/tilt. */
+.card-icon {
+  width: 40px; height: 40px; margin-bottom: 18px;
+  color: var(--grey-dim);
+  transition: color .3s var(--ease-out), filter .3s var(--ease-out);
+}
+.card.interactive:hover .card-icon {
+  color: #3fa9e8;
+  filter: drop-shadow(0 0 10px rgba(63,169,232,.5));
 }
 
 /* ---------- Stats strip ---------- */
