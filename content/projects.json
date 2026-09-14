@@ -27,6 +27,13 @@
       "description": "A short, practical guide breaking down five different ways a business can add chatbot functionality — from simple no-code widgets to custom AI assistants, platform bots, CRM lead-capture, and voice assistants — with real-world costs, limitations, and a decision framework for picking the right one before spending money.",
       "externalUrl": "https://selar.com/58i6085055",
       "ctaLabel": "Get it on Selar — $3"
+    },
+    {
+      "title": "Building a Self-Learning AI: The Concept-Graph Memory Architecture",
+      "tags": ["Technical Guide", "AI Memory", "$14.75"],
+      "description": "An implementation-level guide to giving AI assistants persistent, connected memory — moving past flat fact storage into a concept-graph architecture that links related information, scores what's worth remembering, and expands as conversations produce new knowledge. Covers semantic linking, memory ingestion, novelty scoring, and a full worked example. Built for AI developers and agent builders working with memory or retrieval, not a beginner explainer.",
+      "externalUrl": "https://selar.com/38836r93y1",
+      "ctaLabel": "Get the Architecture — $14.75"
     }
   ]
 }
