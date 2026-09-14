@@ -57,28 +57,15 @@ body {
   position: relative;
 }
 
-/* Subtle film-grain texture — a fixed, full-viewport, low-opacity noise
-   layer that never scrolls (so it reads as a property of the screen,
-   not the page). This is the kind of thing that's invisible if you go
-   looking for it but reads as "premium/cinematic" in aggregate rather
-   than the flat, dead-solid dark backgrounds a lot of dark-themed sites
-   have — a still-image screenshot won't fully do it justice the way
-   seeing it move subtly with the page does. Self-contained inline SVG
-   (feTurbulence), no image request needed. Disabled for reduced-motion
-   preference not because it moves, but because it's a texture some
-   people specifically find visually noisy/distracting regardless of
-   whether anything is animating. */
-body::after {
-  content: "";
-  position: fixed; inset: 0; z-index: 2;
-  pointer-events: none;
-  opacity: .035;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-@media (prefers-reduced-motion: reduce) {
-  body::after { display: none; }
-}
+/* NOTE: a film-grain overlay already exists further down this file
+   (search "Cinematic film grain") — it deliberately avoids
+   mix-blend-mode for a documented performance reason. An earlier pass
+   added a second, duplicate body::after rule here that used
+   mix-blend-mode anyway (without noticing the existing one), which
+   silently won the cascade and reintroduced exactly the cost the
+   original was written to avoid — the likely cause of a reported
+   "extremely laggy on all pages" regression. Removed; the original
+   below is the only grain overlay now. */
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -106,23 +93,16 @@ video { max-width: 100%; height: auto; display: block; }
   filter: blur(90px);
   background: radial-gradient(circle, var(--blue-glow-soft), transparent 70%);
 }
-/* Slow, subtle drift instead of a perfectly static blob — reads as an
-   ambient, "living" background rather than a fixed decoration, at a
-   pace slow enough (20+s) to never feel like motion competing for
-   attention. Pure transform/opacity, no scroll listeners or JS
-   involved, and already covered by the site's existing
-   prefers-reduced-motion rule (animation-duration forced to ~0). */
-.glow-field::before { width: 46vw; height: 46vw; top: -14vw; left: -10vw; animation: glowDrift1 22s ease-in-out infinite alternate; }
+/* A prior pass animated these (slow position/scale drift) for a
+   "living background" feel, but animating a large blur(90px) filter
+   forces the browser to re-rasterize that blur every single frame —
+   filters generally can't be cheaply cached across geometry changes,
+   and this ran on every page, permanently, whether idle or not.
+   Reverted to static after a reported "extremely laggy on all pages"
+   regression — not worth a real, continuous cost for a subtle effect. */
+.glow-field::before { width: 46vw; height: 46vw; top: -14vw; left: -10vw; }
 .glow-field::after { width: 38vw; height: 38vw; bottom: -12vw; right: -8vw;
-  background: radial-gradient(circle, rgba(63,169,232,.10), transparent 70%); animation: glowDrift2 27s ease-in-out infinite alternate; }
-@keyframes glowDrift1 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(3vw, 2.5vw) scale(1.08); }
-}
-@keyframes glowDrift2 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-2.5vw, -3vw) scale(1.06); }
-}
+  background: radial-gradient(circle, rgba(63,169,232,.10), transparent 70%); }
 
 /* ---------- Typography ---------- */
 h1, h2, h3, h4 {
