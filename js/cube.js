@@ -1049,6 +1049,42 @@ import * as THREE from "three";
     }
   });
 
+  // ---------- Hidden perf stats overlay ----------
+  // Ctrl+Shift+P toggles a small on-screen readout of FPS and the
+  // renderer's own draw-call/triangle counts (renderer.info) — not for
+  // visitors, just a real debugging tool so future perf questions can
+  // be answered with actual numbers instead of guessing from a
+  // screen-recording or a verbal "it feels laggy". Never shown unless
+  // explicitly toggled; adds zero cost while hidden.
+  let statsEl = null;
+  let statsVisible = false;
+  let statsFrameCount = 0;
+  let statsLastUpdate = 0;
+
+  function toggleStats() {
+    statsVisible = !statsVisible;
+    if (statsVisible && !statsEl) {
+      statsEl = document.createElement("div");
+      statsEl.style.cssText = "position:fixed;bottom:8px;right:8px;z-index:9999;background:rgba(0,0,0,.75);color:#0f0;font:11px monospace;padding:6px 9px;border-radius:4px;pointer-events:none;white-space:pre;";
+      document.body.appendChild(statsEl);
+    }
+    if (statsEl) statsEl.style.display = statsVisible ? "block" : "none";
+  }
+  window.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "p") toggleStats();
+  });
+
+  function updateStats(elapsed) {
+    if (!statsVisible) return;
+    statsFrameCount++;
+    if (elapsed - statsLastUpdate < 0.5) return; // refresh twice a second — reading it doesn't need to be per-frame, and per-frame DOM writes would add their own cost
+    const fps = Math.round(statsFrameCount / (elapsed - statsLastUpdate));
+    statsFrameCount = 0;
+    statsLastUpdate = elapsed;
+    const info = renderer.info;
+    statsEl.textContent = `FPS: ${fps}\nDraw calls: ${info.render.calls}\nTriangles: ${info.render.triangles}\nlowFX: ${lowFX}`;
+  }
+
   function animate() {
     if (rafPaused) return;
     requestAnimationFrame(animate);
@@ -1064,6 +1100,7 @@ import * as THREE from "three";
 
     updateBoot();
     monitorPerformance(elapsed);
+    updateStats(elapsed);
     updateFloatingGlass(elapsed);
     updateNebulaBackdrop(elapsed);
     if (scatterActive) {
