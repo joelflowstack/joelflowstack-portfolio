@@ -98,6 +98,7 @@ import * as THREE from "three";
   let hoveredNavIndex = -1;
   let keyboardNavIndex = -1; // -1 = no keyboard selection; mouse movement clears it back
   let pointerPixel = { x: -9999, y: -9999 };
+  let pointerMoved = true; // starts true so the first frame still resolves hover state correctly
   let clickPulsePiece = null;
   let clickPulseStart = 0;
   let floatingGlass = null;
@@ -829,7 +830,15 @@ import * as THREE from "three";
         // hover — same visual language either way, just a different
         // input driving hoveredNavIndex.
         hoveredNavIndex = keyboardNavIndex;
-      } else {
+      } else if (pointerMoved) {
+        // This used to raycast against all 8 nav tiles unconditionally,
+        // every single frame, forever — including every frame the mouse
+        // sits perfectly still (which is most of them). Ray-triangle
+        // intersection tests aren't free; only re-running this when the
+        // pointer actually moved cuts that cost to near-zero while idle,
+        // with zero visible difference since the result can't change
+        // without the pointer moving anyway.
+        pointerMoved = false;
         pointer.x = (pointerPixel.x / window.innerWidth) * 2 - 1;
         pointer.y = -(pointerPixel.y / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(pointer, camera);
@@ -938,6 +947,7 @@ import * as THREE from "three";
     pointerPixel.x = e.clientX;
     pointerPixel.y = e.clientY;
     keyboardNavIndex = -1;
+    pointerMoved = true; // consumed (and cleared) in updateTileHover — skips a full raycast on frames where nothing actually changed
   }
 
   // Arrow keys cycle the same 8 nav tiles the mouse can hover; Enter/Space
