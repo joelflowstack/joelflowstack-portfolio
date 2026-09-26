@@ -118,6 +118,7 @@ import * as THREE from "three";
   let scrollP = 0; // 0..1, updated on scroll (portal mode only)
   let scrollDirty = true; // set on scroll, consumed once per rendered frame in animate() — see onScroll
   let pinStageEl = null; // cached in init(), avoids a querySelector on every scroll event
+  let cornerGlowShown = false; // one-time latch — see the corner-glow fade-in trigger in updatePortalFrame
   let rafPaused = false; // must be declared before the first animate() call below, or referencing it inside animate() throws (temporal dead zone) on that first call
   let isMobile = window.innerWidth < 760; // viewport-width guess — kept for onResize's own pixel-ratio recompute
 
@@ -1175,6 +1176,16 @@ import * as THREE from "three";
     // text was swinging along with the still-spinning cube.
     const labelAmt = smootherstep(LOCK_POINT - 0.06, LOCK_POINT, P);
     updateTileHover(labelAmt);
+
+    // Fades the static corner glow in once, at the same point the old
+    // per-frame-animated version used to fade in — a single boolean
+    // check + classList.add guarded by cornerGlowShown, not a per-frame
+    // write, so this adds no meaningful cost to a function that's
+    // already running every frame regardless.
+    if (!cornerGlowShown && labelAmt > 0.5) {
+      cornerGlowShown = true;
+      if (pinStageEl) pinStageEl.classList.add("locked");
+    }
 
     // gentle idle spin on the mini-cube regardless of phase
     pieces.forEach((p) => {
