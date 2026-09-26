@@ -94,7 +94,6 @@ import * as THREE from "three";
   let lockedCameraZ = 6; // recomputed from viewport + FOV in onResize()/init(), not a magic number
 
   let renderer, scene, camera, cubeGroup, shadowCatcher;
-  let edgeLight = null;
   let hoveredNavIndex = -1;
   let keyboardNavIndex = -1; // -1 = no keyboard selection; mouse movement clears it back
   let pointerPixel = { x: -9999, y: -9999 };
@@ -271,7 +270,11 @@ import * as THREE from "three";
     lockedCameraZ = computeLockedCameraZ();
 
     if (PORTAL_MODE) {
-      buildEdgeLights();
+      // Edge light is now a static CSS glow (see #scroll-hero .pin-stage
+      // in global.css) instead of an animated SVG perimeter sweep — that
+      // sweep called getPointAtLength() and multiple setAttribute() calls
+      // every single frame, a real and entirely avoidable cost for a
+      // decorative element. A static corner glow costs nothing per frame.
       pinStageEl = document.querySelector("#scroll-hero .pin-stage");
       window.addEventListener("scroll", onScroll, { passive: true });
       onScroll();
@@ -726,95 +729,6 @@ import * as THREE from "three";
   // ---------------------------------------------------------------
   // NAV LABELS (2D DOM overlay, positioned each frame from 3D)
   // ---------------------------------------------------------------
-  function buildEdgeLights() {
-    const stage = document.querySelector("#scroll-hero .pin-stage");
-    if (!stage) return;
-    const svgNS = "http://www.w3.org/2000/svg";
-
-    const svg = document.createElementNS(svgNS, "svg");
-    svg.id = "edge-light-svg";
-
-    const defs = document.createElementNS(svgNS, "defs");
-    const filter = document.createElementNS(svgNS, "filter");
-    filter.id = "edgeGlow";
-    filter.setAttribute("x", "-60%"); filter.setAttribute("y", "-60%");
-    filter.setAttribute("width", "220%"); filter.setAttribute("height", "220%");
-    const blur = document.createElementNS(svgNS, "feGaussianBlur");
-    blur.setAttribute("stdDeviation", "5");
-    filter.appendChild(blur);
-    defs.appendChild(filter);
-    svg.appendChild(defs);
-
-    // The bold traveling light itself — a thick, blurred, bright dash.
-    const sweep = document.createElementNS(svgNS, "path");
-    sweep.setAttribute("fill", "none");
-    sweep.setAttribute("stroke", "#3fa9e8"); // matches --blue-glow directly (var() support in SVG presentation attrs is inconsistent)
-    sweep.setAttribute("stroke-width", "5");
-    sweep.setAttribute("stroke-linecap", "round");
-    sweep.setAttribute("filter", "url(#edgeGlow)");
-    svg.appendChild(sweep);
-
-    // The leading dot — bright core, sits exactly on the path via
-    // getPointAtLength(), so it's always precisely at the sweep's front.
-    const dot = document.createElementNS(svgNS, "circle");
-    dot.setAttribute("r", "6");
-    dot.setAttribute("fill", "#eef8ff");
-    dot.setAttribute("filter", "url(#edgeGlow)");
-    svg.appendChild(dot);
-
-    stage.appendChild(svg);
-    edgeLight = { svg, sweep, dot, perimeter: 0 };
-    layoutEdgeLights();
-    window.addEventListener("resize", layoutEdgeLights);
-  }
-
-  function layoutEdgeLights() {
-    if (!edgeLight) return;
-    const stage = document.querySelector("#scroll-hero .pin-stage");
-    if (!stage) return;
-    const w = stage.clientWidth, h = stage.clientHeight;
-    const inset = 3;
-    edgeLight.svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-    // Starts at top-center, goes clockwise: right along top, down the
-    // right edge, left along the bottom, up the left edge, back to start.
-    // Starting the path itself at top-center (not a corner) is what
-    // makes the sweep "accurately start at the top" rather than
-    // approximating it through an angular offset.
-    const d = `M ${w / 2},${inset} L ${w - inset},${inset} L ${w - inset},${h - inset} L ${inset},${h - inset} L ${inset},${inset} Z`;
-    edgeLight.sweep.setAttribute("d", d);
-    edgeLight.perimeter = edgeLight.sweep.getTotalLength();
-    const dash = edgeLight.perimeter * 0.14;
-    edgeLight.sweep.setAttribute("stroke-dasharray", `${dash} ${edgeLight.perimeter - dash}`);
-    edgeLight.dashLength = dash;
-
-    // Scale the stroke/dot relative to the smaller viewport dimension —
-    // a 5px stroke that looks bold on a 1920px desktop reads as oversized
-    // on a 375px phone screen.
-    const scale = Math.max(0.6, Math.min(1, Math.min(w, h) / 700));
-    edgeLight.sweep.setAttribute("stroke-width", (5 * scale).toFixed(1));
-    edgeLight.dot.setAttribute("r", (6 * scale).toFixed(1));
-  }
-
-  // Constant-speed loop around the true perimeter, computed fresh from
-  // elapsed time each frame (stateless, same philosophy as the rest of
-  // the portal animation) — one full lap every LOOP_SECONDS regardless
-  // of screen size, so it never feels rushed on a big monitor or
-  // frantic on a small one.
-  function updateEdgeLights(elapsed, visibility) {
-    if (!edgeLight || !edgeLight.perimeter) return;
-    const LOOP_SECONDS = 10;
-    const dist = (elapsed % LOOP_SECONDS) / LOOP_SECONDS * edgeLight.perimeter;
-    edgeLight.sweep.setAttribute("stroke-dashoffset", -dist);
-
-    const leadDist = (dist + edgeLight.dashLength) % edgeLight.perimeter;
-    const pt = edgeLight.sweep.getPointAtLength(leadDist);
-    edgeLight.dot.setAttribute("cx", pt.x);
-    edgeLight.dot.setAttribute("cy", pt.y);
-
-    // Fades in alongside the rest of the locked-hero UI rather than
-    // being visible (and distracting) during the tumble.
-    edgeLight.svg.style.opacity = String(Math.max(0.35, visibility));
-  }
 
   // Raycasts from the actual pointer position (not just on click) to find
   // which nav tile, if any, is currently under the cursor, then eases
@@ -1050,12 +964,20 @@ import * as THREE from "three";
   });
 
   // ---------- Hidden perf stats overlay ----------
-  // Ctrl+Shift+P toggles a small on-screen readout of FPS and the
+  // Ctrl+Alt+Shift+D toggles a small on-screen readout of FPS and the
   // renderer's own draw-call/triangle counts (renderer.info) — not for
   // visitors, just a real debugging tool so future perf questions can
   // be answered with actual numbers instead of guessing from a
   // screen-recording or a verbal "it feels laggy". Never shown unless
   // explicitly toggled; adds zero cost while hidden.
+  //
+  // This was originally bound to Ctrl+Shift+P, which turned out to
+  // collide with the browser's own Print command on Windows/Chrome —
+  // missing a preventDefault() meant the OS print dialog fired right
+  // alongside it. Moved to a four-modifier combo specifically because
+  // essentially nothing else claims it, and preventDefault() is now
+  // called regardless as a second layer of protection against this
+  // exact class of collision happening again with some other browser.
   let statsEl = null;
   let statsVisible = false;
   let statsFrameCount = 0;
@@ -1071,7 +993,10 @@ import * as THREE from "three";
     if (statsEl) statsEl.style.display = statsVisible ? "block" : "none";
   }
   window.addEventListener("keydown", (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "p") toggleStats();
+    if (e.ctrlKey && e.altKey && e.shiftKey && e.key.toLowerCase() === "d") {
+      e.preventDefault();
+      toggleStats();
+    }
   });
 
   function updateStats(elapsed) {
@@ -1250,7 +1175,6 @@ import * as THREE from "three";
     // text was swinging along with the still-spinning cube.
     const labelAmt = smootherstep(LOCK_POINT - 0.06, LOCK_POINT, P);
     updateTileHover(labelAmt);
-    updateEdgeLights(elapsed, labelAmt);
 
     // gentle idle spin on the mini-cube regardless of phase
     pieces.forEach((p) => {
