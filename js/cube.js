@@ -632,33 +632,27 @@ import * as THREE from "three";
 
     for (let i = 0; i < count; i++) {
       const size = 0.1 + Math.random() * 0.2;
-      // `transmission` forces WebGLRenderer to render an extra full copy of
-      // the opaque scene to a texture every frame, once, regardless of how
-      // many transmissive objects exist — on mobile that's a genuinely
-      // heavy tax for a background detail. Mobile shards drop transmission
-      // and lean on opacity + clearcoat + the real env map instead, which
-      // still reads as glass-like without the extra render pass.
-      const mat = lowFX ? new THREE.MeshPhysicalMaterial({
+      // `transmission` used to be on for full-effects devices — it forces
+      // WebGLRenderer to render an entire extra copy of the opaque scene
+      // to a texture, every single frame, regardless of how many
+      // transmissive objects exist. That's one of the most expensive
+      // things a material can ask for, and it was costing EVERY visitor
+      // on "full" effects this tax for a background decoration, not just
+      // mobile. Given how persistent the reported lag has been even with
+      // the adaptive lowFX system in place, this is worth giving up
+      // universally rather than trusting auto-detection to catch it in
+      // time — opacity + clearcoat + emissive + the real env map still
+      // reads as glass-like without the extra render pass.
+      const mat = new THREE.MeshPhysicalMaterial({
         color: 0xe4d6ff,
         transparent: true,
-        opacity: 0.42 + Math.random() * 0.2,
-        roughness: 0.15,
+        opacity: 0.45 + Math.random() * 0.22,
+        roughness: 0.14,
         metalness: 0,
-        clearcoat: 0,
+        clearcoat: lowFX ? 0 : 0.85,
+        clearcoatRoughness: 0.1,
         emissive: 0x8b5cf6,
-        emissiveIntensity: 0.6,
-      }) : new THREE.MeshPhysicalMaterial({
-        color: 0xe4d6ff,
-        transparent: true,
-        opacity: 0.5 + Math.random() * 0.25,
-        roughness: 0.12,
-        metalness: 0,
-        transmission: 0.55,   // genuine glass-like light transmission
-        thickness: 0.4,
-        clearcoat: 1,
-        clearcoatRoughness: 0.08,
-        emissive: 0x8b5cf6,   // this is what makes them read as light sources, not just lit objects
-        emissiveIntensity: 0.7,
+        emissiveIntensity: 0.65,
       });
       const mesh = new THREE.Mesh(shardGeo, mat);
       mesh.scale.setScalar(size);
