@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>You're offline — Joel Flowstack</title>
+<meta name="robots" content="noindex, nofollow" />
+<!--
+  Served by sw.js when a navigation request fails while offline — this
+  intercepts the browser's own network-error interstitial (the one with
+  the default dinosaur game) and shows this instead. Deliberately fully
+  self-contained (inline CSS/JS, no external font/script/image requests)
+  since this has to render correctly with zero network access — the
+  whole point of the page.
+-->
+<style>
+  :root {
+    --black: #05070c; --white: #f4f6fb; --grey-dim: #7b8494;
+    --blue: #3fa9e8; --purple: #8b5cf6; --line: rgba(255,255,255,.12);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%;
+    background: radial-gradient(ellipse 120% 60% at 50% 0%, #16213a 0%, #0a0f1c 38%, var(--black) 72%);
+    color: var(--white);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .wrap { text-align: center; padding: 24px; max-width: 640px; width: 100%; }
+  .logo { font-family: "Courier New", monospace; font-size: .8rem; letter-spacing: .1em; color: var(--grey-dim); margin-bottom: 6px; }
+  .logo b { color: var(--white); }
+  h1 { font-size: 1.3rem; margin: 0 0 6px; font-weight: 600; }
+  p.sub { color: var(--grey-dim); font-size: .88rem; margin: 0 0 20px; }
+  canvas {
+    width: 100%; max-width: 600px; height: 200px;
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--line); border-radius: 12px;
+    touch-action: manipulation;
+  }
+  .hint { margin-top: 14px; font-size: .78rem; color: var(--grey-dim); }
+  .score-row { display: flex; justify-content: space-between; font-family: "Courier New", monospace; font-size: .78rem; color: var(--grey-dim); padding: 0 4px; margin-bottom: 6px; }
+  .score-row span b { color: var(--white); }
+  button#retry {
+    margin-top: 16px; font-family: "Courier New", monospace; font-size: .75rem;
+    background: rgba(255,255,255,.06); border: 1px solid var(--line); color: var(--white);
+    padding: 9px 18px; border-radius: 999px; cursor: pointer; display: none;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo"><b>JOEL</b> FLOWSTACK</div>
+  <h1>You're offline</h1>
+  <p class="sub">No connection right now — but the cube still jumps. Press Space, tap, or click to play.</p>
+
+  <div class="score-row">
+    <span>SCORE <b id="score">0</b></span>
+    <span>BEST <b id="best">0</b></span>
+  </div>
+  <canvas id="game" width="600" height="200"></canvas>
+  <div class="hint" id="hint">Space / tap to jump</div>
+  <button id="retry">Try reloading the page</button>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const scoreEl = document.getElementById("score");
+  const bestEl = document.getElementById("best");
+  const hintEl = document.getElementById("hint");
+  const retryBtn = document.getElementById("retry");
+
+  // Canvas has a fixed internal resolution (600x200) scaled to CSS width
+  // via the stylesheet above — keeps game logic in simple fixed units
+  // regardless of the viewport, same trick the real dino game uses.
+  const W = 600, H = 200;
+  const GROUND_Y = 160;
+  const GRAVITY = 0.9;
+  const JUMP_V = -13;
+
+  let best = 0;
+  try { best = parseInt(localStorage.getItem("offlineRunnerBest") || "0", 10); } catch {}
+  bestEl.textContent = best;
+
+  let state = "idle"; // idle | playing | over
+  let player, obstacles, speed, score, frame;
+
+  function reset() {
+    player = { x: 60, y: GROUND_Y - 22, w: 22, h: 22, vy: 0, jumping: false };
+    obstacles = [];
+    speed = 5;
+    score = 0;
+    frame = 0;
+    scoreEl.textContent = "0";
+  }
+  reset();
+
+  function jump() {
+    if (state === "idle") { state = "playing"; hintEl.style.display = "none"; }
+    if (state === "over") { reset(); state = "playing"; retryBtn.style.display = "none"; hintEl.style.display = "none"; return; }
+    if (!player.jumping) { player.vy = JUMP_V; player.jumping = true; }
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space" || e.key === " ") { e.preventDefault(); jump(); }
+  });
+  canvas.addEventListener("pointerdown", jump);
+  document.querySelector(".wrap").addEventListener("click", (e) => {
+    if (e.target === retryBtn) return;
+    jump();
+  });
+  retryBtn.addEventListener("click", () => location.reload());
+
+  function spawnObstacle() {
+    const h = 16 + Math.random() * 22;
+    obstacles.push({ x: W + 10, y: GROUND_Y - h, w: 14 + Math.random() * 10, h });
+  }
+
+  function update() {
+    frame++;
+    if (frame % Math.max(35, 70 - Math.floor(speed * 2)) === 0) spawnObstacle();
+
+    player.vy += GRAVITY;
+    player.y += player.vy;
+    if (player.y >= GROUND_Y - player.h) {
+      player.y = GROUND_Y - player.h;
+      player.vy = 0;
+      player.jumping = false;
+    }
+
+    obstacles.forEach(o => o.x -= speed);
+    while (obstacles.length && obstacles[0].x + obstacles[0].w < 0) obstacles.shift();
+
+    for (const o of obstacles) {
+      if (player.x < o.x + o.w && player.x + player.w > o.x && player.y < o.y + o.h && player.y + player.h > o.y) {
+        state = "over";
+        if (score > best) {
+          best = score;
+          try { localStorage.setItem("offlineRunnerBest", String(best)); } catch {}
+          bestEl.textContent = best;
+        }
+        hintEl.textContent = "Space / tap to try again";
+        hintEl.style.display = "block";
+        retryBtn.style.display = "inline-block";
+      }
+    }
+
+    score += 1;
+    scoreEl.textContent = Math.floor(score / 5);
+    speed = 5 + score / 500; // slow, steady ramp — noticeable but never unfair
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // ground
+    ctx.strokeStyle = "rgba(255,255,255,.18)";
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y);
+    ctx.lineTo(W, GROUND_Y);
+    ctx.stroke();
+
+    // player — a small rotating square standing in for the cube, tilts
+    // slightly mid-air for a touch of life rather than a static block
+    ctx.save();
+    ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
+    if (player.jumping) ctx.rotate(Math.min(0.5, Math.abs(player.vy) * 0.03) * Math.sign(player.vy));
+    const grad = ctx.createLinearGradient(-11, -11, 11, 11);
+    grad.addColorStop(0, "#3fa9e8");
+    grad.addColorStop(1, "#8b5cf6");
+    ctx.fillStyle = grad;
+    ctx.fillRect(-player.w / 2, -player.h / 2, player.w, player.h);
+    ctx.restore();
+
+    // obstacles — dark "signal-loss" glitch blocks
+    ctx.fillStyle = "#e05a5a";
+    obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.w, o.h));
+  }
+
+  function loop() {
+    if (state === "playing") update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+  draw();
+  loop();
+})();
+</script>
+</body>
+</html>
