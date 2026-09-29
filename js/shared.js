@@ -53,6 +53,16 @@
     } catch {}
   })();
 
+  // Registers sw.js, whose only job is swapping the browser's default
+  // network-error page (dinosaur game and all) for a custom branded
+  // offline page — see sw.js's own header comment for exactly how and
+  // its real first-visit limitation. Registration itself is cheap and
+  // safe to just fire on every page load; the browser handles not
+  // re-installing an already-current worker.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {}); // offline support degrading to the browser default on failure is fine — never worth surfacing to the visitor
+  }
+
   const NAV_LINKS = [
     { label: "Home",      href: "home" },
     { label: "About",     href: "about" },
