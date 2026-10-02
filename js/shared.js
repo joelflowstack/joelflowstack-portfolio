@@ -25,6 +25,8 @@
     let mode = "auto";
     try { mode = localStorage.getItem("flow-fx-mode") || "auto"; } catch {}
     const reduced = mode === "low" || (mode === "auto" && window.innerWidth < 760);
+    // Same signal drives the cheaper glass variant in global.css ("Liquid Glass layer").
+    document.documentElement.classList.toggle("fx-low", reduced);
     const tag = Array.from(document.querySelectorAll("style")).find(s => s.textContent.includes("@view-transition"));
     if (tag) tag.textContent = `@view-transition { navigation: ${reduced ? "none" : "auto"}; }`;
   })();
