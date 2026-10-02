@@ -45,21 +45,27 @@
     background: rgba(255,255,255,.06); border: 1px solid var(--line); color: var(--white);
     padding: 9px 18px; border-radius: 999px; cursor: pointer; display: none;
   }
+  .status { margin-top: 14px; min-height: 1.2em; font-family: "Courier New", monospace; font-size: .75rem; color: var(--grey-dim); }
+  .status.ok { color: var(--blue); }
+  .contact { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line); font-size: .76rem; color: var(--grey-dim); line-height: 1.6; }
+  .contact b { color: var(--white); font-weight: 500; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="logo"><b>JOEL</b> FLOWSTACK</div>
   <h1>You're offline</h1>
-  <p class="sub">No connection right now — but the cube still jumps. Press Space, tap, or click to play.</p>
+  <p class="sub">No connection right now — but the cube still jumps. Press Space, ↑, W, tap, or click to play.</p>
 
   <div class="score-row">
     <span>SCORE <b id="score">0</b></span>
     <span>BEST <b id="best">0</b></span>
   </div>
   <canvas id="game" width="600" height="200"></canvas>
-  <div class="hint" id="hint">Space / tap to jump</div>
-  <button id="retry">Try reloading the page</button>
+  <div class="hint" id="hint">Space / ↑ / W / tap to jump</div>
+  <button id="retry">Check connection</button>
+  <div class="status" id="status" role="status" aria-live="polite">Waiting for connection…</div>
+  <div class="contact">Need me in the meantime?<br><b>joelflowstack@gmail.com</b> &nbsp;·&nbsp; Telegram <b>@joelflowstack</b></div>
 </div>
 
 <script>
@@ -70,6 +76,8 @@
   const bestEl = document.getElementById("best");
   const hintEl = document.getElementById("hint");
   const retryBtn = document.getElementById("retry");
+  const statusEl = document.getElementById("status");
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // Canvas has a fixed internal resolution (600x200) scaled to CSS width
   // via the stylesheet above — keeps game logic in simple fixed units
@@ -83,7 +91,7 @@
   try { best = parseInt(localStorage.getItem("offlineRunnerBest") || "0", 10); } catch {}
   bestEl.textContent = best;
 
-  let state = "idle"; // idle | playing | over
+  let state = "idle"; // idle | playing | paused | over
   let player, obstacles, speed, score, frame;
 
   function reset() {
@@ -97,20 +105,22 @@
   reset();
 
   function jump() {
+    if (state === "paused") { state = "playing"; hintEl.style.display = "none"; return; }
     if (state === "idle") { state = "playing"; hintEl.style.display = "none"; }
     if (state === "over") { reset(); state = "playing"; retryBtn.style.display = "none"; hintEl.style.display = "none"; return; }
     if (!player.jumping) { player.vy = JUMP_V; player.jumping = true; }
   }
 
   window.addEventListener("keydown", (e) => {
-    if (e.code === "Space" || e.key === " ") { e.preventDefault(); jump(); }
+    if (e.repeat) return;
+    if (e.code === "Space" || e.key === " " || e.code === "ArrowUp" || e.code === "KeyW") { e.preventDefault(); jump(); }
   });
   canvas.addEventListener("pointerdown", jump);
   document.querySelector(".wrap").addEventListener("click", (e) => {
     if (e.target === retryBtn) return;
     jump();
   });
-  retryBtn.addEventListener("click", () => location.reload());
+  retryBtn.addEventListener("click", () => checkConnection(true));
 
   function spawnObstacle() {
     const h = 16 + Math.random() * 22;
@@ -140,7 +150,7 @@
           try { localStorage.setItem("offlineRunnerBest", String(best)); } catch {}
           bestEl.textContent = best;
         }
-        hintEl.textContent = "Space / tap to try again";
+        hintEl.textContent = "Space / ↑ / W / tap to try again";
         hintEl.style.display = "block";
         retryBtn.style.display = "inline-block";
       }
@@ -165,7 +175,7 @@
     // slightly mid-air for a touch of life rather than a static block
     ctx.save();
     ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
-    if (player.jumping) ctx.rotate(Math.min(0.5, Math.abs(player.vy) * 0.03) * Math.sign(player.vy));
+    if (player.jumping && !reduceMotion) ctx.rotate(Math.min(0.5, Math.abs(player.vy) * 0.03) * Math.sign(player.vy));
     const grad = ctx.createLinearGradient(-11, -11, 11, 11);
     grad.addColorStop(0, "#3fa9e8");
     grad.addColorStop(1, "#8b5cf6");
@@ -185,6 +195,40 @@
   }
   draw();
   loop();
+
+  // Pause when the tab is hidden so the run isn't lost while away.
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && state === "playing") {
+      state = "paused";
+      hintEl.textContent = "Paused — Space / tap to resume";
+      hintEl.style.display = "block";
+    }
+  });
+
+  // Reconnect detection. navigator.onLine only says there's a network
+  // interface, not that the site is reachable, so confirm with a real
+  // no-store request before reloading. Service worker only intercepts
+  // navigations, so this fetch fails honestly while offline.
+  let checking = false;
+  async function checkConnection(manual) {
+    if (checking) return;
+    checking = true;
+    if (manual) { statusEl.className = "status"; statusEl.textContent = "Checking…"; }
+    try {
+      const res = await fetch("/robots.txt?ping=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) throw new Error("bad status");
+      statusEl.className = "status ok";
+      statusEl.textContent = "Back online — reloading…";
+      setTimeout(() => location.reload(), 700);
+      return;
+    } catch (_) {
+      statusEl.className = "status";
+      statusEl.textContent = manual ? "Still offline — I'll reload automatically when you're back." : "Waiting for connection…";
+    }
+    checking = false;
+  }
+  window.addEventListener("online", () => checkConnection(false));
+  setInterval(() => { if (!document.hidden) checkConnection(false); }, 5000);
 })();
 </script>
 </body>
