@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>You're offline — Joel Flowstack</title>
 <meta name="robots" content="noindex, nofollow" />
 <!--
@@ -12,6 +12,11 @@
   self-contained (inline CSS/JS, no external font/script/image requests)
   since this has to render correctly with zero network access — the
   whole point of the page.
+
+  The game canvas fills the entire viewport. All game logic runs in
+  fixed "units" (the cube is 22 units wide) and the canvas transform
+  scales units to pixels, so a resize only changes the scale, never the
+  game state.
 -->
 <style>
   :root {
@@ -20,52 +25,61 @@
   }
   * { box-sizing: border-box; }
   html, body {
-    margin: 0; height: 100%;
+    margin: 0; height: 100%; overflow: hidden;
     background: radial-gradient(ellipse 120% 60% at 50% 0%, #16213a 0%, #0a0f1c 38%, var(--black) 72%);
     color: var(--white);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    display: flex; align-items: center; justify-content: center;
+    touch-action: manipulation; overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none;
   }
-  .wrap { text-align: center; padding: 24px; max-width: 640px; width: 100%; }
+  canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .wrap {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+    text-align: center;
+    padding: calc(22px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+  .top, .bottom { width: 100%; max-width: 760px; }
   .logo { font-family: "Courier New", monospace; font-size: .8rem; letter-spacing: .1em; color: var(--grey-dim); margin-bottom: 6px; }
   .logo b { color: var(--white); }
-  h1 { font-size: 1.3rem; margin: 0 0 6px; font-weight: 600; }
-  p.sub { color: var(--grey-dim); font-size: .88rem; margin: 0 0 20px; }
-  canvas {
-    width: 100%; max-width: 600px; height: 200px;
-    background: rgba(255,255,255,.02);
-    border: 1px solid var(--line); border-radius: 12px;
-    touch-action: manipulation;
-  }
-  .hint { margin-top: 14px; font-size: .78rem; color: var(--grey-dim); }
-  .score-row { display: flex; justify-content: space-between; font-family: "Courier New", monospace; font-size: .78rem; color: var(--grey-dim); padding: 0 4px; margin-bottom: 6px; }
+  h1 { font-size: clamp(1.3rem, 1rem + 1.2vw, 2rem); margin: 0 0 6px; font-weight: 600; }
+  p.sub { color: var(--grey-dim); font-size: .9rem; margin: 0 0 14px; }
+  .score-row { display: flex; justify-content: center; gap: 28px; font-family: "Courier New", monospace; font-size: .8rem; color: var(--grey-dim); }
   .score-row span b { color: var(--white); }
+  .hint { font-size: .8rem; color: var(--grey-dim); }
   button#retry {
-    margin-top: 16px; font-family: "Courier New", monospace; font-size: .75rem;
+    pointer-events: auto; margin-top: 14px; font-family: "Courier New", monospace; font-size: .75rem;
     background: rgba(255,255,255,.06); border: 1px solid var(--line); color: var(--white);
     padding: 9px 18px; border-radius: 999px; cursor: pointer; display: none;
   }
-  .status { margin-top: 14px; min-height: 1.2em; font-family: "Courier New", monospace; font-size: .75rem; color: var(--grey-dim); }
+  .status { margin-top: 12px; min-height: 1.2em; font-family: "Courier New", monospace; font-size: .75rem; color: var(--grey-dim); }
   .status.ok { color: var(--blue); }
-  .contact { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line); font-size: .76rem; color: var(--grey-dim); line-height: 1.6; }
+  .contact { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); font-size: .76rem; color: var(--grey-dim); line-height: 1.6; }
   .contact b { color: var(--white); font-weight: 500; }
+  @media (max-height: 480px) {
+    p.sub, .contact { display: none; }
+    h1 { font-size: 1.05rem; }
+  }
 </style>
 </head>
 <body>
+<canvas id="game"></canvas>
 <div class="wrap">
-  <div class="logo"><b>JOEL</b> FLOWSTACK</div>
-  <h1>You're offline</h1>
-  <p class="sub">No connection right now — but the cube still jumps. Press Space, ↑, W, tap, or click to play.</p>
-
-  <div class="score-row">
-    <span>SCORE <b id="score">0</b></span>
-    <span>BEST <b id="best">0</b></span>
+  <div class="top">
+    <div class="logo"><b>JOEL</b> FLOWSTACK</div>
+    <h1>You're offline</h1>
+    <p class="sub">No connection right now — but the cube still jumps. Press Space, ↑, W, tap, or click to play.</p>
+    <div class="score-row">
+      <span>SCORE <b id="score">0</b></span>
+      <span>BEST <b id="best">0</b></span>
+    </div>
   </div>
-  <canvas id="game" width="600" height="200"></canvas>
-  <div class="hint" id="hint">Space / ↑ / W / tap to jump</div>
-  <button id="retry">Check connection</button>
-  <div class="status" id="status" role="status" aria-live="polite">Waiting for connection…</div>
-  <div class="contact">Need me in the meantime?<br><b>joelflowstack@gmail.com</b> &nbsp;·&nbsp; Telegram <b>@joelflowstack</b></div>
+  <div class="bottom">
+    <div class="hint" id="hint">Space / ↑ / W / tap to jump</div>
+    <button id="retry">Check connection</button>
+    <div class="status" id="status" role="status" aria-live="polite">Waiting for connection…</div>
+    <div class="contact">Need me in the meantime?<br><b>joelflowstack@gmail.com</b> &nbsp;·&nbsp; Telegram <b>@joelflowstack</b></div>
+  </div>
 </div>
 
 <script>
@@ -79,30 +93,50 @@
   const statusEl = document.getElementById("status");
   const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Canvas has a fixed internal resolution (600x200) scaled to CSS width
-  // via the stylesheet above — keeps game logic in simple fixed units
-  // regardless of the viewport, same trick the real dino game uses.
-  const W = 600, H = 200;
-  const GROUND_Y = 160;
+  // Game units: the cube is BASE units wide. Physics constants below are
+  // in units per fixed 1/60s step, so the game plays identically on 60Hz,
+  // 120Hz and 144Hz screens (see the accumulator in loop()).
+  const BASE = 22;
   const GRAVITY = 0.9;
   const JUMP_V = -13;
+  const STEP = 1000 / 60;
 
   let best = 0;
-  try { best = parseInt(localStorage.getItem("offlineRunnerBest") || "0", 10); } catch {}
+  try { best = parseInt(localStorage.getItem("offlineRunnerBest") || "0", 10) || 0; } catch {}
   bestEl.textContent = best;
 
   let state = "idle"; // idle | playing | paused | over
-  let player, obstacles, speed, score, frame;
+  let player = null, obstacles = [], speed = 5, score = 0, frame = 0;
+  let W = 0, H = 0, dpr = 1, k = 1, Wu = 0, Hu = 0, groundU = 0;
+
+  // Fills the whole viewport. Canvas backing store is scaled by devicePixelRatio
+  // (capped at 2) so it stays sharp on retina/phone screens; k maps game units
+  // to CSS pixels so cube size scales with the screen.
+  function layout() {
+    W = window.innerWidth; H = window.innerHeight;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    const u = Math.max(20, Math.min(64, Math.min(H / 16, W / 18)));
+    k = u / BASE;
+    Wu = W / k; Hu = H / k;
+    groundU = Hu * 0.62;
+    ctx.setTransform(dpr * k, 0, 0, dpr * k, 0, 0);
+    if (player && !player.jumping) player.y = groundU - player.h;
+  }
+  const playerX = () => Math.max(60, Wu * 0.14);
 
   function reset() {
-    player = { x: 60, y: GROUND_Y - 22, w: 22, h: 22, vy: 0, jumping: false };
+    player = { w: BASE, h: BASE, y: groundU - BASE, vy: 0, jumping: false };
     obstacles = [];
     speed = 5;
     score = 0;
     frame = 0;
     scoreEl.textContent = "0";
   }
+  layout();
   reset();
+  window.addEventListener("resize", layout);
 
   function jump() {
     if (state === "paused") { state = "playing"; hintEl.style.display = "none"; return; }
@@ -111,20 +145,20 @@
     if (!player.jumping) { player.vy = JUMP_V; player.jumping = true; }
   }
 
+  // One input path for the whole screen: pointerdown anywhere (except the
+  // button) or Space / ArrowUp / W.
   window.addEventListener("keydown", (e) => {
     if (e.repeat) return;
     if (e.code === "Space" || e.key === " " || e.code === "ArrowUp" || e.code === "KeyW") { e.preventDefault(); jump(); }
   });
-  canvas.addEventListener("pointerdown", jump);
-  document.querySelector(".wrap").addEventListener("click", (e) => {
+  window.addEventListener("pointerdown", (e) => {
     if (e.target === retryBtn) return;
     jump();
   });
   retryBtn.addEventListener("click", () => checkConnection(true));
 
   function spawnObstacle() {
-    const h = 16 + Math.random() * 22;
-    obstacles.push({ x: W + 10, y: GROUND_Y - h, w: 14 + Math.random() * 10, h });
+    obstacles.push({ x: Wu + 10, w: 14 + Math.random() * 10, h: 16 + Math.random() * 22 });
   }
 
   function update() {
@@ -133,8 +167,8 @@
 
     player.vy += GRAVITY;
     player.y += player.vy;
-    if (player.y >= GROUND_Y - player.h) {
-      player.y = GROUND_Y - player.h;
+    if (player.y >= groundU - player.h) {
+      player.y = groundU - player.h;
       player.vy = 0;
       player.jumping = false;
     }
@@ -142,17 +176,21 @@
     obstacles.forEach(o => o.x -= speed);
     while (obstacles.length && obstacles[0].x + obstacles[0].w < 0) obstacles.shift();
 
+    const px = playerX();
     for (const o of obstacles) {
-      if (player.x < o.x + o.w && player.x + player.w > o.x && player.y < o.y + o.h && player.y + player.h > o.y) {
+      const oy = groundU - o.h;
+      if (px < o.x + o.w && px + player.w > o.x && player.y < oy + o.h && player.y + player.h > oy) {
         state = "over";
-        if (score > best) {
-          best = score;
+        const shown = Math.floor(score / 5);
+        if (shown > best) {
+          best = shown;
           try { localStorage.setItem("offlineRunnerBest", String(best)); } catch {}
           bestEl.textContent = best;
         }
         hintEl.textContent = "Space / ↑ / W / tap to try again";
         hintEl.style.display = "block";
         retryBtn.style.display = "inline-block";
+        return;
       }
     }
 
@@ -162,19 +200,22 @@
   }
 
   function draw() {
-    ctx.clearRect(0, 0, W, H);
+    ctx.clearRect(0, 0, Wu, Hu);
 
-    // ground
+    // ground: faint fill below the line, then the line across the full width
+    ctx.fillStyle = "rgba(255,255,255,.025)";
+    ctx.fillRect(0, groundU, Wu, Hu - groundU);
     ctx.strokeStyle = "rgba(255,255,255,.18)";
+    ctx.lineWidth = 1 / k;
     ctx.beginPath();
-    ctx.moveTo(0, GROUND_Y);
-    ctx.lineTo(W, GROUND_Y);
+    ctx.moveTo(0, groundU);
+    ctx.lineTo(Wu, groundU);
     ctx.stroke();
 
-    // player — a small rotating square standing in for the cube, tilts
-    // slightly mid-air for a touch of life rather than a static block
+    // player — a small square standing in for the cube; tilts mid-air
+    // (skipped when the visitor prefers reduced motion)
     ctx.save();
-    ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
+    ctx.translate(playerX() + player.w / 2, player.y + player.h / 2);
     if (player.jumping && !reduceMotion) ctx.rotate(Math.min(0.5, Math.abs(player.vy) * 0.03) * Math.sign(player.vy));
     const grad = ctx.createLinearGradient(-11, -11, 11, 11);
     grad.addColorStop(0, "#3fa9e8");
@@ -183,18 +224,31 @@
     ctx.fillRect(-player.w / 2, -player.h / 2, player.w, player.h);
     ctx.restore();
 
-    // obstacles — dark "signal-loss" glitch blocks
+    // obstacles — "signal-loss" glitch blocks
     ctx.fillStyle = "#e05a5a";
-    obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.w, o.h));
+    obstacles.forEach(o => ctx.fillRect(o.x, groundU - o.h, o.w, o.h));
   }
 
-  function loop() {
-    if (state === "playing") update();
-    draw();
+  // Fixed-timestep loop: simulation always advances in 1/60s steps no matter
+  // how often the display refreshes.
+  let last = performance.now(), acc = 0;
+  function loop(now) {
     requestAnimationFrame(loop);
+    let dt = now - last;
+    last = now;
+    if (dt > 250) dt = STEP; // resumed after a long stall — don't fast-forward
+    if (state === "playing") {
+      acc += dt;
+      let n = 0;
+      while (acc >= STEP && n < 5 && state === "playing") { update(); acc -= STEP; n++; }
+      if (n === 5) acc = 0;
+    } else {
+      acc = 0;
+    }
+    draw();
   }
   draw();
-  loop();
+  requestAnimationFrame(loop);
 
   // Pause when the tab is hidden so the run isn't lost while away.
   document.addEventListener("visibilitychange", () => {
