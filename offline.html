@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#04060d" />
 <title>You're offline — Joel Flowstack</title>
 <meta name="robots" content="noindex, nofollow" />
 <!--
@@ -10,71 +11,117 @@
   intercepts the browser's own network-error interstitial (the one with
   the default dinosaur game) and shows this instead. Deliberately fully
   self-contained (inline CSS/JS, no external font/script/image requests)
-  since this has to render correctly with zero network access — the
-  whole point of the page.
+  since this has to render correctly with zero network access.
 
-  The game canvas fills the entire viewport. All game logic runs in
-  fixed "units" (the cube is 22 units wide) and the canvas transform
-  scales units to pixels, so a resize only changes the scale, never the
-  game state.
+  Look: frosted-glass panels (backdrop blur + specular edge highlights)
+  floating over a slow aurora, with the game canvas filling the whole
+  viewport behind them so the cube visibly passes beneath the glass.
+  Game logic runs in fixed "units" (cube = 22 units); the canvas
+  transform scales units to pixels, so a resize only changes the scale.
 -->
 <style>
   :root {
-    --black: #05070c; --white: #f4f6fb; --grey-dim: #7b8494;
-    --blue: #3fa9e8; --purple: #8b5cf6; --line: rgba(255,255,255,.12);
+    --white: #f5f7fb; --dim: rgba(235,240,255,.62);
+    --blue: #3fa9e8; --purple: #8b5cf6; --green: #34d399; --amber: #f5a524;
   }
   * { box-sizing: border-box; }
   html, body {
-    margin: 0; height: 100%; overflow: hidden;
-    background: radial-gradient(ellipse 120% 60% at 50% 0%, #16213a 0%, #0a0f1c 38%, var(--black) 72%);
-    color: var(--white);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    margin: 0; height: 100%; overflow: hidden; background: #04060d; color: var(--white);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
     touch-action: manipulation; overscroll-behavior: none;
     -webkit-user-select: none; user-select: none;
   }
-  canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* Slow colour fields — gives the glass something to refract. */
+  .aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden;
+    background: radial-gradient(ellipse 120% 70% at 50% -10%, #16213a 0%, #0a0f1c 45%, #04060d 80%); }
+  .aurora i { position: absolute; border-radius: 50%; filter: blur(60px); will-change: transform; }
+  .aurora i:nth-child(1) { width: 55vmax; height: 55vmax; left: -15vmax; top: -12vmax; background: var(--blue); opacity: .34; animation: d1 26s ease-in-out infinite alternate; }
+  .aurora i:nth-child(2) { width: 60vmax; height: 60vmax; right: -22vmax; bottom: -22vmax; background: var(--purple); opacity: .38; animation: d2 32s ease-in-out infinite alternate; }
+  .aurora i:nth-child(3) { width: 34vmax; height: 34vmax; left: 38%; top: 42%; background: #ec4899; opacity: .14; animation: d3 38s ease-in-out infinite alternate; }
+  @keyframes d1 { to { transform: translate(12vmax, 8vmax) scale(1.15); } }
+  @keyframes d2 { to { transform: translate(-10vmax, -9vmax) scale(1.1); } }
+  @keyframes d3 { to { transform: translate(-14vmax, 6vmax) scale(1.25); } }
+  @media (prefers-reduced-motion: reduce) { .aurora i, .dot { animation: none !important; } }
+
+  canvas#game { position: fixed; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; }
+
   .wrap {
-    position: fixed; inset: 0; z-index: 1; pointer-events: none;
-    display: flex; flex-direction: column; justify-content: space-between; align-items: center;
-    text-align: center;
-    padding: calc(22px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    position: fixed; inset: 0; z-index: 2; pointer-events: none;
+    display: flex; flex-direction: column; justify-content: space-between; align-items: center; gap: 12px;
+    padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
   }
-  .top, .bottom { width: 100%; max-width: 760px; }
-  .logo { font-family: "Courier New", monospace; font-size: .8rem; letter-spacing: .1em; color: var(--grey-dim); margin-bottom: 6px; }
-  .logo b { color: var(--white); }
-  h1 { font-size: clamp(1.3rem, 1rem + 1.2vw, 2rem); margin: 0 0 6px; font-weight: 600; }
-  p.sub { color: var(--grey-dim); font-size: .9rem; margin: 0 0 14px; }
-  .score-row { display: flex; justify-content: center; gap: 28px; font-family: "Courier New", monospace; font-size: .8rem; color: var(--grey-dim); }
-  .score-row span b { color: var(--white); }
-  .hint { font-size: .8rem; color: var(--grey-dim); }
+
+  /* ---- Glass ---- */
+  .glass {
+    position: relative; border-radius: 26px;
+    background: linear-gradient(145deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
+    -webkit-backdrop-filter: blur(26px) saturate(180%); backdrop-filter: blur(26px) saturate(180%);
+    border: 1px solid rgba(255,255,255,.2);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.42),
+      inset 0 -1px 0 rgba(255,255,255,.06),
+      inset 0 0 18px rgba(255,255,255,.04),
+      0 10px 40px rgba(0,0,0,.4), 0 2px 6px rgba(0,0,0,.3);
+  }
+  .glass::before { /* specular sheen from the top-left, like light catching the edge */
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background:
+      radial-gradient(120% 90% at 0% 0%, rgba(255,255,255,.22), transparent 45%),
+      linear-gradient(180deg, rgba(255,255,255,.08), transparent 30%);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass { background: rgba(24,30,48,.9); }
+  }
+
+  .bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 11px 18px; border-radius: 999px;
+    font-size: .8rem; font-weight: 650; letter-spacing: .06em; white-space: nowrap; }
+  .brand small { color: var(--dim); font-weight: 500; letter-spacing: 0; font-size: .78rem; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 10px var(--amber); animation: pulse 1.8s ease-in-out infinite; }
+  .dot.ok { background: var(--green); box-shadow: 0 0 10px var(--green); animation: none; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .scores { display: flex; gap: 18px; padding: 10px 20px; border-radius: 999px; font-size: .72rem; letter-spacing: .08em; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .scores b { color: var(--white); font-size: .98rem; font-weight: 650; margin-left: 7px; letter-spacing: 0; }
+
+  .card { width: 100%; max-width: 540px; padding: 24px 26px 18px; text-align: center; }
+  .card h1 { font-size: clamp(1.3rem, 1rem + 1vw, 1.75rem); font-weight: 650; margin: 0 0 6px; letter-spacing: -.015em; }
+  .card p.sub { margin: 0 0 14px; color: var(--dim); font-size: .92rem; line-height: 1.45; }
+  .hint { color: var(--dim); font-size: .78rem; margin-bottom: 14px; }
   button#retry {
-    pointer-events: auto; margin-top: 14px; font-family: "Courier New", monospace; font-size: .75rem;
-    background: rgba(255,255,255,.06); border: 1px solid var(--line); color: var(--white);
-    padding: 9px 18px; border-radius: 999px; cursor: pointer; display: none;
+    pointer-events: auto; position: relative; cursor: pointer; font: inherit; font-size: .82rem; font-weight: 600; color: var(--white);
+    padding: 11px 22px; border-radius: 999px; border: 1px solid rgba(255,255,255,.24);
+    background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.07));
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 4px 14px rgba(0,0,0,.3);
+    transition: background .2s, transform .15s;
   }
-  .status { margin-top: 12px; min-height: 1.2em; font-family: "Courier New", monospace; font-size: .75rem; color: var(--grey-dim); }
-  .status.ok { color: var(--blue); }
-  .contact { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); font-size: .76rem; color: var(--grey-dim); line-height: 1.6; }
-  .contact b { color: var(--white); font-weight: 500; }
-  @media (max-height: 480px) {
-    p.sub, .contact { display: none; }
-    h1 { font-size: 1.05rem; }
+  button#retry:hover { background: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.11)); }
+  button#retry:active { transform: scale(.97); }
+  .status { margin-top: 12px; min-height: 1.2em; font-size: .78rem; color: var(--dim); }
+  .status.ok { color: var(--green); }
+  .contact { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.12); font-size: .76rem; color: var(--dim); line-height: 1.6; }
+  .contact b { color: var(--white); font-weight: 550; }
+
+  @media (max-width: 440px) { .brand small { display: none; } .scores { gap: 12px; padding: 10px 16px; } }
+  @media (max-height: 520px) {
+    .card p.sub, .contact { display: none; }
+    .card { padding: 14px 20px 14px; } .card h1 { font-size: 1.05rem; margin-bottom: 4px; } .hint { margin-bottom: 8px; }
   }
 </style>
 </head>
 <body>
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
 <canvas id="game"></canvas>
 <div class="wrap">
-  <div class="top">
-    <div class="logo"><b>JOEL</b> FLOWSTACK</div>
+  <div class="bar">
+    <div class="brand glass"><span class="dot" id="dot"></span><span>JOEL FLOWSTACK</span><small id="netlabel">Offline</small></div>
+    <div class="scores glass"><span>SCORE<b id="score">0</b></span><span>BEST<b id="best">0</b></span></div>
+  </div>
+  <div class="card glass">
     <h1>You're offline</h1>
     <p class="sub">No connection right now — but the cube still jumps. Press Space, ↑, W, tap, or click to play.</p>
-    <div class="score-row">
-      <span>SCORE <b id="score">0</b></span>
-      <span>BEST <b id="best">0</b></span>
-    </div>
-  </div>
-  <div class="bottom">
     <div class="hint" id="hint">Space / ↑ / W / tap to jump</div>
     <button id="retry">Check connection</button>
     <div class="status" id="status" role="status" aria-live="polite">Waiting for connection…</div>
@@ -91,15 +138,12 @@
   const hintEl = document.getElementById("hint");
   const retryBtn = document.getElementById("retry");
   const statusEl = document.getElementById("status");
+  const dotEl = document.getElementById("dot");
+  const netEl = document.getElementById("netlabel");
   const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Game units: the cube is BASE units wide. Physics constants below are
-  // in units per fixed 1/60s step, so the game plays identically on 60Hz,
-  // 120Hz and 144Hz screens (see the accumulator in loop()).
-  const BASE = 22;
-  const GRAVITY = 0.9;
-  const JUMP_V = -13;
-  const STEP = 1000 / 60;
+  // Units: the cube is BASE units wide; constants are per fixed 1/60s step.
+  const BASE = 22, GRAVITY = 0.9, JUMP_V = -13, STEP = 1000 / 60;
 
   let best = 0;
   try { best = parseInt(localStorage.getItem("offlineRunnerBest") || "0", 10) || 0; } catch {}
@@ -109,18 +153,15 @@
   let player = null, obstacles = [], speed = 5, score = 0, frame = 0;
   let W = 0, H = 0, dpr = 1, k = 1, Wu = 0, Hu = 0, groundU = 0;
 
-  // Fills the whole viewport. Canvas backing store is scaled by devicePixelRatio
-  // (capped at 2) so it stays sharp on retina/phone screens; k maps game units
-  // to CSS pixels so cube size scales with the screen.
   function layout() {
     W = window.innerWidth; H = window.innerHeight;
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
-    const u = Math.max(20, Math.min(64, Math.min(H / 16, W / 18)));
+    const u = Math.max(26, Math.min(64, Math.min(H / 16, W / 15)));
     k = u / BASE;
     Wu = W / k; Hu = H / k;
-    groundU = Hu * 0.62;
+    groundU = Hu * 0.58;
     ctx.setTransform(dpr * k, 0, 0, dpr * k, 0, 0);
     if (player && !player.jumping) player.y = groundU - player.h;
   }
@@ -128,51 +169,35 @@
 
   function reset() {
     player = { w: BASE, h: BASE, y: groundU - BASE, vy: 0, jumping: false };
-    obstacles = [];
-    speed = 5;
-    score = 0;
-    frame = 0;
+    obstacles = []; speed = 5; score = 0; frame = 0;
     scoreEl.textContent = "0";
   }
-  layout();
-  reset();
+  layout(); reset();
   window.addEventListener("resize", layout);
 
+  function setHint(text, visible) { hintEl.textContent = text; hintEl.style.visibility = visible ? "visible" : "hidden"; }
+
   function jump() {
-    if (state === "paused") { state = "playing"; hintEl.style.display = "none"; return; }
-    if (state === "idle") { state = "playing"; hintEl.style.display = "none"; }
-    if (state === "over") { reset(); state = "playing"; retryBtn.style.display = "none"; hintEl.style.display = "none"; return; }
+    if (state === "paused") { state = "playing"; setHint("", false); return; }
+    if (state === "idle") { state = "playing"; setHint("", false); }
+    if (state === "over") { reset(); state = "playing"; setHint("", false); return; }
     if (!player.jumping) { player.vy = JUMP_V; player.jumping = true; }
   }
 
-  // One input path for the whole screen: pointerdown anywhere (except the
-  // button) or Space / ArrowUp / W.
   window.addEventListener("keydown", (e) => {
     if (e.repeat) return;
     if (e.code === "Space" || e.key === " " || e.code === "ArrowUp" || e.code === "KeyW") { e.preventDefault(); jump(); }
   });
-  window.addEventListener("pointerdown", (e) => {
-    if (e.target === retryBtn) return;
-    jump();
-  });
+  window.addEventListener("pointerdown", (e) => { if (e.target === retryBtn) return; jump(); });
   retryBtn.addEventListener("click", () => checkConnection(true));
 
-  function spawnObstacle() {
-    obstacles.push({ x: Wu + 10, w: 14 + Math.random() * 10, h: 16 + Math.random() * 22 });
-  }
+  function spawnObstacle() { obstacles.push({ x: Wu + 10, w: 14 + Math.random() * 10, h: 16 + Math.random() * 22 }); }
 
   function update() {
     frame++;
     if (frame % Math.max(35, 70 - Math.floor(speed * 2)) === 0) spawnObstacle();
-
-    player.vy += GRAVITY;
-    player.y += player.vy;
-    if (player.y >= groundU - player.h) {
-      player.y = groundU - player.h;
-      player.vy = 0;
-      player.jumping = false;
-    }
-
+    player.vy += GRAVITY; player.y += player.vy;
+    if (player.y >= groundU - player.h) { player.y = groundU - player.h; player.vy = 0; player.jumping = false; }
     obstacles.forEach(o => o.x -= speed);
     while (obstacles.length && obstacles[0].x + obstacles[0].w < 0) obstacles.shift();
 
@@ -187,82 +212,86 @@
           try { localStorage.setItem("offlineRunnerBest", String(best)); } catch {}
           bestEl.textContent = best;
         }
-        hintEl.textContent = "Space / ↑ / W / tap to try again";
-        hintEl.style.display = "block";
-        retryBtn.style.display = "inline-block";
+        setHint("Space / ↑ / W / tap to try again", true);
         return;
       }
     }
-
     score += 1;
     scoreEl.textContent = Math.floor(score / 5);
-    speed = 5 + score / 500; // slow, steady ramp — noticeable but never unfair
+    speed = 5 + score / 500; // slow, steady ramp
+  }
+
+  function rr(x, y, w, h, r) { // rounded rect path (roundRect() isn't in older Safari)
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
   }
 
   function draw() {
+    const s = dpr * k; // device px per unit — shadowBlur is NOT affected by the transform
     ctx.clearRect(0, 0, Wu, Hu);
 
-    // ground: faint fill below the line, then the line across the full width
-    ctx.fillStyle = "rgba(255,255,255,.025)";
-    ctx.fillRect(0, groundU, Wu, Hu - groundU);
-    ctx.strokeStyle = "rgba(255,255,255,.18)";
-    ctx.lineWidth = 1 / k;
-    ctx.beginPath();
-    ctx.moveTo(0, groundU);
-    ctx.lineTo(Wu, groundU);
-    ctx.stroke();
+    // glass floor + horizon line that fades out toward the edges
+    const fl = ctx.createLinearGradient(0, groundU, 0, Hu);
+    fl.addColorStop(0, "rgba(255,255,255,.08)"); fl.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = fl; ctx.fillRect(0, groundU, Wu, Hu - groundU);
+    const ln = ctx.createLinearGradient(0, 0, Wu, 0);
+    ln.addColorStop(0, "rgba(255,255,255,0)"); ln.addColorStop(.5, "rgba(255,255,255,.38)"); ln.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.strokeStyle = ln; ctx.lineWidth = 1 / k;
+    ctx.beginPath(); ctx.moveTo(0, groundU); ctx.lineTo(Wu, groundU); ctx.stroke();
 
-    // player — a small square standing in for the cube; tilts mid-air
-    // (skipped when the visitor prefers reduced motion)
+    // player: glass cube with glow, gloss and a bright rim
     ctx.save();
     ctx.translate(playerX() + player.w / 2, player.y + player.h / 2);
     if (player.jumping && !reduceMotion) ctx.rotate(Math.min(0.5, Math.abs(player.vy) * 0.03) * Math.sign(player.vy));
-    const grad = ctx.createLinearGradient(-11, -11, 11, 11);
-    grad.addColorStop(0, "#3fa9e8");
-    grad.addColorStop(1, "#8b5cf6");
-    ctx.fillStyle = grad;
-    ctx.fillRect(-player.w / 2, -player.h / 2, player.w, player.h);
+    const hw = player.w / 2, hh = player.h / 2;
+    ctx.shadowColor = "rgba(110,140,255,.6)"; ctx.shadowBlur = 18 * s;
+    const g = ctx.createLinearGradient(-hw, -hh, hw, hh);
+    g.addColorStop(0, "rgba(63,169,232,.95)"); g.addColorStop(1, "rgba(139,92,246,.95)");
+    ctx.fillStyle = g; rr(-hw, -hh, player.w, player.h, 5); ctx.fill();
+    ctx.shadowBlur = 0;
+    const gl = ctx.createLinearGradient(0, -hh, 0, hh);
+    gl.addColorStop(0, "rgba(255,255,255,.5)"); gl.addColorStop(.5, "rgba(255,255,255,.08)"); gl.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = gl; rr(-hw, -hh, player.w, player.h, 5); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.65)"; ctx.lineWidth = 1 / k; rr(-hw, -hh, player.w, player.h, 5); ctx.stroke();
     ctx.restore();
 
-    // obstacles — "signal-loss" glitch blocks
-    ctx.fillStyle = "#e05a5a";
-    obstacles.forEach(o => ctx.fillRect(o.x, groundU - o.h, o.w, o.h));
+    // obstacles: red glass shards
+    obstacles.forEach(o => {
+      const y = groundU - o.h;
+      ctx.shadowColor = "rgba(255,90,110,.55)"; ctx.shadowBlur = 14 * s;
+      const og = ctx.createLinearGradient(0, y, 0, y + o.h);
+      og.addColorStop(0, "rgba(255,125,135,.9)"); og.addColorStop(1, "rgba(224,70,90,.55)");
+      ctx.fillStyle = og; rr(o.x, y, o.w, o.h, 3); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(255,255,255,.4)"; ctx.lineWidth = 1 / k; rr(o.x, y, o.w, o.h, 3); ctx.stroke();
+    });
   }
 
-  // Fixed-timestep loop: simulation always advances in 1/60s steps no matter
-  // how often the display refreshes.
+  // Fixed-timestep loop: identical speed on 60/120/144Hz displays.
   let last = performance.now(), acc = 0;
   function loop(now) {
     requestAnimationFrame(loop);
-    let dt = now - last;
-    last = now;
-    if (dt > 250) dt = STEP; // resumed after a long stall — don't fast-forward
+    let dt = now - last; last = now;
+    if (dt > 250) dt = STEP;
     if (state === "playing") {
-      acc += dt;
-      let n = 0;
+      acc += dt; let n = 0;
       while (acc >= STEP && n < 5 && state === "playing") { update(); acc -= STEP; n++; }
       if (n === 5) acc = 0;
-    } else {
-      acc = 0;
-    }
+    } else acc = 0;
     draw();
   }
-  draw();
-  requestAnimationFrame(loop);
+  draw(); requestAnimationFrame(loop);
 
-  // Pause when the tab is hidden so the run isn't lost while away.
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden && state === "playing") {
-      state = "paused";
-      hintEl.textContent = "Paused — Space / tap to resume";
-      hintEl.style.display = "block";
-    }
+    if (document.hidden && state === "playing") { state = "paused"; setHint("Paused — Space / tap to resume", true); }
   });
 
-  // Reconnect detection. navigator.onLine only says there's a network
-  // interface, not that the site is reachable, so confirm with a real
-  // no-store request before reloading. Service worker only intercepts
-  // navigations, so this fetch fails honestly while offline.
+  // Reconnect detection: navigator.onLine only means "a network interface
+  // exists", so confirm with a real no-store request before reloading.
+  // (sw.js only intercepts navigations, so this fetch fails honestly offline.)
   let checking = false;
   async function checkConnection(manual) {
     if (checking) return;
@@ -271,8 +300,8 @@
     try {
       const res = await fetch("/robots.txt?ping=" + Date.now(), { cache: "no-store" });
       if (!res.ok) throw new Error("bad status");
-      statusEl.className = "status ok";
-      statusEl.textContent = "Back online — reloading…";
+      statusEl.className = "status ok"; statusEl.textContent = "Back online — reloading…";
+      dotEl.classList.add("ok"); netEl.textContent = "Online";
       setTimeout(() => location.reload(), 700);
       return;
     } catch (_) {
