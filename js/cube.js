@@ -120,6 +120,16 @@ import * as THREE from "three";
   let pinStageEl = null; // cached in init(), avoids a querySelector on every scroll event
   let cornerGlowShown = false; // one-time latch — see the corner-glow fade-in trigger in updatePortalFrame
   let rafPaused = false; // must be declared before the first animate() call below, or referencing it inside animate() throws (temporal dead zone) on that first call
+  // Perf-stats overlay state (see toggleStats/updateStats further down). Declared
+  // here, not next to those functions: animate() calls updateStats() on its very
+  // first run, which happens before execution reaches that later point in the
+  // file, so these must already be initialized or that first call throws a
+  // temporal-dead-zone ReferenceError (which surfaced as the false "3D cube
+  // failed to load" box, even though every later frame rendered fine).
+  let statsEl = null;
+  let statsVisible = false;
+  let statsFrameCount = 0;
+  let statsLastUpdate = 0;
   let isMobile = window.innerWidth < 760; // viewport-width guess — kept for onResize's own pixel-ratio recompute
 
   // `lowFX` is what every rendering-cost trim below actually checks
@@ -973,10 +983,6 @@ import * as THREE from "three";
   // essentially nothing else claims it, and preventDefault() is now
   // called regardless as a second layer of protection against this
   // exact class of collision happening again with some other browser.
-  let statsEl = null;
-  let statsVisible = false;
-  let statsFrameCount = 0;
-  let statsLastUpdate = 0;
 
   function toggleStats() {
     statsVisible = !statsVisible;
