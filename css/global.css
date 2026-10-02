@@ -1410,3 +1410,187 @@ html.custom-cursor-on, html.custom-cursor-on * { cursor: none !important; }
   .card.tile-match { aspect-ratio: auto; } /* single column at this width — a forced square reads odd stacked with lots of text */
 }
 
+/* ============================================================
+   LIQUID GLASS LAYER — clear, translucent panels (iOS 26 / iPhone Air feel)
+   ------------------------------------------------------------
+   Appended LAST on purpose. Every glass surface above already reads its
+   look from the shared tokens (--glass-bg, --glass-blur, --radius), so
+   this layer re-tunes those tokens and adds only what flat translucency
+   can't fake: a hairline bright edge, a faint specular glint from the
+   top-left, rounder shapes, and a clearer (more see-through) fill.
+   No component's layout rules are touched.
+
+   LOOK RULES — keep it clear, not gray:
+   - Fills stay under ~5% white. Bevels (bright inset on every side),
+     opaque gradients and milky overlays read as 1990s plastic, not glass.
+   - One thin top highlight + one faint corner glint. That's the whole trick.
+   - Floating panels that sit over arbitrary content (chat, modals, command
+     palette, toasts) keep a higher fill so text behind them can never show
+     through, even in a browser that skips the blur.
+
+   COST NOTES — this site has had real lag regressions from blur + animation:
+   - Rims and glints are plain box-shadow / background-image: painted once.
+   - This layer adds NO new backdrop-filter. It only re-tunes the existing ones.
+   - html.fx-low (set by shared.js from the same "flow-fx-mode" signal cube.js
+     uses) removes backdrop-filter from the many in-page surfaces and shrinks
+     it on the few floating ones. Over this page's near-black background the
+     blur has almost nothing to blur, so low mode looks nearly identical.
+   - Do NOT animate blur radius or backdrop-filter. Do NOT add mix-blend-mode.
+   ============================================================ */
+
+:root {
+  --glass-bg: rgba(255,255,255,.035);
+  --glass-bg-strong: rgba(255,255,255,.075);
+  --glass-blur: blur(20px) saturate(170%);
+  --glass-border: rgba(255,255,255,.11);
+  --glass-rim: inset 0 1px 0 rgba(255,255,255,.14), inset 1px 0 0 rgba(255,255,255,.04);
+  --glass-sheen: radial-gradient(90% 70% at 0% 0%, rgba(255,255,255,.07), rgba(255,255,255,0) 42%);
+  --glass-drop: 0 10px 28px rgba(0,0,0,.28);
+  --radius: 22px;
+  --radius-sm: 14px;
+}
+
+/* ---- Content panels ---- */
+.card, .stat, .flow-status-panel, .accordion, .service-quiz, .flow-preview {
+  border-color: var(--glass-border);
+  background-image: var(--glass-sheen);
+  box-shadow: var(--glass-rim), var(--glass-drop);
+}
+a.card:hover, .card.interactive:hover {
+  background-color: var(--glass-bg-strong);
+  background-image: var(--glass-sheen);
+  border-color: rgba(255,255,255,.24);
+  box-shadow: var(--glass-rim), 0 20px 48px rgba(0,0,0,.42), 0 0 40px var(--blue-glow-soft);
+}
+/* The original settle animation ends with box-shadow:none, which would flash
+   the edge off for .8s on every card reveal. Same animation, edge kept. */
+@keyframes cardSettle {
+  from { box-shadow: var(--glass-rim), var(--glass-drop), 0 0 0 1px var(--blue-glow-soft); }
+  to   { box-shadow: var(--glass-rim), var(--glass-drop), 0 0 0 0 rgba(63,169,232,0); }
+}
+
+/* ---- Floating glass: nav, widget, modals, menus ---- */
+.site-nav {
+  background-color: rgba(8,12,22,.46);
+  background-image: var(--glass-sheen);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-rim), 0 14px 38px rgba(0,0,0,.4);
+}
+.site-nav.scrolled { background-color: rgba(6,9,18,.66); }
+.site-nav a:hover { background: rgba(255,255,255,.07); }
+.site-nav a.active {
+  background-color: rgba(63,169,232,.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 0 0 1px rgba(63,169,232,.30);
+}
+#cmdk-trigger { border-color: var(--glass-border); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+
+#flowbot-launcher {
+  border-color: var(--glass-border);
+  background-image: var(--glass-sheen);
+  box-shadow: var(--glass-rim), 0 10px 26px rgba(0,0,0,.5);
+}
+#flowbot-launcher:hover {
+  border-color: rgba(255,255,255,.26);
+  box-shadow: var(--glass-rim), 0 14px 34px rgba(0,0,0,.55), 0 0 30px var(--blue-glow-soft);
+}
+#flowbot-panel, .lead-modal, #cmdk-panel {
+  border-radius: 28px;
+  border-color: var(--glass-border);
+  background-image: var(--glass-sheen);
+  box-shadow: var(--glass-rim), 0 30px 80px rgba(0,0,0,.55);
+}
+#flowbot-panel { background-color: rgba(8,14,28,.90); }
+.lead-modal    { background-color: rgba(10,13,24,.90); }
+#cmdk-panel    { background-color: rgba(10,13,24,.90); }
+#flowbot-panel .fb-head, #flowbot-panel .fb-input, #flowbot-panel .fb-input button { border-color: rgba(255,255,255,.09); }
+#flowbot-panel .fb-msg { border-radius: 18px; }
+#flowbot-panel .fb-msg.bot { box-shadow: inset 0 1px 0 rgba(255,255,255,.08); }
+
+#fx-toggle { border-color: var(--glass-border); background-image: var(--glass-sheen); box-shadow: inset 0 1px 0 rgba(255,255,255,.14); }
+#fx-toggle:hover { background-color: var(--glass-bg-strong); background-image: var(--glass-sheen); border-color: rgba(255,255,255,.24); }
+#fx-menu, #fx-toast, .egg-toast, .custom-select-options {
+  border-color: var(--glass-border);
+  background-image: var(--glass-sheen);
+  box-shadow: var(--glass-rim), 0 18px 44px rgba(0,0,0,.5);
+}
+#fx-menu, #fx-toast, .egg-toast { background-color: rgba(10,14,26,.84); }
+.custom-select-options { background-color: rgba(10,14,26,.88); }
+
+#backdoor { border-top-color: rgba(255,255,255,.14); box-shadow: inset 0 1px 0 rgba(255,255,255,.1); }
+
+/* ---- Buttons: pill-shaped clear glass; primary stays the site's solid white ---- */
+.btn {
+  border-radius: 999px;
+  border-color: var(--glass-border);
+  background-image: var(--glass-sheen);
+  box-shadow: var(--glass-rim);
+}
+.btn:hover {
+  background-color: var(--glass-bg-strong);
+  background-image: var(--glass-sheen);
+  border-color: rgba(255,255,255,.26);
+  box-shadow: var(--glass-rim), 0 10px 28px rgba(0,0,0,.4), 0 0 26px var(--blue-glow-soft);
+}
+.btn:active { transform: translateY(0) scale(.98); }
+.btn.btn-solid, .btn.btn-solid:hover { background-image: none; box-shadow: 0 8px 22px rgba(0,0,0,.35); }
+
+/* ---- Tabs, tags, quiz rows, flow nodes, terminal ---- */
+.tab-btn { border-color: var(--glass-border); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+.tab-btn.active { background-image: none; box-shadow: 0 6px 16px rgba(0,0,0,.35); }
+.tag { border-color: var(--glass-border); box-shadow: inset 0 1px 0 rgba(255,255,255,.1); }
+.quiz-opt {
+  border-radius: var(--radius-sm); border-color: var(--glass-border);
+  background-image: var(--glass-sheen); box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+.quiz-opt:hover { background-image: var(--glass-sheen); }
+.flow-node { border-radius: 14px; background-image: var(--glass-sheen); }
+#flow-terminal { border-radius: 18px; border-color: var(--glass-border); box-shadow: var(--glass-rim), var(--glass-drop); }
+
+/* ---- Form fields: gently inset, soft blue focus ring ---- */
+html form input:not([type=checkbox]):not([type=radio]):not([type=hidden]),
+html form textarea, html form select,
+html .admin-card input, html .custom-select-trigger {
+  border-color: var(--glass-border);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.3);
+}
+html form input:focus, html form textarea:focus, html form select:focus,
+html .admin-card input:focus, html .custom-select-trigger:focus {
+  border-color: rgba(255,255,255,.4);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.25), 0 0 0 3px rgba(63,169,232,.18);
+}
+.lead-modal-close { border-color: var(--glass-border); }
+
+/* ---- Footer: a quiet lit edge rather than a flat rule ---- */
+.site-footer { border-top-color: rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
+
+/* ============================================================
+   Degrade gracefully
+   ============================================================ */
+
+/* Low-power / reduced-effects mode (class set in shared.js): the many
+   in-page surfaces lose the blur (cheap); floating ones keep a smaller one. */
+html.fx-low { --glass-blur: blur(10px) saturate(150%); --glass-drop: 0 6px 16px rgba(0,0,0,.26); }
+html.fx-low .card, html.fx-low .stat, html.fx-low .flow-status-panel, html.fx-low .accordion,
+html.fx-low .service-quiz, html.fx-low .flow-preview, html.fx-low .btn,
+html.fx-low .custom-select-trigger, html.fx-low form input, html.fx-low form textarea, html.fx-low form select {
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+html.fx-low .card, html.fx-low .stat, html.fx-low .flow-status-panel, html.fx-low .accordion,
+html.fx-low .service-quiz, html.fx-low .flow-preview { background-color: rgba(18,22,36,.5); }
+html.fx-low #backdoor { -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); }
+
+/* OS-level "Reduce transparency" (Apple accessibility) and browsers without
+   backdrop-filter: same shapes and edges, solid-ish fills. */
+@media (prefers-reduced-transparency: reduce) {
+  .site-nav, .card, .stat, .flow-status-panel, .accordion, .service-quiz, .flow-preview, .btn,
+  #flowbot-launcher, #flowbot-panel, .lead-modal, #cmdk-panel, #fx-toggle, #fx-menu, #fx-toast,
+  .egg-toast, .custom-select-trigger, .custom-select-options, #mobile-nav-overlay, #backdoor {
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    background-color: rgba(14,18,32,.95);
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .site-nav, #flowbot-panel, .lead-modal, #cmdk-panel, #fx-menu, #fx-toast, .egg-toast,
+  .custom-select-options, #mobile-nav-overlay { background-color: rgba(14,18,32,.95); }
+}
