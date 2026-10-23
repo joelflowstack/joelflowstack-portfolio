@@ -1604,3 +1604,102 @@ html.fx-low #backdoor { -webkit-backdrop-filter: blur(14px) saturate(140%); back
 #flowbot-panel .fb-actions a { color: var(--blue-glow); text-decoration: none; border-bottom: 1px dotted currentColor; }
 #flowbot-panel .fb-actions a:hover { color: var(--white); }
 
+/* ============================================================
+   JADE-ICE BUTTONS — translucent jade shading into the site's accent blue
+   ------------------------------------------------------------
+   Appended after the glass layer on purpose (same specificity, later wins).
+   Look: a frosted highlight in the top-left corner, ONE faint crystalline
+   glint across the face, a hairline icy rim and a soft jade glow. No thick
+   bevels or hard inner shadows — that is what reads as 1990s.
+   Cost: gradients and box-shadows only, painted once. Nothing here adds a
+   backdrop-filter, animates a blur, or uses filter/mix-blend-mode.
+   ============================================================ */
+:root {
+  --jade-rgb: 52,211,153;     /* the site's "online" green, pushed toward jade */
+  --ice-rgb: 176,247,232;     /* frost highlight */
+  --flow-rgb: 63,169,232;     /* the site's accent blue (--blue-glow) */
+  --jade-glint: linear-gradient(115deg, rgba(255,255,255,0) 36%, rgba(255,255,255,.20) 47%, rgba(255,255,255,0) 58%);
+  --jade-frost: radial-gradient(130% 150% at 0% 0%, rgba(var(--ice-rgb),.34), rgba(var(--ice-rgb),0) 56%);
+  --jade-body: linear-gradient(160deg, rgba(var(--jade-rgb),.30), rgba(var(--flow-rgb),.17));
+  --jade-rim: inset 0 1px 0 rgba(255,255,255,.48), inset 0 0 18px rgba(var(--ice-rgb),.10);
+  --jade-glow: 0 8px 22px -8px rgba(0,0,0,.5), 0 0 22px rgba(var(--jade-rgb),.18);
+}
+
+/* ---- Secondary buttons: clear jade-ice glass ---- */
+.btn {
+  color: #eafff9;
+  text-shadow: 0 1px 10px rgba(0,70,52,.55);
+  border-color: rgba(var(--ice-rgb),.42);
+  background-color: rgba(var(--jade-rgb),.12);
+  background-image: var(--jade-glint), var(--jade-frost), var(--jade-body);
+  box-shadow: var(--jade-rim), var(--jade-glow);
+}
+.btn:hover {
+  color: #fff;
+  border-color: rgba(var(--ice-rgb),.72);
+  background-color: rgba(var(--jade-rgb),.20);
+  background-image: var(--jade-glint), var(--jade-frost), var(--jade-body);
+  box-shadow: var(--jade-rim), 0 12px 30px -8px rgba(0,0,0,.5), 0 0 34px rgba(var(--jade-rgb),.34);
+}
+
+/* ---- Primary buttons: stronger jade, still see-through ---- */
+.btn.btn-solid, .btn.btn-solid:hover, .tab-btn.active, #flowbot-panel .fb-retry {
+  color: #032018;
+  text-shadow: 0 1px 0 rgba(255,255,255,.32);
+  border-color: rgba(230,255,250,.70);
+  background-color: rgba(var(--jade-rgb),.55);
+  background-image: var(--jade-glint),
+    radial-gradient(130% 150% at 0% 0%, rgba(255,255,255,.55), rgba(255,255,255,0) 52%),
+    linear-gradient(150deg, rgba(150,246,214,.90), rgba(52,205,160,.84) 55%, rgba(var(--flow-rgb),.78));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75), inset 0 0 22px rgba(255,255,255,.18),
+    0 12px 30px -10px rgba(var(--jade-rgb),.55), 0 0 30px rgba(var(--jade-rgb),.20);
+}
+.btn.btn-solid:hover, #flowbot-panel .fb-retry:hover {
+  border-color: rgba(240,255,252,.9);
+  background-image: var(--jade-glint),
+    radial-gradient(130% 150% at 0% 0%, rgba(255,255,255,.70), rgba(255,255,255,0) 54%),
+    linear-gradient(150deg, rgba(175,252,226,.94), rgba(70,220,175,.88) 55%, rgba(var(--flow-rgb),.84));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), inset 0 0 24px rgba(255,255,255,.24),
+    0 16px 38px -10px rgba(var(--jade-rgb),.65), 0 0 40px rgba(var(--jade-rgb),.32);
+}
+
+/* ---- Tabs ---- */
+.tab-btn {
+  color: rgba(220,250,242,.82);
+  border-color: rgba(var(--ice-rgb),.30);
+  background-color: rgba(var(--jade-rgb),.07);
+  background-image: var(--jade-frost);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.24);
+}
+.tab-btn:hover { color: #fff; border-color: rgba(var(--ice-rgb),.58); background-color: rgba(var(--jade-rgb),.14); }
+.tab-btn.active, .tab-btn.active:hover { color: #032018; border-color: rgba(230,255,250,.70); }
+
+/* ---- Chat: launcher, Send ---- */
+#flowbot-launcher {
+  border-color: rgba(var(--ice-rgb),.40);
+  background-image: var(--jade-frost);
+  box-shadow: var(--jade-rim), 0 12px 30px rgba(0,0,0,.5), 0 0 22px rgba(var(--jade-rgb),.20);
+}
+#flowbot-launcher:hover {
+  border-color: rgba(var(--ice-rgb),.70);
+  box-shadow: var(--jade-rim), 0 16px 40px rgba(0,0,0,.55), 0 0 38px rgba(var(--jade-rgb),.38);
+}
+#flowbot-panel .fb-input button { color: rgb(var(--ice-rgb)); transition: color .2s var(--ease-out), background .2s var(--ease-out); }
+#flowbot-panel .fb-input button:hover { color: #fff; background: rgba(var(--jade-rgb),.16); }
+
+/* ---- Utility controls: the same jade-ice language, kept light ---- */
+#fx-toggle, #cmdk-trigger, .lead-modal-close { border-color: rgba(var(--ice-rgb),.28); }
+#fx-toggle:hover, #cmdk-trigger:hover, .lead-modal-close:hover {
+  border-color: rgba(var(--ice-rgb),.58);
+  background-color: rgba(var(--jade-rgb),.12);
+  color: #fff;
+}
+#fx-menu button:hover { background: rgba(var(--jade-rgb),.14); color: #fff; }
+.fx-toast-actions button[data-action="restore"] {
+  color: #eafff9; border-color: rgba(var(--ice-rgb),.42);
+  background-color: rgba(var(--jade-rgb),.14); background-image: var(--jade-frost);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3);
+}
+.fx-toast-actions button[data-action="restore"]:hover { background-color: rgba(var(--jade-rgb),.24); border-color: rgba(var(--ice-rgb),.7); }
+.quiz-opt:hover { border-color: rgba(var(--ice-rgb),.6); background-color: rgba(var(--jade-rgb),.10); color: var(--white); }
+
