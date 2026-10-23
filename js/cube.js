@@ -104,6 +104,12 @@ import * as THREE from "three";
   let nebulaMesh = null;
   let nebulaBaseX = 0;
   let nebulaBaseY = 0;
+  // Draw-call batching: each piece's 6 faces used to be 6 separate draw calls
+  // (26 pieces x 6 = ~156 per frame). Now every piece is an INVISIBLE proxy mesh
+  // that still owns the animated transform + raycasting, and the visible faces
+  // are drawn by a handful of InstancedMeshes (one per material x face slot,
+  // ~20 draws total). See buildPieces() and syncFaceInstances().
+  let faceBatches = []; // [{im: InstancedMesh, pieces: piece[]}]
   let pieces = []; // {mesh, grid:{x,y,z}, home:Vector3, scattered:Vector3, delay:number, isFrontOuter:bool, navIndex:number}
   let navMeshesCache = []; // pieces[].isNavTile never changes after buildPieces(), so this is computed once instead of filter+map on every raycast (was happening every animation frame in updateTileHover)
   let clock = new THREE.Clock();
@@ -477,12 +483,20 @@ import * as THREE from "three";
     const step = s + gap;
     let navIndex = 0;
 
+    // Shared by all 26 pieces: one box (transform carrier + raycast target) and
+    // one material that is never drawn (renderer skips material.visible=false,
+    // while Mesh.raycast does not look at it, so hover/click hit-testing is
+    // exactly what it was). Children (the mini-cube) still render normally.
+    const boxGeo = new THREE.BoxGeometry(s, s, s);
+    const proxyMat = new THREE.MeshBasicMaterial({ visible: false });
+    const faceGeos = Array.from({ length: 6 }, (_, f) => extractFaceGeometry(boxGeo, f));
+    const batchMap = new Map(); // "slot|material.uuid" -> {mat, slot, pieces}
+
     for (let x = -1; x <= 1; x++) {
       for (let y = -1; y <= 1; y++) {
         for (let z = -1; z <= 1; z++) {
           if (x === 0 && y === 0 && z === 0) continue; // hollow center
 
-          const geo = new THREE.BoxGeometry(s, s, s);
           // material order: [+x,-x,+y,-y,+z,-z]
           const isFrontOuterFace = (z === 1);
           const gridKeyMatch = isFrontOuterFace
@@ -509,7 +523,7 @@ import * as THREE from "three";
             z === -1 ? makePlasticMaterial(x + y + 4) : makeBlackFaceMaterial(), // -z
           ];
 
-          const mesh = new THREE.Mesh(geo, materials);
+          const mesh = new THREE.Mesh(boxGeo, proxyMat);
           const home = new THREE.Vector3(x * step, y * step, z * step);
 
           // scattered start position: pushed far out along its own
@@ -535,13 +549,70 @@ import * as THREE from "three";
             isNavTile: gridKeyMatch >= 0,
             isCenterTile,
             navIndex: gridKeyMatch,
+            frontMat: materials[4], // the +z face material (label/logo/plastic); hover glow drives this one
             glow: 0, // eased emissive intensity for hover/click feedback
           };
           pieces.push(piece);
 
+          // register each of this piece's 6 faces with the batch for (slot, material)
+          for (let f = 0; f < 6; f++) {
+            const mat = materials[f];
+            const key = f + "|" + mat.uuid;
+            let b = batchMap.get(key);
+            if (!b) { b = { mat, slot: f, pieces: [] }; batchMap.set(key, b); }
+            b.pieces.push(piece);
+          }
+
           if (isCenterTile) buildMiniCube(mesh);
         }
       }
+    }
+
+    batchMap.forEach((b) => {
+      const im = new THREE.InstancedMesh(faceGeos[b.slot], b.mat, b.pieces.length);
+      im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      im.frustumCulled = false; // instances move every frame; the cube is nearly always on screen anyway
+      cubeGroup.add(im);
+      faceBatches.push({ im, pieces: b.pieces });
+    });
+    syncFaceInstances();
+  }
+
+  // One face of a BoxGeometry as its own 4-vertex geometry, in the box's own
+  // local space: positions, normals and UVs copied verbatim, so texture
+  // orientation (which matters: a 4x4 checker flips parity if rotated 90deg)
+  // is exactly what the original per-face material groups produced.
+  function extractFaceGeometry(box, f) {
+    const g = box.groups[f];
+    const idx = [];
+    for (let i = g.start; i < g.start + g.count; i++) idx.push(box.index.getX(i));
+    const base = Math.min(...idx);
+    const pos = box.attributes.position, nor = box.attributes.normal, uv = box.attributes.uv;
+    const P = new Float32Array(12), N = new Float32Array(12), T = new Float32Array(8);
+    for (let i = 0; i < 4; i++) {
+      const v = base + i;
+      P.set([pos.getX(v), pos.getY(v), pos.getZ(v)], i * 3);
+      N.set([nor.getX(v), nor.getY(v), nor.getZ(v)], i * 3);
+      T.set([uv.getX(v), uv.getY(v)], i * 2);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(P, 3));
+    geo.setAttribute("normal", new THREE.BufferAttribute(N, 3));
+    geo.setAttribute("uv", new THREE.BufferAttribute(T, 2));
+    geo.setIndex(idx.map((i) => i - base));
+    return geo;
+  }
+
+  // Copies every piece's current local transform into its face instances.
+  // Must run AFTER everything that moves pieces this frame (boot fly-in, scatter,
+  // hover scale) and BEFORE renderer.render; see animate().
+  function syncFaceInstances() {
+    for (let i = 0; i < pieces.length; i++) pieces[i].mesh.updateMatrix();
+    for (let i = 0; i < faceBatches.length; i++) {
+      const b = faceBatches[i];
+      const arr = b.im.instanceMatrix.array;
+      for (let j = 0; j < b.pieces.length; j++) b.pieces[j].mesh.matrix.toArray(arr, j * 16);
+      b.im.instanceMatrix.needsUpdate = true;
     }
   }
 
@@ -554,8 +625,7 @@ import * as THREE from "three";
     // shared material for all of them, not 6 separately-generated
     // (but pixel-identical) textures and material instances.
     const sharedMat = makeLogoMaterial(0.85);
-    const materials = Array.from({ length: 6 }, () => sharedMat);
-    const mini = new THREE.Mesh(geo, materials);
+    const mini = new THREE.Mesh(geo, sharedMat); // single material -> one draw call, not one per face
     mini.position.set(0, 0, CONFIG.pieceSize / 2 + 0.2);
     mini.name = "miniCube";
     parentMesh.add(mini);
@@ -789,7 +859,7 @@ import * as THREE from "three";
       }
 
       p.glow += (target - p.glow) * 0.25;
-      const frontMat = Array.isArray(p.mesh.material) ? p.mesh.material[4] : p.mesh.material;
+      const frontMat = p.frontMat;
       if (frontMat && frontMat.emissiveIntensity !== undefined) frontMat.emissiveIntensity = Math.max(0, p.glow);
       if (frontMat && frontMat.opacity !== undefined) frontMat.opacity += (opacityTarget - frontMat.opacity) * 0.25;
       const curScale = p.mesh.scale.x + (scaleTarget - p.mesh.scale.x) * 0.25;
@@ -1045,6 +1115,7 @@ import * as THREE from "three";
     // lower pixel ratio) do. Those other trims give up real GPU cost
     // without being nearly as perceptible, so they're doing the actual
     // performance work now and every frame renders at full rate again.
+    syncFaceInstances();
     renderer.render(scene, camera);
   }
 
