@@ -26,6 +26,12 @@
   // that limit, so this is folded into api/chat.js rather than its own file.
   const ADMIN_URL = "https://flow-v3-mu.vercel.app/api/chat";
 
+  // Shown whenever chat can't answer, so a visitor with a problem always has a
+  // next step that works without Flow.
+  const CONTACT_EMAIL = "joelflowstack@gmail.com";
+  const CONTACT_TG = "https://t.me/joelflowstack";
+  const REQUEST_TIMEOUT_MS = 30000;
+
   const SYSTEM_PROMPT =
     "You are Flow, the AI agent Joel Flowstack built, embedded as a live " +
     "capability demo on his studio's public portfolio site. You're talking " +
@@ -99,9 +105,32 @@
     const timeout = setTimeout(() => controller.abort(), 6000);
     const startedAt = performance.now();
     fetch(API_URL, { method: "HEAD", signal: controller.signal })
-      .then(() => onResult(true, Math.round(performance.now() - startedAt)))
-      .catch(() => onResult(false, null))
+      .then(() => onResult(true, Math.round(performance.now() - startedAt), null))
+      .catch(async () => onResult(false, null, await networkFailureReason()))
       .finally(() => clearTimeout(timeout));
+  }
+
+  // A network-level failure (fetch rejected) has three very different causes,
+  // and only one of them is "Flow is down":
+  //   "offline"  - the visitor's own connection is gone
+  //   "blocked"  - their connection works and Flow's server answers at its root,
+  //                but THIS request was stopped on their side (ad blocker,
+  //                privacy extension, firewall rule, e.g. ERR_BLOCKED_BY_CLIENT)
+  //   "down"     - the server can't be reached at all
+  // The root probe is no-cors (we only need "did anything answer"), and it only
+  // ever runs after a failure, so it costs nothing on the happy path.
+  async function networkFailureReason() {
+    if (navigator.onLine === false) return "offline";
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    try {
+      await fetch(new URL(API_URL).origin + "/", { mode: "no-cors", cache: "no-store", signal: controller.signal });
+      return "blocked";
+    } catch (e) {
+      return "down";
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   const PING_HISTORY_KEY = "flowv3_ping_history";
@@ -155,13 +184,17 @@
       <span class="flow-status-caption">Last ${total} checks &middot; tracking since ${firstLabel}</span>`;
   }
 
-  function applyStatus(online, ms) {
+  function applyStatus(online, ms, reason) {
     const dots = document.querySelectorAll(".fb-dot");
     const text = document.getElementById("fb-status-text");
     dots.forEach(d => d.className = "fb-dot " + (online ? "online" : "offline"));
     if (text) {
       text.className = "fb-status " + (online ? "online" : "offline");
-      text.innerHTML = `<span class="fb-dot ${online ? "online" : "offline"}"></span>${online ? "online" : "offline — try email instead"}`;
+      const label = online ? "online"
+        : reason === "offline" ? "you're offline"
+        : reason === "blocked" ? "blocked by your browser — try email"
+        : "offline — try email instead";
+      text.innerHTML = `<span class="fb-dot ${online ? "online" : "offline"}"></span>${label}`;
     }
     // Only present on index.html's stats section — same real ping, just
     // also surfaced as a number rather than a dot, so it's not a second
@@ -169,7 +202,10 @@
     const liveStat = document.getElementById("live-ping");
     if (liveStat) liveStat.textContent = online ? ms + "ms" : "n/a";
 
-    recordPing(online, ms);
+    // The uptime history is about FLOW's availability. A visitor being offline,
+    // or their own blocker stopping the request, says nothing about that, so
+    // those failures aren't recorded against it.
+    if (online || reason === "down") recordPing(online, ms);
     renderStatusPanel();
   }
 
@@ -229,21 +265,33 @@
       return div;
     }
 
-    async function send() {
+    let busy = false;
+
+    function send() {
       const text = input.value.trim();
-      if (!text) return;
+      if (!text || busy) return;
       addMsg(text, "user");
       conversation.push({ role: "user", content: text });
       input.value = "";
-      const thinking = addMsg("...", "bot");
+      requestReply(addMsg("...", "bot"));
+    }
 
+    // Sends the current conversation and fills `bubble` with the answer, or, on
+    // failure, with what went wrong, a Try again button and direct contact
+    // links. Retrying re-sends the same conversation (the user's message is
+    // already in it), so nothing gets duplicated.
+    async function requestReply(bubble) {
+      busy = true;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
       try {
         const res = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ messages: conversation }),
+          signal: controller.signal,
         });
-        if (!res.ok) throw new Error("HTTP " + res.status);
+        if (!res.ok) { const e = new Error("HTTP " + res.status); e.status = res.status; throw e; }
         const data = await res.json();
 
         let replyText = (data.reply || "").trim();
@@ -252,12 +300,66 @@
         }
         if (!replyText) replyText = "Hmm, I didn't get a clean reply — try asking again?";
 
-        thinking.textContent = replyText;
+        bubble.className = "fb-msg bot";
+        bubble.textContent = replyText;
         conversation.push({ role: "assistant", content: replyText });
       } catch (err) {
         console.warn("[flowbot] request failed:", err);
-        thinking.textContent = "Couldn't reach Flow right now — try again in a moment, or email joelflowstack@gmail.com.";
+        showFailure(bubble, await classifyFailure(err));
+        checkStatus(applyStatus); // refresh the header badge so it matches what the visitor just saw
+      } finally {
+        clearTimeout(timer);
+        busy = false;
       }
+    }
+
+    // err.status is set only when the server actually answered with an error;
+    // a rejected fetch with no status is a network-level failure.
+    async function classifyFailure(err) {
+      if (err && err.status === 429) return "busy";
+      if (err && err.status) return "server";
+      if (err && err.name === "AbortError") return "timeout";
+      if (err instanceof SyntaxError) return "server"; // answered, but not with valid JSON
+      return await networkFailureReason(); // "offline" | "blocked" | "down"
+    }
+
+    const FAILURE_TEXT = {
+      offline: "You're offline right now — reconnect and I'll pick up where we left off.",
+      blocked: "Something in your browser is blocking the chat connection — usually an ad blocker or privacy extension. Allowing this site in it normally fixes that.",
+      down: "I can't reach Flow's server right now — it may be having a moment.",
+      busy: "Flow is getting a lot of messages at the moment — give it a minute and try again.",
+      server: "Flow ran into a problem on its side.",
+      timeout: "Flow is taking longer than usual to answer.",
+    };
+
+    function showFailure(bubble, kind) {
+      bubble.className = "fb-msg bot fb-error";
+      bubble.textContent = "";
+      const msg = document.createElement("div");
+      msg.textContent = FAILURE_TEXT[kind] || FAILURE_TEXT.down;
+      bubble.appendChild(msg);
+
+      const row = document.createElement("div");
+      row.className = "fb-actions";
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.className = "fb-retry";
+      retry.textContent = "Try again";
+      retry.addEventListener("click", () => {
+        if (busy) return;
+        bubble.className = "fb-msg bot";
+        bubble.textContent = "...";
+        requestReply(bubble);
+      });
+      const mail = document.createElement("a");
+      mail.href = "mailto:" + CONTACT_EMAIL;
+      mail.textContent = "Email Joel";
+      const tg = document.createElement("a");
+      tg.href = CONTACT_TG; tg.target = "_blank"; tg.rel = "noopener";
+      tg.textContent = "Telegram";
+      row.append(retry, mail, tg);
+      bubble.appendChild(row);
+      log.scrollTop = log.scrollHeight;
     }
 
     sendBtn.addEventListener("click", send);
