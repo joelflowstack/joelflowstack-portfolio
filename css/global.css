@@ -1594,3 +1594,13 @@ html.fx-low #backdoor { -webkit-backdrop-filter: blur(14px) saturate(140%); back
   .site-nav, #flowbot-panel, .lead-modal, #cmdk-panel, #fx-menu, #fx-toast, .egg-toast,
   .custom-select-options, #mobile-nav-overlay { background-color: rgba(14,18,32,.95); }
 }
+
+/* ---- Chat: failure bubble (what went wrong + Try again + direct contact) ---- */
+#flowbot-panel .fb-msg.fb-error { border-color: rgba(248,113,113,.38); background: rgba(248,113,113,.07); }
+#flowbot-panel .fb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 10px; font-family: var(--font-mono); font-size: .72rem; letter-spacing: .04em; }
+#flowbot-panel .fb-retry { cursor: pointer; font: inherit; color: #000; background: var(--white); border: 0; border-radius: 999px; padding: 6px 14px; transition: background .2s, transform .15s; }
+#flowbot-panel .fb-retry:hover { background: var(--white-dim); }
+#flowbot-panel .fb-retry:active { transform: scale(.97); }
+#flowbot-panel .fb-actions a { color: var(--blue-glow); text-decoration: none; border-bottom: 1px dotted currentColor; }
+#flowbot-panel .fb-actions a:hover { color: var(--white); }
+
