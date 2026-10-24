@@ -1703,3 +1703,21 @@ html.fx-low #backdoor { -webkit-backdrop-filter: blur(14px) saturate(140%); back
 .fx-toast-actions button[data-action="restore"]:hover { background-color: rgba(var(--jade-rgb),.24); border-color: rgba(var(--ice-rgb),.7); }
 .quiz-opt:hover { border-color: rgba(var(--ice-rgb),.6); background-color: rgba(var(--jade-rgb),.10); color: var(--white); }
 
+/* ============================================================
+   CARD MEDIA — an illustration bleeding to the top edge of a card
+   (Services, Home and Blog cards). Images are small WebP files
+   (10-22 KB), lazy-loaded, with width/height set so nothing shifts.
+   The bleed margin follows the card's own side padding: 32px, and
+   22px under 760px (see the .card rule in the mobile block above).
+   ============================================================ */
+.card.has-media { padding-top: 0; overflow: hidden; --cm-x: 32px; }
+@media (max-width: 760px) { .card.has-media { --cm-x: 22px; } }
+.card-media {
+  margin: 0 calc(var(--cm-x) * -1) 24px;
+  aspect-ratio: 16 / 10; overflow: hidden; position: relative;
+  background: #060d1a; border-bottom: 1px solid var(--glass-border);
+}
+.card-media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .7s var(--ease-out); }
+.card.interactive:hover .card-media img { transform: scale(1.045); }
+@media (prefers-reduced-motion: reduce) { .card-media img { transition: none; } .card.interactive:hover .card-media img { transform: none; } }
+
