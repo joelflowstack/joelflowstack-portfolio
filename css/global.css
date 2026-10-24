@@ -1721,3 +1721,76 @@ html.fx-low #backdoor { -webkit-backdrop-filter: blur(14px) saturate(140%); back
 .card.interactive:hover .card-media img { transform: scale(1.045); }
 @media (prefers-reduced-motion: reduce) { .card-media img { transition: none; } .card.interactive:hover .card-media img { transform: none; } }
 
+/* ============================================================
+   JADE-ICE UI — the jade / ice / flow-blue language across the whole interface
+   ------------------------------------------------------------
+   The glass and button layers above read their colours from shared tokens, so
+   re-tinting the tokens here carries icy-jade edges to EVERY panel, card, modal
+   and menu at once; the rules below add what tokens can't reach (nav, stats,
+   tags, focus, selection, scrollbar, chat bubbles, palette, form focus).
+   The WebGL cube keeps its own lighting (no script reads these tokens).
+   Cost: colours, gradients and box-shadows only. No new backdrop-filter, no
+   filter, no blend modes, nothing animated that touches a blur.
+   ============================================================ */
+:root {
+  --glass-border: rgba(var(--ice-rgb), .16);
+  --glass-rim: inset 0 1px 0 rgba(214,255,247,.22), inset 1px 0 0 rgba(214,255,247,.05);
+  --glass-sheen: radial-gradient(90% 70% at 0% 0%, rgba(var(--ice-rgb), .09), rgba(var(--ice-rgb), 0) 42%);
+  --blue-glow-soft: rgba(var(--jade-rgb), .16);   /* every hover glow that used the soft blue is now jade */
+  --blue-line: rgba(var(--ice-rgb), .40);
+}
+
+::selection { background: rgba(var(--jade-rgb), .45); color: #fff; }
+:focus-visible { outline: 2px solid rgba(var(--ice-rgb), .75); outline-offset: 3px; }
+#scroll-progress {
+  background: linear-gradient(90deg, rgb(var(--jade-rgb)), rgb(var(--flow-rgb)));
+  box-shadow: 0 0 14px rgba(var(--jade-rgb), .7);
+}
+html { scrollbar-width: thin; scrollbar-color: rgba(var(--ice-rgb), .32) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(var(--ice-rgb), .28); border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(var(--ice-rgb), .5); background-clip: content-box; }
+
+/* a second ambient blob in jade, so the glass has some colour to pick up (static blur, as before) */
+.glow-field::after { background: radial-gradient(circle, rgba(var(--jade-rgb), .10), transparent 70%); }
+
+/* ---- Panels ---- */
+a.card:hover, .card.interactive:hover {
+  border-color: rgba(var(--ice-rgb), .42);
+  box-shadow: var(--glass-rim), 0 20px 48px rgba(0,0,0,.42), 0 0 44px rgba(var(--jade-rgb), .16);
+}
+.site-footer { border-top-color: rgba(var(--ice-rgb), .16); box-shadow: inset 0 1px 0 rgba(214,255,247,.08); }
+
+/* ---- Nav ---- */
+.site-nav a:hover { color: #fff; background: rgba(var(--jade-rgb), .10); }
+.site-nav a.active {
+  color: #eafff9; background-color: rgba(var(--jade-rgb), .16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.30), inset 0 0 0 1px rgba(var(--ice-rgb), .34);
+}
+
+/* ---- Stats, tags ---- */
+.stat .num { text-shadow: 0 0 26px rgba(var(--jade-rgb), .35); }
+@keyframes statPulse {
+  0%   { text-shadow: 0 0 2px rgb(var(--jade-rgb)); }
+  40%  { text-shadow: 0 0 34px rgb(var(--jade-rgb)); }
+  100% { text-shadow: 0 0 26px rgba(var(--jade-rgb), .35); }
+}
+.tag { border-color: rgba(var(--ice-rgb), .24); background: rgba(var(--jade-rgb), .06); }
+
+/* ---- Chat + palette ---- */
+#flowbot-panel .fb-msg.user {
+  color: #04201a; border-color: rgba(230,255,250,.55);
+  background: linear-gradient(150deg, rgba(150,246,214,.95), rgba(var(--flow-rgb), .9));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 6px 18px rgba(var(--jade-rgb), .25);
+}
+#flowbot-panel .fb-msg.bot { border-color: rgba(var(--ice-rgb), .16); }
+.cmdk-item.active, .cmdk-item:hover { background: rgba(var(--jade-rgb), .14); }
+
+/* ---- Form focus ---- */
+html form input:focus, html form textarea:focus, html form select:focus,
+html .admin-card input:focus, html .custom-select-trigger:focus {
+  border-color: rgba(var(--ice-rgb), .6);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.25), 0 0 0 3px rgba(var(--jade-rgb), .20);
+}
+
