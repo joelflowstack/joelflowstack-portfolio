@@ -1765,3 +1765,26 @@ html .admin-card input:focus, html .custom-select-trigger:focus {
   box-shadow: inset 0 1px 2px rgba(0,0,0,.25), 0 0 0 3px rgba(var(--accent-rgb), .20);
 }
 
+/* ============================================================
+   HERO BOTTOM + GLOW SEAMS
+   ------------------------------------------------------------
+   1) Heroes had top padding but none at the bottom, so on a short or narrow
+      window the buttons ran straight into the black letterbox bar pinned to the
+      hero's bottom edge: a dead strip right under them. Heroes now reserve room
+      at the bottom, and the hard bar is replaced by a short fade into the page's
+      black. (The body gradient is already pure #000 well above any hero's
+      bottom edge, so the fade meets the page with no band. The top bar under the
+      nav is unchanged.)
+   2) .glow-field was clipped to its section's .container box (max 1180px), which
+      left a visible vertical seam wherever the window is wider than that. It now
+      spans the full window width: still clipped at the window edge and at its own
+      section's top and bottom, just no longer at the container's sides.
+      body { overflow-x: clip } guards against a few px of sideways scroll where
+      scrollbars take layout width (clip, unlike hidden, doesn't break sticky).
+   ============================================================ */
+:root { --hero-fade: clamp(56px, 10vh, 110px); }
+.page-hero { padding-bottom: calc(var(--hero-fade) + 28px); }
+.page-hero::after { height: var(--hero-fade); background: linear-gradient(to bottom, rgba(0,0,0,0), #000 90%); }
+.glow-field { left: calc(50% - 50vw); right: calc(50% - 50vw); }
+body { overflow-x: clip; }
+
