@@ -558,7 +558,7 @@
           <input type="text" name="website" class="lead-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" />
           <input type="text" name="name" placeholder="Name (optional)" autocomplete="name" />
           <input type="email" name="email" placeholder="Email" autocomplete="email" required />
-          <select name="interest">
+          <select name="interest" class="js-custom-select">
             <option value="">What are you interested in? (optional)</option>
             <option>3D website</option>
             <option>AI chatbot / agent</option>
@@ -572,6 +572,8 @@
         <button type="button" class="lead-no-thanks">No thanks</button>
       </div>`;
     document.body.appendChild(overlay);
+    // the popup is built long after page load, so ask enhance.js to upgrade its select now
+    document.dispatchEvent(new CustomEvent("flow:enhance-selects"));
     requestAnimationFrame(() => overlay.classList.add("open"));
 
     const close = (submitted) => {
@@ -682,7 +684,14 @@
       `<button data-mode="${m}">${FX_LABELS[m]}</button>`
     ).join("");
     menu.hidden = true;
+    // mark which mode is current (radio-menu semantics; styled in global.css)
+    menu.setAttribute("role", "menu");
+    menu.querySelectorAll("button").forEach((b) => {
+      b.setAttribute("role", "menuitemradio");
+      b.setAttribute("aria-checked", String(b.dataset.mode === getFxMode()));
+    });
     document.body.appendChild(menu);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) { menu.hidden = true; btn.focus(); } });
 
     btn.addEventListener("click", () => { menu.hidden = !menu.hidden; });
     menu.addEventListener("click", (e) => {
