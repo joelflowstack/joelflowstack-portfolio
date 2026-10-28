@@ -1717,11 +1717,6 @@ html.fx-low #backdoor { -webkit-backdrop-filter: blur(14px) saturate(140%); back
   background: linear-gradient(90deg, rgb(var(--accent-rgb)), rgb(var(--flow-rgb)));
   box-shadow: 0 0 14px rgba(var(--accent-rgb), .7);
 }
-html { scrollbar-width: thin; scrollbar-color: rgba(var(--ice-rgb), .32) transparent; }
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(var(--ice-rgb), .28); border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
-::-webkit-scrollbar-thumb:hover { background: rgba(var(--ice-rgb), .5); background-clip: content-box; }
 
 /* a second ambient blob in the accent teal, so the glass has some colour to pick up (static blur, as before) */
 .glow-field::after { background: radial-gradient(circle, rgba(var(--accent-rgb), .10), transparent 70%); }
@@ -1787,4 +1782,93 @@ html .admin-card input:focus, html .custom-select-trigger:focus {
 .page-hero::after { height: var(--hero-fade); background: linear-gradient(to bottom, rgba(0,0,0,0), #000 90%); }
 .glow-field { left: calc(50% - 50vw); right: calc(50% - 50vw); }
 body { overflow-x: clip; }
+
+/* ============================================================
+   SCROLLBARS + DROPDOWNS
+   ------------------------------------------------------------
+   Scrollbars: every scroller on the site (the page, chat messages, command
+   palette, dropdown options, terminal, mobile menu, code preview, textareas)
+   gets one teal-ice pill thumb on a clear track.
+   - Chrome / Edge / Safari use the ::-webkit-scrollbar pseudo-elements. They must
+     NOT also get scrollbar-color/-width: in Chromium 121+ those standard
+     properties switch the pseudo-element styling off entirely.
+   - Firefox has no pseudo-elements, so only it gets the standard properties.
+   color-scheme: dark makes anything the page can't style (a native select
+   popup if a script ever fails, form-control internals) render dark, not white.
+   Cost: static colours only.
+   ============================================================ */
+html { color-scheme: dark; }
+
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: rgba(var(--ice-rgb), .30) transparent; }
+}
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: rgba(var(--ice-rgb), .26); background-clip: padding-box; border: 3px solid transparent; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background-color: rgba(var(--ice-rgb), .50); }
+::-webkit-scrollbar-thumb:active { background-color: rgba(var(--ice-rgb), .68); }
+
+/* floating panels and small scrollers: slimmer, quieter */
+.custom-select-options::-webkit-scrollbar, #flowbot-panel .fb-log::-webkit-scrollbar, #cmdk-list::-webkit-scrollbar,
+.ft-body::-webkit-scrollbar, #mobile-nav-overlay::-webkit-scrollbar, .lead-modal::-webkit-scrollbar,
+.flow-preview::-webkit-scrollbar, textarea::-webkit-scrollbar { width: 8px; height: 8px; }
+.custom-select-options::-webkit-scrollbar-thumb, #flowbot-panel .fb-log::-webkit-scrollbar-thumb, #cmdk-list::-webkit-scrollbar-thumb,
+.ft-body::-webkit-scrollbar-thumb, #mobile-nav-overlay::-webkit-scrollbar-thumb, .lead-modal::-webkit-scrollbar-thumb,
+.flow-preview::-webkit-scrollbar-thumb, textarea::-webkit-scrollbar-thumb { border-width: 2px; background-color: rgba(var(--ice-rgb), .22); }
+.custom-select-options::-webkit-scrollbar-thumb:hover, #flowbot-panel .fb-log::-webkit-scrollbar-thumb:hover, #cmdk-list::-webkit-scrollbar-thumb:hover,
+.ft-body::-webkit-scrollbar-thumb:hover, #mobile-nav-overlay::-webkit-scrollbar-thumb:hover, .lead-modal::-webkit-scrollbar-thumb:hover,
+.flow-preview::-webkit-scrollbar-thumb:hover, textarea::-webkit-scrollbar-thumb:hover { background-color: rgba(var(--ice-rgb), .46); }
+textarea::-webkit-resizer {
+  background: linear-gradient(135deg, transparent 0 52%, rgba(var(--ice-rgb), .5) 52% 60%, transparent 60% 74%, rgba(var(--ice-rgb), .5) 74% 82%, transparent 82%);
+  border-radius: 0 0 var(--radius-sm) 0;
+}
+/* a scrolled list shouldn't drag the page behind it along once it hits its end */
+.custom-select-options, #cmdk-list, #flowbot-panel .fb-log, .ft-body, #mobile-nav-overlay, .lead-modal { overscroll-behavior: contain; }
+
+/* the lead popup was taller than a short window (e.g. a phone in landscape), so its
+   top or bottom could be unreachable; on short windows it now scrolls inside itself */
+@media (max-height: 640px) {
+  #lead-modal-overlay { padding: 16px; }
+  .lead-modal { max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto; }
+}
+
+/* ---- Dropdown (custom select, used by the contact form and the lead popup) ---- */
+@keyframes csIn   { from { opacity: 0; transform: translateY(-4px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes csInUp { from { opacity: 0; transform: translateY(4px) scale(.985); }  to { opacity: 1; transform: none; } }
+.custom-select-trigger { transition: border-color .2s var(--ease-out), box-shadow .2s var(--ease-out); }
+.custom-select-trigger:hover { border-color: rgba(var(--ice-rgb), .45); }
+.custom-select-trigger.is-placeholder { color: var(--grey); }
+/* one clean line, truncated with an ellipsis, rather than wrapping (long placeholder / long option names on a narrow phone) */
+.custom-select-trigger { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#lead-form .custom-select-trigger { font-size: .92rem; }
+.custom-select-trigger.open { border-color: rgba(var(--ice-rgb), .6); box-shadow: inset 0 1px 2px rgba(0,0,0,.25), 0 0 0 3px rgba(var(--accent-rgb), .20); }
+.custom-select-trigger::after { border-color: rgba(var(--ice-rgb), .75); }
+.custom-select-options {
+  border-radius: 16px; max-height: var(--cs-max, 240px);
+  transform-origin: top center; animation: csIn .16s var(--ease-out);
+}
+.custom-select-options.drop-up { top: auto; bottom: calc(100% + 6px); transform-origin: bottom center; animation-name: csInUp; }
+.custom-select-option { position: relative; padding: 11px 38px 11px 14px; border-radius: 10px; transition: background-color .12s, color .12s; }
+.custom-select-option:hover, .custom-select-option.is-active { background: rgba(var(--accent-rgb), .16); color: #fff; }
+.custom-select-option[aria-selected="true"] { color: #fff; }
+.custom-select-option[aria-selected="true"]::after {
+  content: ""; position: absolute; right: 16px; top: 50%; width: 5px; height: 10px;
+  border-right: 2px solid rgb(var(--ice-rgb)); border-bottom: 2px solid rgb(var(--ice-rgb));
+  transform: translateY(-62%) rotate(45deg);
+}
+.custom-select-option[data-value=""] { color: var(--grey); }
+.custom-select-option[data-value=""]:hover, .custom-select-option[data-value=""].is-active { color: #fff; }
+/* native <option> rows, for any select a script ever leaves un-upgraded */
+select option { background: #0b1220; color: #e9f3f7; }
+
+/* ---- Effects menu: same option language, current mode marked ---- */
+#fx-menu { border-radius: 14px; min-width: 150px; animation: csIn .16s var(--ease-out); }
+#fx-menu button { position: relative; padding: 9px 32px 9px 12px; border-radius: 9px; transition: background-color .12s, color .12s; }
+#fx-menu button[aria-checked="true"] { color: #fff; background: rgba(var(--accent-rgb), .12); }
+#fx-menu button[aria-checked="true"]::after {
+  content: ""; position: absolute; right: 13px; top: 50%; width: 5px; height: 9px;
+  border-right: 2px solid rgb(var(--ice-rgb)); border-bottom: 2px solid rgb(var(--ice-rgb));
+  transform: translateY(-62%) rotate(45deg);
+}
+@media (prefers-reduced-motion: reduce) { .custom-select-options, #fx-menu { animation: none; } }
 
