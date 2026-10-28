@@ -501,68 +501,167 @@
   // keeps the original <select> in the DOM (visually hidden, not
   // removed) so form submission works completely unchanged; this is
   // purely a visual layer on top of it.
+  // Only one custom select is ever open; clicking anywhere outside closes it.
+  // (Registered once here, not per select, because initCustomSelects can run
+  // more than once — the lead popup is created long after page load.)
+  let customSelectCount = 0;
+  let closeOpenSelect = null;
+  document.addEventListener("click", (e) => {
+    if (closeOpenSelect && !e.target.closest(".custom-select")) closeOpenSelect();
+  });
+  document.addEventListener("flow:enhance-selects", () => initCustomSelects());
+
   function initCustomSelects() {
     document.querySelectorAll("select.js-custom-select").forEach((select) => {
       if (select.dataset.customized) return;
       select.dataset.customized = "1";
+      const uid = "cs" + (++customSelectCount);
 
       const wrap = document.createElement("div");
       wrap.className = "custom-select";
 
       const trigger = document.createElement("button");
       trigger.type = "button";
+      trigger.id = uid + "-trigger";
       trigger.className = "custom-select-trigger";
       trigger.setAttribute("aria-haspopup", "listbox");
       trigger.setAttribute("aria-expanded", "false");
+      trigger.setAttribute("aria-controls", uid + "-list");
+      const label = select.id ? document.querySelector(`label[for="${select.id}"]`) : null;
+      if (label) {
+        if (!label.id) label.id = uid + "-label";
+        trigger.setAttribute("aria-labelledby", label.id + " " + trigger.id);
+      }
 
       const panel = document.createElement("div");
       panel.className = "custom-select-options";
+      panel.id = uid + "-list";
       panel.setAttribute("role", "listbox");
       panel.hidden = true;
 
       const options = Array.from(select.options);
-      const syncTrigger = () => {
-        const selected = options[select.selectedIndex];
-        trigger.textContent = selected ? selected.textContent : "";
-      };
+      let activeIndex = Math.max(0, select.selectedIndex);
 
-      options.forEach((opt, i) => {
+      const items = options.map((opt, i) => {
         const item = document.createElement("div");
         item.className = "custom-select-option";
+        item.id = `${uid}-opt-${i}`;
+        item.dataset.value = opt.value;
         item.textContent = opt.textContent;
         item.setAttribute("role", "option");
-        item.tabIndex = -1;
-        item.addEventListener("click", () => {
-          select.selectedIndex = i;
-          select.dispatchEvent(new Event("change", { bubbles: true }));
-          syncTrigger();
-          closePanel();
-        });
+        item.setAttribute("aria-selected", "false");
+        item.addEventListener("mousedown", (e) => e.preventDefault()); // keep keyboard focus on the trigger
+        item.addEventListener("click", () => choose(i));
+        item.addEventListener("mousemove", () => { if (activeIndex !== i) setActive(i, false); });
         panel.appendChild(item);
+        return item;
       });
 
+      // Trigger text + placeholder look (an empty-value first option reads as a
+      // placeholder, like a native select) + the selected row's check mark.
+      function sync() {
+        const i = select.selectedIndex;
+        const selected = options[i];
+        trigger.textContent = selected ? selected.textContent : "";
+        trigger.classList.toggle("is-placeholder", !selected || selected.value === "");
+        items.forEach((it, j) => it.setAttribute("aria-selected", j === i ? "true" : "false"));
+      }
+
+      function setActive(i, scroll = true) {
+        activeIndex = Math.max(0, Math.min(items.length - 1, i));
+        items.forEach((it, j) => it.classList.toggle("is-active", j === activeIndex));
+        trigger.setAttribute("aria-activedescendant", items[activeIndex].id);
+        if (scroll) {
+          // scroll inside the panel only — scrollIntoView could also scroll the page
+          const el = items[activeIndex];
+          if (el.offsetTop < panel.scrollTop) panel.scrollTop = el.offsetTop - 6;
+          else if (el.offsetTop + el.offsetHeight > panel.scrollTop + panel.clientHeight) panel.scrollTop = el.offsetTop + el.offsetHeight - panel.clientHeight + 6;
+        }
+      }
+
+      function choose(i) {
+        select.selectedIndex = i;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        sync();
+        closePanel();
+        trigger.focus();
+      }
+
+      // The box the list has to fit inside: the nearest ancestor that clips or
+      // scrolls (e.g. the lead popup on a short window), else the window.
+      function boundsBox() {
+        for (let el = wrap.parentElement; el && el !== document.body; el = el.parentElement) {
+          if (getComputedStyle(el).overflowY !== "visible") return el.getBoundingClientRect();
+        }
+        return { top: 0, bottom: window.innerHeight };
+      }
+      // Open downward unless there isn't room and there's more above; either way
+      // cap the height to the room available so the list scrolls instead of
+      // running off-screen.
+      function place() {
+        const box = boundsBox(), r = trigger.getBoundingClientRect(), gap = 12;
+        const below = Math.min(box.bottom, window.innerHeight) - r.bottom - gap;
+        const above = r.top - Math.max(box.top, 0) - gap;
+        const wanted = Math.min(panel.scrollHeight, 240);
+        const up = below < wanted && above > below;
+        panel.classList.toggle("drop-up", up);
+        panel.style.setProperty("--cs-max", Math.max(120, Math.min(240, up ? above : below)) + "px");
+      }
+
       function openPanel() {
+        if (closeOpenSelect && closeOpenSelect !== closePanel) closeOpenSelect();
         panel.hidden = false;
+        place();
         trigger.setAttribute("aria-expanded", "true");
         trigger.classList.add("open");
+        setActive(Math.max(0, select.selectedIndex));
+        closeOpenSelect = closePanel;
       }
       function closePanel() {
         panel.hidden = true;
         trigger.setAttribute("aria-expanded", "false");
         trigger.classList.remove("open");
+        trigger.removeAttribute("aria-activedescendant");
+        if (closeOpenSelect === closePanel) closeOpenSelect = null;
       }
 
-      trigger.addEventListener("click", () => {
-        panel.hidden ? openPanel() : closePanel();
-      });
-      document.addEventListener("click", (e) => {
-        if (!wrap.contains(e.target)) closePanel();
-      });
+      trigger.addEventListener("click", () => { panel.hidden ? openPanel() : closePanel(); });
+
+      // Keyboard: arrows / Home / End move, Enter or Space picks, Escape closes
+      // (without also closing a popup the select sits in), Tab closes, and
+      // typing letters jumps to a matching option.
+      let typed = "", typedTimer;
       trigger.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closePanel();
+        const open = !panel.hidden;
+        switch (e.key) {
+          case "ArrowDown":
+          case "ArrowUp":
+            e.preventDefault();
+            if (!open) openPanel(); else setActive(activeIndex + (e.key === "ArrowDown" ? 1 : -1));
+            break;
+          case "Home": if (open) { e.preventDefault(); setActive(0); } break;
+          case "End": if (open) { e.preventDefault(); setActive(items.length - 1); } break;
+          case "Enter":
+          case " ": if (open) { e.preventDefault(); choose(activeIndex); } break; // closed: the button's own click opens it
+          case "Escape": if (open) { e.preventDefault(); e.stopPropagation(); closePanel(); } break;
+          case "Tab": if (open) closePanel(); break;
+          default:
+            if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+              typed += e.key.toLowerCase();
+              clearTimeout(typedTimer);
+              typedTimer = setTimeout(() => { typed = ""; }, 600);
+              const start = typed.length > 1 ? activeIndex : activeIndex + 1;
+              const hit = items.map((_, k) => (start + k) % items.length)
+                .find((k) => options[k].textContent.trim().toLowerCase().startsWith(typed));
+              if (hit !== undefined) { if (!open) openPanel(); setActive(hit); }
+            }
+        }
       });
 
-      syncTrigger();
+      select.addEventListener("change", sync);
+      if (select.form) select.form.addEventListener("reset", () => setTimeout(sync));
+
+      sync();
       select.style.display = "none"; // hidden, not removed — still the real form field
       select.parentNode.insertBefore(wrap, select);
       wrap.appendChild(trigger);
